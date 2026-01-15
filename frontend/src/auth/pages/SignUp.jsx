@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
+
 export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +61,7 @@ export default function SignUp() {
           <h1 className="text-xl font-semibold mb-2 text-blue-700">
             Sign Up
           </h1>
-          <p className="text-sm text-blue-600 mb-6 font-Ligconsolata">
+          <p className="text-sm text-blue-600 mb-6">
             Let’s start off with some basic information about you!
           </p>
 
