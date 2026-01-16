@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState(""); // "learner" | "tutor"
+  const [role, setRole] = useState(""); 
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
