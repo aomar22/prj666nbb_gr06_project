@@ -6,28 +6,26 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState(""); 
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+    role: false,
+  });
+
 
   const isSenecaEmail = (value) =>
     /^[A-Za-z0-9._%+-]+@myseneca\.ca$/i.test(value.trim());
 
+  const emailOk = isSenecaEmail(email);
+  const passwordOk = password.length >= 8;
+  const roleOk = Boolean(role);
+  const formOk = emailOk && passwordOk && roleOk;
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
-
-    if (!isSenecaEmail(email)) {
-      setError("Use a valid Seneca email (@myseneca.ca).");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (!role) {
-      setError("Please select Learner or Tutor.");
-      return;
-    }
+    if (!formOk) return;
 
     const initialUser = { email: email.trim().toLowerCase(), role };
     localStorage.setItem("scholarly_initial_user", JSON.stringify(initialUser));
@@ -62,10 +60,10 @@ export default function SignUp() {
 
         {/* Body */}
         <div className="font-['Inter'] px-14 py-12 flex flex-col min-h-[589.22px]">
-          <h1 className="text-[60px] -top-320 font-extrabold text-[#0066CC] mb-4">
+          <h1 className="text-[50px] -top-320 font-extrabold text-[#0066CC] mb-4">
             Sign Up
           </h1>
-          <p className="text-[40px] text-base font-semibold mb-10">
+          <p className="text-[30px] text-[#0066CC] font-semibold mb-10">
             Let’s start off with some basic information about you!
           </p>
 
@@ -75,8 +73,14 @@ export default function SignUp() {
                 className="w-full rounded-md border px-4 py-3 shadow-sm w-[467px] h-[47.12px] text-[25px]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                 placeholder="Seneca Email"
               />
+              {touched.email && !emailOk && (
+                <p className="text-red-600 text-sm font-medium text-[18px]">
+                  Please enter a valid Seneca email (ending with @myseneca.ca).
+                </p>
+              )}
             </div>
 
             <div>
@@ -85,8 +89,14 @@ export default function SignUp() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                 placeholder="Seneca Password"
               />
+              {touched.password && !passwordOk && (
+                <p className="text-red-600 text-sm font-medium text-[18px]">
+                  Password must be at least 8 characters.
+                </p>
+              )}
             </div>
 
             <div>
@@ -94,38 +104,45 @@ export default function SignUp() {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => setRole("learner")}
+                  onClick={() => {
+                    setRole("learner");
+                    setTouched((t) => ({ ...t, role: true }));
+                  }}
                   className={`flex flex-1 items-center justify-center gap-3 rounded-md border px-4 py-3 text-[25px] ${
                     role === "learner"
                       ? "bg-[#82C6E3] text-black font-bold"
                       : "bg-white"
                   }`}
                 >
-                  <img src="/person-search.png" alt="Learner" className="w-[28px] h-[28px]" />
+                  <img src="/person-search.png" alt="" aria-hidden="true" className="w-[35px] h-[35px]" />
                   Learner
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRole("tutor")}
+                  onClick={() => {
+                    setRole("tutor");
+                    setTouched((t) => ({ ...t, role: true }));
+                  }}
                   className={`flex flex-1 items-center justify-center gap-3 rounded-md border px-4 py-3 text-[25px] ${
                     role === "tutor"
                       ? "bg-[#82C6E3] text-black font-bold"
                       : "bg-white"
                   }`}
                 >
-                  <img src="/user-tie.png" alt="Tutor" className="w-[28px] h-[28px]" />
+                  <img src="/user-tie.png" alt="" aria-hidden="true" className="w-[28px] h-[28px]" />
                   Tutor
                 </button>
               </div>
             </div>
 
-            {error && (
-              <p className="text-red-600 text-sm font-medium text-[25px]">{error}</p>
-            )}
+          
 
             <button
               type="submit"
-              className="w-full bg-[#0066CC] text-white py-3 rounded-md text-[25px] font-normal shadow"
+              disabled={!formOk}
+              className={`w-full py-3 rounded-md text-[25px] font-normal shadow ${
+                formOk ? "bg-[#0066CC] text-white" : "bg-[#0066CC] text-white opacity-50 cursor-not-allowed"
+              }`}
             >
               Create Account
             </button>
