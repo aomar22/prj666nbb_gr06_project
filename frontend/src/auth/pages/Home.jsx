@@ -9,42 +9,52 @@ export default function Home() {
         <div className="relative bg-[#0B2F86] h-[215.25px] flex flex-col items-center justify-center pt-[52px]">
           {/* Floating logo */}
           <div className="absolute top-5 left-1/2 -translate-x-1/2">
-            <div className="h-[79.21px] w-[88.85px] rounded-full bg-white flex items-center justify-center">
-              <span className="text-5xl">🎓</span>
+            <div
+              className="h-[79.21px] w-[88.85px] rounded-full bg-white flex items-center justify-center"
+              style={{ boxShadow: "0px 4px 4px 0px #00000040" }}
+            >
+              <img
+                src="/hat.png"
+                alt="Scholarly logo"
+                className="h-[48px] w-[48px]"
+              />
             </div>
           </div>
 
-          <h1 className="font-['Inter'] text-white text-[50px] leading-[40px] font-bold mt-6 font-inter">Scholarly</h1>
-          <p className="text-white text-[20px] font-semibold mt-2 font-inter">
+          <h1 className="font-['Inter'] text-white text-[50px] leading-[40px] font-bold mt-6">
+            Scholarly
+          </h1>
+          <p className="text-white text-[20px] font-semibold mt-2">
             Connect. Learn. Grow.
           </p>
         </div>
 
         {/* Body */}
-        <div className="font-['Ligconsolata'] px-14 py-12 flex flex-col min-h-[589.22]px">
-            {/* Top content */}
-            <div>
-          <h2 className="text-[60px] -top-320 font-extrabold text-[#0066CC] mb-4">Welcome!</h2>
-          <p className="text-[40px] text-base font-semibold mb-10">
-            Connecting Seneca students
-            <br />
-            with peer tutors for personalized support.
-          </p>
+        <div className="font-['Ligconsolata'] px-14 py-12 flex flex-col min-h-[589.22px]">
+          {/* Top content */}
+          <div>
+            <h2 className="text-[60px] font-extrabold text-[#0066CC] mb-4">
+              Welcome!
+            </h2>
+            <p className="text-[40px] font-semibold mb-10">
+              Connecting Seneca students
+              <br />
+              with peer tutors for personalized support.
+            </p>
           </div>
 
-            {/* Buttons */}
-
-          <div className="space-y-10 font-['Ligconsolata'] pt-15">
+          {/* Buttons */}
+          <div className="space-y-10 pt-15">
             <Link
               to="/login"
-              className="block mx-auto rounded-[10px] text-center bg-[#0066CC] text-white text-[40px] w-[530px] py-4 rounded-md font-normal shadow"
+              className="block mx-auto w-[530px] rounded-[10px] bg-[#0066CC] py-4 text-center text-[40px] font-normal text-white shadow"
             >
               Login
             </Link>
 
             <Link
               to="/signup"
-              className="block mx-auto rounded-[10px] text-center bg-[#0066CC] text-white py-4 rounded-md text-[40px] w-[530px] font-normal shadow"
+              className="block mx-auto w-[530px] rounded-[10px] bg-[#0066CC] py-4 text-center text-[40px] font-normal text-white shadow"
             >
               SignUp
             </Link>
