@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { registerLearner, registerTutor } from "../../api";
 
 
 export default function SignUp() {
@@ -7,6 +8,8 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState(""); 
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({
     email: false,
     password: false,
@@ -23,14 +26,28 @@ export default function SignUp() {
   const formOk = emailOk && passwordOk && roleOk;
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => { 
     e.preventDefault();
-    if (!formOk) return;
+    if (!formOk || loading) return;
+    
+    setError("");
+    setLoading(true);
+    
+    const payload = { email: email.trim().toLowerCase(), password };
+    
+    try {
+      if (role === "learner") {
+        await registerLearner(payload);
+      } else {
+        await registerTutor(payload);
+      }
 
-    const initialUser = { email: email.trim().toLowerCase(), role };
-    localStorage.setItem("scholarly_initial_user", JSON.stringify(initialUser));
-
-    navigate("/verify-email", { state: initialUser });
+      navigate("/verify-email", { state: { email: payload.email, role } });
+    } catch (err) {
+      setError(err.message || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,6 +85,7 @@ export default function SignUp() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
             <div>
               <input
                 className="w-full rounded-md border px-4 py-3 shadow-sm w-[467px] h-[47.12px] text-[25px]"
@@ -83,6 +101,7 @@ export default function SignUp() {
               )}
             </div>
 
+            {/* Password */}
             <div>
               <input
                 className="w-full rounded-md border px-4 py-3 shadow-sm w-[467px] h-[47.12px] text-[25px]"
@@ -99,6 +118,7 @@ export default function SignUp() {
               )}
             </div>
 
+            {/* Role */}
             <div>
               <p className="mb-2 pt-6 font-medium text-[25px]">Who will you be?</p>
               <div className="flex gap-4">
@@ -133,18 +153,30 @@ export default function SignUp() {
                   Tutor
                 </button>
               </div>
+
+              {touched.role && !roleOk && (
+                <p className="text-red-600 text-[18px] mt-2">
+                  Please select a role.
+                </p>
+              )}
             </div>
 
-          
+            {/* Backend error */}
+            {error && (
+              <p className="text-red-700 text-[18px] font-semibold">
+                {error}
+              </p>
+            )}
 
+            {/* Submit */}
             <button
               type="submit"
-              disabled={!formOk}
+              disabled={!formOk || loading}
               className={`w-full py-3 rounded-md text-[25px] font-normal shadow ${
                 formOk ? "bg-[#0066CC] text-white" : "bg-[#0066CC] text-white opacity-50 cursor-not-allowed"
               }`}
             >
-              Create Account
+              {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
