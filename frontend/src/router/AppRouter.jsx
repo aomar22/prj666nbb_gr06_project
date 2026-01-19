@@ -4,6 +4,7 @@ import Login from "../auth/pages/Login";
 import EmailVerification from "../auth/pages/EmailVerification";
 import Home from "../auth/pages/Home";
 import Onboarding from "../auth/pages/Onboarding";
+import Dashboard from "../pages/Dashboard";
 
 
 export default function AppRouter() {
@@ -16,6 +17,7 @@ export default function AppRouter() {
         <Route path="/verify-email" element={<EmailVerification />} />
         <Route path="/home" element={<Home />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );
