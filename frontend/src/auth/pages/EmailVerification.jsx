@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { verifyEmail } from "../../api";
+import { useNavigate } from "react-router-dom";
 
 function maskEmail(email) {
   const value = String(email || "").trim();
@@ -16,6 +18,9 @@ function maskEmail(email) {
 }
 
 export default function EmailVerification() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
   const { state } = useLocation();
 
   // If user refreshes, location state disappears -> fallback to localStorage
@@ -81,11 +86,27 @@ export default function EmailVerification() {
     inputsRef.current[Math.min(text.length, 4) - 1]?.focus?.();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!codeOk) return;
-
-    // UI-only: no API. 
+    if (!codeOk || !initialUser?.email) return;
+    setApiError("");
+    setLoading(true);
+    const code = digits.join("");
+    try {
+      const resp = await verifyEmail({ email: initialUser.email, code });
+      if (resp?.token) {
+        try {
+          localStorage.setItem("scholarly_token", resp.token);
+        } catch (err) {
+          console.warn("Could not save token to localStorage", err);
+        }
+      }
+      navigate("/onboarding", { state: resp });
+    } catch (err) {
+      setApiError(err.message || "Verification failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -147,10 +168,17 @@ export default function EmailVerification() {
               ))}
             </div>
 
+            {/* API error message */}
+            {apiError && (
+              <p className="text-red-600 text-[18px] font-semibold">
+                {apiError}
+              </p>
+            )}
+
             {/* Button */}
             <button
               type="submit"
-              disabled={!codeOk}
+              disabled={!codeOk || loading}
               className={`w-full h-[64px] rounded-[10px] font-mono text-[26px] shadow-lg ${
                 codeOk
                   ? "bg-[#0066CC] text-white"
