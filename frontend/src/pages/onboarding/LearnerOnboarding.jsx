@@ -26,7 +26,6 @@ export default function LearnerOnboarding() {
     }
   }, [state]);
 
-  // Safety: don’t allow direct access without an email context
   if (!initialUser?.email) return <Navigate to="/login" replace />;
 
   const [fullName, setFullName] = useState("");
@@ -39,13 +38,11 @@ export default function LearnerOnboarding() {
     e.preventDefault();
     setError("");
 
-    // BR5/BR6 style validation (frontend-only)
     if (!fullName.trim() || !program || !semester || !campus) {
       setError("Please complete all required fields.");
       return;
     }
 
-    // store something lightweight for now (until backend wiring is done)
     try {
       localStorage.setItem(
         "scholarly_learner_profile_draft",
@@ -68,11 +65,11 @@ export default function LearnerOnboarding() {
   return (
     <div className="min-h-screen bg-[url('/seneca-4.png')] bg-cover bg-center flex items-center justify-center p-6">
       {/* Card */}
-      <div className="w-[980px] bg-white rounded-[10px] shadow-2xl overflow-hidden">
+      <div className="w-[900.84px] h-[1000px] bg-white rounded-[10px] shadow-2xl overflow-visible">
         {/* Header */}
-        <div className="relative h-[210px] bg-[#0B2F86] flex flex-col items-center justify-center">
+        <div className="relative h-[215.25px] bg-[#0B2F86] flex flex-col items-center justify-center pt-[52px]">
           {/* floating logo circle */}
-          <div className="absolute top-[-28px] left-1/2 -translate-x-1/2">
+          <div className="absolute top-5 left-1/2 -translate-x-1/2">
             <div className="h-[80px] w-[80px] rounded-full bg-white flex items-center justify-center shadow-lg">
               <img src="/hat.png" alt="Scholarly logo" className="h-[44px] w-[44px]" />
             </div>
