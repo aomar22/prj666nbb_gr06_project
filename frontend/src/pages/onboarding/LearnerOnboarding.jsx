@@ -15,7 +15,7 @@ export default function LearnerOnboarding() {
   const navigate = useNavigate();
   const { state } = useLocation();
 
-  // accept either router state OR localStorage (useful for dev testing)
+  // local storage only
   const initialUser = useMemo(() => {
     if (state?.email) return state;
     try {
@@ -76,12 +76,12 @@ export default function LearnerOnboarding() {
           </div>
 
           <div className="pt-6 text-center">
-            <div className="text-white text-[44px] font-extrabold leading-none">
+            <h1 className="text-white font-['Inter'] text-[50px] font-extrabold leading-[40px] font-bold mt-6">
               Scholarly
-            </div>
-            <div className="text-white text-[16px] font-semibold mt-2">
+            </h1>
+            <p className="text-white text-[20px] font-bold mt-2">
               Connect. Learn. Grow.
-            </div>
+            </p>
           </div>
         </div>
 
