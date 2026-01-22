@@ -111,7 +111,7 @@ export default function LearnerOnboarding() {
                     <input 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder=""
                     className="w-[520px] h-[54px] rounded-[10px]
                                border border-[#E5E5E5] shadow-md
                                px-4 font-mono text-[18px] outline-none"
@@ -134,7 +134,7 @@ export default function LearnerOnboarding() {
                                style={{ boxShadow: "0px 0px 10px 0px #00000059"}}
                   >
                     <option value="" disabled>
-                      —
+                      
                     </option>
                     {PROGRAMS.map((p) => (
                       <option key={p} value={p}>
@@ -205,7 +205,7 @@ export default function LearnerOnboarding() {
                   style={{boxShadow: "0px 0px 10px 0px #00000059"}}
                 >
                   <option value="" disabled>
-                    —
+                    
                   </option>
                   {CAMPUSES.map((c) => (
                     <option key={c} value={c}>
