@@ -63,7 +63,7 @@ export default function LearnerOnboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-[url('/seneca-4.png')] bg-cover bg-center flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[url('/seneca-5.jpg')] bg-cover bg-center flex items-center justify-center p-6">
       {/* Card */}
       <div className="w-[900.84px] h-[1000px] bg-white rounded-[10px] shadow-2xl overflow-visible">
         {/* Header */}
@@ -86,35 +86,40 @@ export default function LearnerOnboarding() {
         </div>
 
         {/* Body */}
-        <div className="px-[56px] pt-[30px] pb-[46px]">
-          <div className="font-mono text-[#0066CC] text-[48px] font-extrabold leading-none">
+        <div className="px-[50px] pt-[30px] pb-[46px]">
+          <div className="font-mono text-[#0066CC] text-[48px] font-bold leading-none">
             Congratulations!
           </div>
 
-          <div className="font-mono text-[#0066CC] text-[22px] font-bold mt-2">
+          <div className="font-mono text-[#0066CC] text-[30px] font-bold mt-2">
             Your account has been created.
           </div>
 
-          <div className="font-mono text-black text-[22px] font-semibold mt-6 leading-snug">
+          <div className="font-mono text-black text-[30px] font-semibold mt-6 leading-snug">
             We just need a few details to personalize
             <br />
             your learning experience.
           </div>
 
           <form onSubmit={handleContinue} className="mt-10  space-y-6">
-            {/* Full Name */}
-            <div className="space-y-2">
-              <label className="font-mono text-black text-[18px]">Full Name</label>
-              <option value=""></option>
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder=" Your full name"
-                className="w-[520px] h-[54px] rounded-[10px] border border-[#E5E5E5] shadow-md px-4 font-mono text-[18px] outline-none"
-              />
-            </div>
+            
+                  <div className="space-y-2">
+                    <label className="block font-mono text-black text-[18px]">
+                    Full Name
+                    </label>
+                    
+                    <input 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your full name"
+                    className="w-[520px] h-[54px] rounded-[10px]
+                               border border-[#E5E5E5] shadow-md
+                               px-4 font-mono text-[18px] outline-none"
+                               style={{boxShadow: "0px 0px 10px 0px #00000059"}}
+                    />
+                  </div>
 
-            {/* Program + Semester row */}
+                  {/* Program + Semester row */}
             <div className="mt-8 flex items-end gap-10">
               <div className="space-y-2">
                 <label className="font-mono text-black text-[18px]">Program / Major</label>
@@ -122,7 +127,11 @@ export default function LearnerOnboarding() {
                   <select
                     value={program}
                     onChange={(e) => setProgram(e.target.value)}
-                    className="w-[520px] h-[54px] rounded-[10px] border border-[#E5E5E5] shadow-md px-4 pr-14 font-mono text-[18px] outline-none appearance-none bg-white"
+                    className="w-[520px] h-[54px] rounded-[10px]
+                               border border-[#E5E5E5] shadow-md
+                               px-4 pr-14 font-mono text-[18px]
+                               outline-none appearance-none bg-white"
+                               style={{ boxShadow: "0px 0px 10px 0px #00000059"}}
                   >
                     <option value="" disabled>
                       —
@@ -135,7 +144,12 @@ export default function LearnerOnboarding() {
                   </select>
 
                   {/* small dropdown pill*/}
-                  <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 h-[34px] w-[44px] rounded-full border border-[#E5E5E5] bg-white shadow flex items-center justify-center">
+                  <div className="pointer-events-none absolute top-1/2
+                                  right-3 -translate-y-1/2 h-[34px] w-[44px]
+                                  rounded-full border border-[#E5E5E5] 
+                                  bg-white shadow flex items-center justify-center"
+                                  style={{ boxShadow: "0px 3px 5px 0px #000000"}}
+                                  >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                       <path
                         d="M5 7.5L10 12.5L15 7.5"
@@ -155,7 +169,10 @@ export default function LearnerOnboarding() {
                   <select
                     value={semester}
                     onChange={(e) => setSemester(e.target.value)}
-                    className="w-[220px] h-[54px] rounded-full border border-[#E5E5E5] shadow-md px-6 pr-12 font-mono text-[18px] outline-none appearance-none bg-white text-center"
+                    className="w-[212px] h-[54px] rounded-full border border-[#E5E5E5] shadow-md px-6 pr-12
+                               font-mono text-[18px] outline-none appearance-none
+                                bg-white text-center"
+                                style={{ boxShadow: "0px 3px 5px 0px #000000"}}
                   >
                     {["Sem 1", "Sem 2", "Sem 3", "Sem 4", "Sem 5", "Sem 6"].map((s) => (
                       <option key={s} value={s}>
@@ -163,7 +180,12 @@ export default function LearnerOnboarding() {
                       </option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 h-[34px] w-[44px] rounded-full border border-[#E5E5E5] bg-white shadow flex items-center justify-center">
+                  <div className="pointer-events-none absolute
+                                  top-1/2 right-12 -translate-y-1/2
+                                  rounded-full border border-[#E5E5E5] 
+                                  h-[30px] w-[40px] 
+                                  bg-white flex items-center justify-center"
+                                  style={{ boxShadow: "0px 3px 5px 0px #000000"}}>
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                      <path d="M5 7.5L10 12.5L15 7.5" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -180,6 +202,7 @@ export default function LearnerOnboarding() {
                   value={campus}
                   onChange={(e) => setCampus(e.target.value)}
                   className="w-[520px] h-[54px] rounded-[10px] border border-[#E5E5E5] shadow-md px-4 pr-14 font-mono text-[18px] outline-none appearance-none bg-white"
+                  style={{boxShadow: "0px 0px 10px 0px #00000059"}}
                 >
                   <option value="" disabled>
                     —
@@ -191,7 +214,11 @@ export default function LearnerOnboarding() {
                   ))}
                 </select>
 
-                <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 h-[34px] w-[44px] rounded-full border border-[#E5E5E5] bg-white shadow flex items-center justify-center">
+                <div className="pointer-events-none absolute top-1/2 right-3
+                                -translate-y-1/2 h-[34px] w-[44px] rounded-full
+                                border border-[#E5E5E5] bg-white shadow flex
+                                items-center justify-center padding-[6px 16px 6px 16px]"
+                                style={{ boxShadow: "0px 3px 5px 0px #000000"}}>
                   <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                     <path
                       d="M5 7.5L10 12.5L15 7.5"
