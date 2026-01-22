@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { verifyEmail } from "../../api";
-import { useNavigate } from "react-router-dom";
+
 
 function maskEmail(email) {
   const value = String(email || "").trim();
@@ -22,8 +22,6 @@ export default function EmailVerification() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const { state } = useLocation();
-
-  // If user refreshes, location state disappears -> fallback to localStorage
   const initialUser = useMemo(() => {
     if (state?.email) return state;
     try {
@@ -41,7 +39,10 @@ export default function EmailVerification() {
     () => maskEmail(initialUser?.email),
     [initialUser?.email]
   );
-
+  const onboardingPath =
+    initialUser?.role?.toLowerCase() === "tutor"
+      ? "/onboarding/tutor"
+      : "/onboarding/learner";
   // 4-digit code UI
   const [digits, setDigits] = useState(["", "", "", ""]);
   const inputsRef = useRef([]);
@@ -87,28 +88,30 @@ export default function EmailVerification() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!codeOk || !initialUser?.email) return;
-    setApiError("");
-    setLoading(true);
-    const code = digits.join("");
-    try {
-      const resp = await verifyEmail({ email: initialUser.email, code });
-      if (resp?.token) {
-        try {
-          localStorage.setItem("scholarly_token", resp.token);
-        } catch (err) {
-          console.warn("Could not save token to localStorage", err);
-        }
+  e.preventDefault();
+  if (!codeOk || !initialUser?.email) return;
+  setApiError("");
+  setLoading(true);
+  const code = digits.join("");
+  try {
+    const resp = await verifyEmail({ email: initialUser.email, code });
+    if (resp?.token) {
+      try {
+        localStorage.setItem("scholarly_token", resp.token);
+      } catch (err) {
+        console.warn("Could not save token to localStorage", err);
       }
-      navigate("/onboarding", { state: resp });
-    } catch (err) {
-      setApiError(err.message || "Verification failed");
-    } finally {
-      setLoading(false);
     }
-  };
-
+    navigate(onboardingPath, {
+      state: { ...initialUser, ...resp},
+      replace: true,
+    });
+  }catch(err){
+    setApiError(err?.message || "Verification failed");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen bg-[url('/seneca-4.png')] bg-cover bg-center flex items-start justify-start p-6">
       {/* Card */}
