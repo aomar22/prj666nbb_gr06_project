@@ -130,7 +130,8 @@ export default function TutorOnboarding() {
             Congratulations!
           </div>
 
-          <div className="font-mono text-[#0066CC] top-[268.76px] left-[26px] text-[25px] font-bold mt-2">
+          <div className="font-mono text-[#0066CC] top-[268.76px]
+                         left-[26px] text-[25px] font-bold mt-2">
             Your account has been created.
           </div>
 
@@ -164,7 +165,10 @@ export default function TutorOnboarding() {
                   <select
                     value={program}
                     onChange={(e) => setProgram(e.target.value)}
-                    className="w-[426px] h-[53px] rounded-[10px] border border-[#E5E5E5] px-4 pr-14 font-mono text-[18px] outline-none appearance-none bg-white shadow-[0px_0px_10px_0px_#00000059]"
+                    className="w-[426px] h-[53px] rounded-[10px]
+                     border border-[#E5E5E5] px-4 pr-14 font-mono
+                      text-[18px] outline-none appearance-none bg-white
+                       shadow-[0px_0px_10px_0px_#00000059]"
                   >
                     <option value="" disabled></option>
                     {PROGRAMS.map((p) => (
@@ -174,7 +178,10 @@ export default function TutorOnboarding() {
                     ))}
                   </select>
 
-                  <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 h-[34px] w-[44px] rounded-full border border-[#E5E5E5] bg-white shadow flex items-center justify-center shadow-[0px_3px_5px_0px_#000000]">
+                  <div className="pointer-events-none absolute top-1/2 right-3
+                   -translate-y-1/2 h-[34px] w-[44px] rounded-full
+                    border border-[#E5E5E5] bg-white shadow flex items-center
+                     justify-center shadow-[0px_3px_5px_0px_#000000]">
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                       <path
                         d="M5 7.5L10 12.5L15 7.5"
@@ -244,7 +251,12 @@ export default function TutorOnboarding() {
                               bg-white text-left shadow-[0px_0px_10px_0px_#00000059]"
                     
                   >
-                    {coursesOffered.length === 0 ? "" : ""}
+                    <span className="font-mono text-[18px] text-black">
+                      {coursesOffered.length === 0
+                        ? ""          
+                      : coursesOffered.length <= 2 ? coursesOffered.join(", ")
+                       : `${coursesOffered.slice(0, 2).join(", ")} +${coursesOffered.length - 2}`}
+                    </span>
                   </button>
 
                   <div className="pointer-events-none absolute
