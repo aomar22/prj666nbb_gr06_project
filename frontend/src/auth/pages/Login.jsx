@@ -10,10 +10,13 @@ export default function Login() {
   const isSenecaEmail = (value) =>
     /^[A-Za-z0-9._%+-]+@myseneca\.ca$/i.test(value.trim());
 
-  const handleSubmit = (e) => {
+  const API_URL = "http://localhost:8080/api/auth";
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    // Validation (Keep your existing checks)
     if (!isSenecaEmail(email)) {
       setError("Use a valid Seneca email (@myseneca.ca).");
       return;
@@ -23,8 +26,34 @@ export default function Login() {
       return;
     }
 
-    // For now, redirect to dashboard (Milestone 1: placeholder)
-    navigate("/dashboard");
+    try {
+      // 2. Send POST request to backend
+      const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      const data = await response.json();
+
+      
+      if (data.accessToken) {
+        localStorage.setItem("token", data.accessToken);
+
+        // 4. Redirect based on logic (or just go to default dashboard)
+        navigate("/dashboard"); 
+      } else {
+        setError("Login failed: No token received.");
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError("Invalid email or password.");
+    }
   };
 
   return (
