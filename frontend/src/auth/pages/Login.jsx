@@ -1,16 +1,24 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { login, setToken, setUser } from "../../api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { state } = useLocation();
+
+  // Show success message if redirected from email verification
+  const verifiedMessage = state?.verified
+    ? "Email verified successfully! Please log in."
+    : "";
 
   const isSenecaEmail = (value) =>
     /^[A-Za-z0-9._%+-]+@myseneca\.ca$/i.test(value.trim());
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -23,8 +31,47 @@ export default function Login() {
       return;
     }
 
-    // For now, redirect to dashboard (Milestone 1: placeholder)
-    navigate("/dashboard");
+    setLoading(true);
+
+    try {
+      const response = await login({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      // Store token and user data
+      if (response.token) {
+        setToken(response.token);
+      }
+
+      // Store user data (excluding token)
+      const userData = {
+        id: response.id,
+        email: response.email,
+        role: response.role,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        campus: response.campus,
+        isOnboarded: response.isOnboarded,
+      };
+      setUser(userData);
+
+      // Redirect based on onboarding status
+      if (response.isOnboarded) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        // Redirect to role-specific onboarding page
+        const onboardingPath =
+          response.role?.toUpperCase() === "TUTOR"
+            ? "/onboarding/tutor"
+            : "/onboarding/learner";
+        navigate(onboardingPath, { replace: true });
+      }
+    } catch (err) {
+      setError(err.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,7 +89,12 @@ export default function Login() {
         {/* Body Section - White */}
         <div style={styles.body}>
           <h2 style={styles.welcomeText}>Welcome back</h2>
-          
+
+          {/* Success message from email verification */}
+          {verifiedMessage && (
+            <p style={styles.successMessage}>{verifiedMessage}</p>
+          )}
+
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.inputGroup}>
               <label style={styles.label}>Seneca Email</label>
@@ -52,33 +104,42 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@myseneca.ca"
                 style={styles.input}
-                onFocus={(e) => e.target.style.borderColor = "#1976D2"}
-                onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                onFocus={(e) => (e.target.style.borderColor = "#1976D2")}
+                onBlur={(e) => (e.target.style.borderColor = "#ddd")}
               />
             </div>
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Seneca Password</label>
+              <label style={styles.label}>Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 style={styles.input}
-                onFocus={(e) => e.target.style.borderColor = "#1976D2"}
-                onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                onFocus={(e) => (e.target.style.borderColor = "#1976D2")}
+                onBlur={(e) => (e.target.style.borderColor = "#ddd")}
               />
             </div>
 
             {error && <p style={styles.error}>{error}</p>}
 
-            <button 
-              type="submit" 
-              style={styles.loginButton}
-              onMouseEnter={(e) => e.target.style.backgroundColor = "#1565C0"}
-              onMouseLeave={(e) => e.target.style.backgroundColor = "#1976D2"}
+            <button
+              type="submit"
+              style={{
+                ...styles.loginButton,
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+              disabled={loading}
+              onMouseEnter={(e) =>
+                !loading && (e.target.style.backgroundColor = "#1565C0")
+              }
+              onMouseLeave={(e) =>
+                !loading && (e.target.style.backgroundColor = "#1976D2")
+              }
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
@@ -100,7 +161,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    backgroundImage: "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&q=80')",
+    backgroundImage:
+      "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&q=80')",
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
@@ -157,6 +219,15 @@ const styles = {
     fontSize: "24px",
     fontWeight: "600",
     color: "#333",
+    fontFamily: "Arial, sans-serif",
+  },
+  successMessage: {
+    backgroundColor: "#e8f5e9",
+    color: "#2e7d32",
+    padding: "12px 16px",
+    borderRadius: "4px",
+    marginBottom: "20px",
+    fontSize: "14px",
     fontFamily: "Arial, sans-serif",
   },
   form: {

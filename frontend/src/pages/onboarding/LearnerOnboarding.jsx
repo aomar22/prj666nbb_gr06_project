@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { getUser, setUser, setToken, onboardUser } from "../../api";
 
 const PROGRAMS = [
   "CPA (Computer Programming & Analysis)",
@@ -13,53 +14,66 @@ const CAMPUSES = ["Newnham", "Seneca@York", "King", "Markham", "Online"];
 
 export default function LearnerOnboarding() {
   const navigate = useNavigate();
-  const { state } = useLocation();
+  const user = getUser();
 
-  // local storage only
-  const initialUser = useMemo(() => {
-    if (state?.email) return state;
-    try {
-      const raw = localStorage.getItem("scholarly_initial_user");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, [state]);
+  // Redirect to login if no user data (not logged in)
+  if (!user?.email) {
+    return <Navigate to="/login" replace />;
+  }
 
-  if (!initialUser?.email) return <Navigate to="/login" replace />;
+  // Already onboarded, redirect to dashboard
+  if (user?.isOnboarded) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [program, setProgram] = useState("");
-  const [semester, setSemester] = useState("Sem 4");
   const [campus, setCampus] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = (e) => {
+  const handleContinue = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!fullName.trim() || !program || !semester || !campus) {
+    if (!firstName.trim() || !lastName.trim() || !program || !campus) {
       setError("Please complete all required fields.");
       return;
     }
 
-    try {
-      localStorage.setItem(
-        "scholarly_learner_profile_draft",
-        JSON.stringify({
-          email: initialUser.email,
-          role: "learner",
-          fullName: fullName.trim(),
-          program,
-          semester,
-          campus,
-        })
-      );
-    } catch {
-      setError("An unexpected error occurred. Please try again."); return;
-    }
+    setLoading(true);
 
-    navigate("/login", { replace: true });
+    try {
+      const response = await onboardUser({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        campus,
+        program,
+      });
+
+      // Update stored token if a new one is returned
+      if (response?.token) {
+        setToken(response.token);
+      }
+
+      // Update stored user data
+      const updatedUser = {
+        ...user,
+        firstName: response?.firstName || firstName.trim(),
+        lastName: response?.lastName || lastName.trim(),
+        campus: response?.campus || campus,
+        isOnboarded: true,
+      };
+      setUser(updatedUser);
+
+      // Redirect to dashboard
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -105,102 +119,79 @@ export default function LearnerOnboarding() {
             your learning experience.
           </div>
 
-          <form onSubmit={handleContinue} className="mt-2  space-y-1.5">
-            
-                  <div className="space-y-2">
-                    <label className="block font-mono text-black text-[18px]
-                                   text-neutral-900">
-                    Full Name <span className="text-red-600">*</span>
-                    </label>
-                    
-                    <input 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder=""
-                    className="w-[426px] h-[54px] rounded-[10px]
-                               border border-[#E5E5E5] shadow-md
-                               px-4 font-mono text-[18px] outline-none"
-                               style={{boxShadow: "0px 0px 10px 0px #00000059"}}
-                    />
-                  </div>
-
-                  {/* Program + Semester row */}
-            <div className="mt-3 flex items-end gap-10">
-              <div className="space-y-2">
-                <label className="font-mono text-black text-[18px]">Program / Major <span className="text-red-600">*</span></label>
-                <div className="relative w-[426px]">
-                  <select
-                    value={program}
-                    onChange={(e) => setProgram(e.target.value)}
-                    className="w-[426px] h-[53px] rounded-[10px]
-                               border border-[#E5E5E5] shadow-md
-                               px-4 pr-14 font-mono text-[18px]
-                               outline-none appearance-none bg-white"
-                               style={{ boxShadow: "0px 0px 10px 0px #00000059"}}
-                  >
-                    <option value="" disabled>
-                      
-                    </option>
-                    {PROGRAMS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* small dropdown pill*/}
-                  <div className="pointer-events-none absolute top-1/2
-                                  right-3 -translate-y-1/2 h-[34px] w-[44px]
-                                  rounded-full border border-[#E5E5E5] 
-                                  bg-white shadow flex items-center justify-center"
-                                  style={{ boxShadow: "0px 3px 5px 0px #000000"}}
-                                  >
-                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#111"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
+          <form onSubmit={handleContinue} className="mt-2 space-y-1.5">
+            {/* First Name & Last Name row */}
+            <div className="flex gap-6">
+              <div className="space-y-2 flex-1">
+                <label className="block font-mono text-black text-[18px] text-neutral-900">
+                  First Name <span className="text-red-600">*</span>
+                </label>
+                <input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder=""
+                  className="w-full h-[54px] rounded-[10px]
+                             border border-[#E5E5E5] shadow-md
+                             px-4 font-mono text-[18px] outline-none"
+                  style={{boxShadow: "0px 0px 10px 0px #00000059"}}
+                />
               </div>
 
-              <div className="space-y-2">
-                <label className="font-mono text-black text-[18px]">Semester</label>
-                <div className="relative w-[220px]">
-                  <select
-                    value={semester}
-                    onChange={(e) => setSemester(e.target.value)}
-                    className="w-[212px] h-[54px] rounded-full border
-                               border-[#E5E5E5] shadow-md px-6 pr-12
-                               font-mono text-[18px] outline-none
-                                appearance-none
-                                bg-white text-center"
+              <div className="space-y-2 flex-1">
+                <label className="block font-mono text-black text-[18px] text-neutral-900">
+                  Last Name <span className="text-red-600">*</span>
+                </label>
+                <input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder=""
+                  className="w-full h-[54px] rounded-[10px]
+                             border border-[#E5E5E5] shadow-md
+                             px-4 font-mono text-[18px] outline-none"
+                  style={{boxShadow: "0px 0px 10px 0px #00000059"}}
+                />
+              </div>
+            </div>
+
+            {/* Program */}
+            <div className="mt-3 space-y-2">
+              <label className="font-mono text-black text-[18px]">Program / Major <span className="text-red-600">*</span></label>
+              <div className="relative w-[426px]">
+                <select
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                  className="w-[426px] h-[53px] rounded-[10px]
+                             border border-[#E5E5E5] shadow-md
+                             px-4 pr-14 font-mono text-[18px]
+                             outline-none appearance-none bg-white"
+                             style={{ boxShadow: "0px 0px 10px 0px #00000059"}}
+                >
+                  <option value="" disabled>
+                    Select program
+                  </option>
+                  {PROGRAMS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+
+                {/* small dropdown pill*/}
+                <div className="pointer-events-none absolute top-1/2
+                                right-3 -translate-y-1/2 h-[34px] w-[44px]
+                                rounded-full border border-[#E5E5E5]
+                                bg-white shadow flex items-center justify-center"
                                 style={{ boxShadow: "0px 3px 5px 0px #000000"}}
-                  >
-                    {["Sem 1", "Sem 2", "Sem 3", "Sem 4", "Sem 5", "Sem 6"].map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute
-                                  top-1/2 right-6 -translate-y-1/2
-                                  rounded-full border border-[#E5E5E5] 
-                                  h-[34px] w-[44px] 
-                                  bg-white flex items-center justify-center"
-                                  style={{ boxShadow: "0px 3px 5px 0px #000000"}}>
-                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                     <path d="M5 7.5L10 12.5L15 7.5"
-                           stroke="#111"
-                           strokeWidth="2"
-                           strokeLinecap="round"
-                           strokeLinejoin="round" />
-                    </svg>
-                  </div>
+                                >
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M5 7.5L10 12.5L15 7.5"
+                      stroke="#111"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -219,7 +210,7 @@ export default function LearnerOnboarding() {
                   style={{boxShadow: "0px 0px 10px 0px #00000059"}}
                 >
                   <option value="" disabled>
-                    
+                    Select campus
                   </option>
                   {CAMPUSES.map((c) => (
                     <option key={c} value={c}>
@@ -257,9 +248,12 @@ export default function LearnerOnboarding() {
             <div className="mt-10 flex justify-center">
               <button
                 type="submit"
-                className="w-[560px] h-[64px] rounded-[10px] bg-[#0066CC] text-white font-mono text-[24px] shadow-xl"
+                disabled={loading}
+                className={`w-[560px] h-[64px] rounded-[10px] bg-[#0066CC] text-white font-mono text-[24px] shadow-xl ${
+                  loading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
-                Continue to Login
+                {loading ? "Completing Setup..." : "Complete Setup"}
               </button>
             </div>
           </form>

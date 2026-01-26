@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerLearner, registerTutor } from "../../api";
+import { register } from "../../api";
 
 
 export default function SignUp() {
@@ -26,24 +26,24 @@ export default function SignUp() {
   const formOk = emailOk && passwordOk && roleOk;
 
 
-  const handleSubmit = async (e) => { 
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formOk || loading) return;
-    
+
     setError("");
     setLoading(true);
-    
-    const payload = { email: email.trim().toLowerCase(), password };
-    
+
+    const payload = {
+      email: email.trim().toLowerCase(),
+      password,
+      role: role.toUpperCase() // API expects "LEARNER" or "TUTOR"
+    };
+
     try {
-      if (role === "learner") {
-        await registerLearner(payload);
-      } else {
-        await registerTutor(payload);
-      }
-      
+      await register(payload);
+
       localStorage.setItem("scholarly_initial_user", JSON.stringify({ email: payload.email, role }));
-            navigate("/verify-email", { state: { email: payload.email, role } });
+      navigate("/verify-email", { state: { email: payload.email, role } });
     } catch (err) {
       setError(err.message || "Failed to create account");
     } finally {

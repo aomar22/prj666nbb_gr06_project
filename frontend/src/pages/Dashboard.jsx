@@ -1,6 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { clearAuth } from "../api";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/login", { replace: true });
+  };
   const [currentMonth] = useState(10); 
   const [currentYear] = useState(2025);
 
@@ -56,9 +64,9 @@ export default function Dashboard() {
           <a href="#" style={styles.navItem}>
             <span>⚙️</span> Settings
           </a>
-          <a href="#" style={styles.navItem}>
+          <button onClick={handleLogout} style={styles.logoutButton}>
             <span>➡️</span> Log Out
-          </a>
+          </button>
         </div>
       </aside>
 
@@ -266,6 +274,9 @@ const styles = {
     padding: '20px',
     display: 'flex',
     flexDirection: 'column',
+    height: '100vh',
+    position: 'sticky',
+    top: 0,
   },
   sidebarHeader: {
     display: 'flex',
@@ -309,6 +320,23 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '15px',
+    marginTop: 'auto',
+    borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+    paddingTop: '15px',
+  },
+  logoutButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: 'white',
+    backgroundColor: 'transparent',
+    border: 'none',
+    padding: '10px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: 'inherit',
+    fontFamily: 'inherit',
+    textAlign: 'left',
   },
   mainContent: {
     flex: 1,

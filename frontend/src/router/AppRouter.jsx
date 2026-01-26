@@ -7,23 +7,45 @@ import Onboarding from "../auth/pages/Onboarding";
 import Dashboard from "../pages/Dashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
-
-
-
+import ProtectedRoute from "./ProtectedRoute";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/verify-email" element={<EmailVerification />} />
-        <Route path="/home" element={<Home />} />
+
+        {/* Protected routes - require authentication */}
         <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/onboarding/learner" element={<LearnerOnboarding />} />
-        <Route path="/onboarding/tutor" element={<TutorOnboarding />} />
+        <Route
+          path="/onboarding/learner"
+          element={
+            <ProtectedRoute requiredRole="LEARNER">
+              <LearnerOnboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/tutor"
+          element={
+            <ProtectedRoute requiredRole="TUTOR">
+              <TutorOnboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requireOnboarded>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

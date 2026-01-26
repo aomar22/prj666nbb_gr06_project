@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { verifyEmail } from "../../api";
-
+import { verifyEmail, resendVerification } from "../../api";
 
 function maskEmail(email) {
   const value = String(email || "").trim();
@@ -11,7 +10,6 @@ function maskEmail(email) {
   const name = value.slice(0, at);
   const domain = value.slice(at + 1);
 
-  
   const prefix = name.slice(0, 2);
   const stars = "*".repeat(Math.max(4, name.length - 2));
   return `${prefix}${stars}@${domain}`;
@@ -21,7 +19,10 @@ export default function EmailVerification() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
   const { state } = useLocation();
+
   const initialUser = useMemo(() => {
     if (state?.email) return state;
     try {
@@ -39,10 +40,7 @@ export default function EmailVerification() {
     () => maskEmail(initialUser?.email),
     [initialUser?.email]
   );
-  const onboardingPath =
-    initialUser?.role?.toLowerCase() === "tutor"
-      ? "/onboarding/tutor"
-      : "/onboarding/learner";
+
   // 4-digit code UI
   const [digits, setDigits] = useState(["", "", "", ""]);
   const inputsRef = useRef([]);
@@ -88,30 +86,53 @@ export default function EmailVerification() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!codeOk || !initialUser?.email) return;
-  setApiError("");
-  setLoading(true);
-  const code = digits.join("");
-  try {
-    const resp = await verifyEmail({ email: initialUser.email, code });
-    if (resp?.token) {
-      try {
-        localStorage.setItem("scholarly_token", resp.token);
-      } catch (err) {
-        console.warn("Could not save token to localStorage", err);
-      }
+    e.preventDefault();
+    if (!codeOk || !initialUser?.email) return;
+    setApiError("");
+    setResendMessage("");
+    setLoading(true);
+    const code = digits.join("");
+
+    try {
+      await verifyEmail({ email: initialUser.email, code });
+      // After successful verification, redirect to login
+      navigate("/login", {
+        state: { verified: true, email: initialUser.email },
+        replace: true,
+      });
+    } catch (err) {
+      setApiError(err?.message || "Verification failed");
+    } finally {
+      setLoading(false);
     }
-    navigate(onboardingPath, {
-      state: { ...initialUser, ...resp},
-      replace: true,
-    });
-  }catch(err){
-    setApiError(err?.message || "Verification failed");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const handleResend = async () => {
+    if (!initialUser?.email || resendLoading) return;
+    setResendLoading(true);
+    setResendMessage("");
+    setApiError("");
+
+    try {
+      await resendVerification({ email: initialUser.email });
+      setResendMessage("A new verification code has been sent to your email.");
+      // Clear the digits for new code entry
+      setDigits(["", "", "", ""]);
+      inputsRef.current?.[0]?.focus?.();
+    } catch (err) {
+      // Handle specific error cases from the API
+      if (err.status === 429) {
+        setApiError("Please wait a few minutes before requesting a new code.");
+      } else if (err.message?.includes("already verified")) {
+        setApiError("This account is already verified. Please log in.");
+      } else {
+        setApiError(err?.message || "Failed to resend verification code");
+      }
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[url('/seneca-4.png')] bg-cover bg-center flex items-start justify-start p-6">
       {/* Card */}
@@ -171,6 +192,13 @@ export default function EmailVerification() {
               ))}
             </div>
 
+            {/* Success message */}
+            {resendMessage && (
+              <p className="text-green-600 text-[16px] font-semibold">
+                {resendMessage}
+              </p>
+            )}
+
             {/* API error message */}
             {apiError && (
               <p className="text-red-600 text-[18px] font-semibold">
@@ -188,8 +216,21 @@ export default function EmailVerification() {
                   : "bg-[#0066CC] text-white opacity-50 cursor-not-allowed"
               }`}
             >
-              Verify Email
+              {loading ? "Verifying..." : "Verify Email"}
             </button>
+
+            {/* Resend code */}
+            <p className="text-center font-mono text-[16px] text-[#6B6B6B]">
+              Didn't receive the code?{" "}
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendLoading}
+                className="text-[#0066CC] font-semibold hover:underline disabled:opacity-50"
+              >
+                {resendLoading ? "Sending..." : "Resend Code"}
+              </button>
+            </p>
 
             <p className="text-center font-mono text-[16px] text-[#6B6B6B]">
               Back to{" "}
