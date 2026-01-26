@@ -18,10 +18,13 @@ export default function Login() {
   const isSenecaEmail = (value) =>
     /^[A-Za-z0-9._%+-]+@myseneca\.ca$/i.test(value.trim());
 
+  const API_URL = "http://localhost:8080/api/auth";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    // Validation (Keep your existing checks)
     if (!isSenecaEmail(email)) {
       setError("Use a valid Seneca email (@myseneca.ca).");
       return;
@@ -95,14 +98,17 @@ export default function Login() {
             <p style={styles.successMessage}>{verifiedMessage}</p>
           )}
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form
+            onSubmit={handleSubmit}
+            style={styles.form}
+          >
             <div style={styles.inputGroup}>
               <label style={styles.label}>Seneca Email</label>
               <input
-                type="email"
+                type='email'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@myseneca.ca"
+                placeholder='name@myseneca.ca'
                 style={styles.input}
                 onFocus={(e) => (e.target.style.borderColor = "#1976D2")}
                 onBlur={(e) => (e.target.style.borderColor = "#ddd")}
@@ -112,10 +118,10 @@ export default function Login() {
             <div style={styles.inputGroup}>
               <label style={styles.label}>Password</label>
               <input
-                type="password"
+                type='password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder='Enter your password'
                 style={styles.input}
                 onFocus={(e) => (e.target.style.borderColor = "#1976D2")}
                 onBlur={(e) => (e.target.style.borderColor = "#ddd")}
@@ -125,7 +131,7 @@ export default function Login() {
             {error && <p style={styles.error}>{error}</p>}
 
             <button
-              type="submit"
+              type='submit'
               style={{
                 ...styles.loginButton,
                 opacity: loading ? 0.7 : 1,
@@ -145,7 +151,10 @@ export default function Login() {
 
           <p style={styles.signupText}>
             Don't have an account?{" "}
-            <Link to="/signup" style={styles.signupLink}>
+            <Link
+              to='/signup'
+              style={styles.signupLink}
+            >
               Create Account
             </Link>
           </p>
