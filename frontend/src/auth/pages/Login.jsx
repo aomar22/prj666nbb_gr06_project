@@ -169,14 +169,13 @@ const styles = {
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundImage:
-      "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&q=80')",
+    justifyContent: "flex-start",
+    backgroundImage: "url('/seneca-4.png')",
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
     position: "relative",
-    padding: "20px",
+    padding: "20px 20px 20px 60px",
   },
   loginForm: {
     width: "100%",

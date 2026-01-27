@@ -1,9 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { clearAuth } from "../api";
+import { clearAuth, getUser } from "../api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const user = getUser();
+  
+  // Get user's full name
+  const getUserName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user?.firstName) {
+      return user.firstName;
+    } else if (user?.lastName) {
+      return user.lastName;
+    }
+    return "User";
+  };
+  
+  const userName = getUserName();
 
   const handleLogout = () => {
     clearAuth();
@@ -96,7 +111,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <section style={styles.welcomeSection}>
           <h1 style={styles.welcomeTitle}>
-            Welcome Back, Bradley 👋
+            Welcome Back, {userName} 👋
           </h1>
           <p style={styles.welcomeSubtitle}>
             Here's what's happening with your learning today.
