@@ -15,6 +15,15 @@ export function removeToken() {
 }
 
 export function getUser() {
+  if (import.meta.env.VITE_DISABLE_AUTH === 'true') {
+    return {
+      email: "dev-mode@seneca.ca",
+      firstName: "Debug",
+      lastName: "User",
+      role: "TUTOR", // or "LEARNER" depending on what you want to test
+      isOnboarded: false // Set to false so you can actually see the onboarding pages!
+    };
+  }
   try {
     const raw = localStorage.getItem("scholarly_user");
     return raw ? JSON.parse(raw) : null;

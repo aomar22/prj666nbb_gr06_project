@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:unprotected": "VITE_DISABLE_AUTH=true vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
