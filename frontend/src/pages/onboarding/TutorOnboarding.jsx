@@ -50,7 +50,8 @@ export default function TutorOnboarding() {
       return [];
     }
   });
-  
+  const hasAvailability = Array.isArray(availability) && availability.length > 0;
+
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -660,9 +661,10 @@ const removeSessionType = (type) => {
                           px-4 font-mono text-[18px]
                           text-left bg-[#E6F0FF]
                           shadow-[0px_0px_10px_0px_#00000059]
-                          hover:bg-black/5"
+                          hover:bg-blue-100"
               >
-                Set availability
+                  {hasAvailability ? "Edit availability" : "Set availability"}
+
               </button>
 
               <p className="font-mono text-[14px] text-black/60">
