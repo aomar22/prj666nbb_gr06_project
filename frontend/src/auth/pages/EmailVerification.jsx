@@ -95,12 +95,32 @@ export default function EmailVerification() {
 
     try {
       await verifyEmail({ email: initialUser.email, code });
+
+      try { localStorage.removeItem("scholarly_initial_user"); } 
+      catch { 
+        // ignore
+      }
       // After successful verification, redirect to login
       navigate("/login", {
         state: { verified: true, email: initialUser.email },
         replace: true,
       });
     } catch (err) {
+      const msg = String(err?.message || "").toLowerCase();
+
+      // If backend says "already verified" treat as success and send to login
+      if (msg.includes("already verified") || msg.includes("already verified.") || msg.includes("verified already")) {
+        try { localStorage.removeItem("scholarly_initial_user"); } 
+        catch { 
+          // ignore
+        }
+        navigate("/login", {
+          state: { verified: true, email: initialUser.email },
+          replace: true,
+        });
+        return;
+      }
+
       setApiError(err?.message || "Verification failed");
     } finally {
       setLoading(false);

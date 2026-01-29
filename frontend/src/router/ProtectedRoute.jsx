@@ -16,6 +16,21 @@ export default function ProtectedRoute({ children, requireOnboarded = false, req
   // No token or incomplete user data - redirect to login
   // Must have both a valid token AND user object with email to be considered authenticated
   if (!token || !user || !user.email) {
+    //try to detect an initial (unverified) user from localStorage
+    let initialUser = null;
+    try {
+      const raw = localStorage.getItem("scholarly_initial_user");
+      initialUser = raw ? JSON.parse(raw) : null;
+    } catch {
+      initialUser = null;
+    }
+
+    // if there is one, send them to the verify page
+    if (initialUser?.email) {
+      return <Navigate to="/verify-email" replace />;
+    }
+
+    //fall back to the login redirect
     return <Navigate to="/login" replace />;
   }
 

@@ -8,16 +8,17 @@ import Dashboard from "../pages/Dashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/" element={<PublicRoute><Navigate to="/home" replace /></PublicRoute>} />
         <Route path="/home" element={<Home />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/verify-email" element={<EmailVerification />} />
 
         {/* Protected routes - require authentication */}
