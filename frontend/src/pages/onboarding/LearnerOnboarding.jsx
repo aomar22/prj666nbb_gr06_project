@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { getUser, setUser, setToken, onboardUser } from "../../api";
+import { PROGRAMS, CAMPUSES } from "../../constants/options";
 
-const PROGRAMS = [
-  "CPA (Computer Programming & Analysis)",
-  "Software Engineering",
-  "Computer Science",
-  "Business",
-  "Other",
-];
+// const PROGRAMS = [
+//   "CPA (Computer Programming & Analysis)",
+//   "Software Engineering",
+//   "Computer Science",
+//   "Business",
+//   "Other",
+// ];
 
-const CAMPUSES = ["Newnham", "Seneca@York", "King", "Markham", "Online"];
+//const CAMPUSES = ["Newnham", "Seneca@York", "King", "Markham", "Online"];
 
 export default function LearnerOnboarding() {
   const navigate = useNavigate();
