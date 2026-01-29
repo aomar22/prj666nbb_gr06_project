@@ -7,6 +7,7 @@ import Onboarding from "../auth/pages/Onboarding";
 import Dashboard from "../pages/Dashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
+import Availability from "../pages/availability/Availability";
 
 export default function AppRouterDev() {
   return (
@@ -48,11 +49,23 @@ export default function AppRouterDev() {
           path='/onboarding/tutor'
           element={<TutorOnboarding />}
         />
+        <Route
+          path='/onboarding/tutor/availability'
+          element={<Availability />}
+        />
 
         {/* Dashboard unlocked */}
         <Route
           path='/dashboard'
           element={<Dashboard />}
+        />
+        <Route
+          path='/dashboard/availability'
+          element={
+          <ProtectedRoute requiredRole="TUTOR" requireOnboarded>
+            <Availability />
+          </ProtectedRoute>
+          }
         />
 
         {/* Catch-all for dev: Redirect any unknown route to home */}
