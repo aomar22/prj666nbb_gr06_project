@@ -62,9 +62,7 @@ export default function AppRouterDev() {
         <Route
           path='/dashboard/availability'
           element={
-          <ProtectedRoute requiredRole="TUTOR" requireOnboarded>
             <Availability />
-          </ProtectedRoute>
           }
         />
 

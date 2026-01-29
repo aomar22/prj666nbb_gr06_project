@@ -42,6 +42,13 @@ export default function TutorOnboarding() {
   const [teachingMode, setTeachingMode] = useState([]);
   const [sessionType, setSessionType] = useState([]);
   const [sessionOpen, setSessionOpen]=useState(false);
+  const [availability, setAvailability] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("tutorAvailabilityDraft") || "[]");
+    } catch {
+      return [];
+    }
+  });
   
 
   const [error, setError] = useState("");
@@ -92,7 +99,8 @@ const removeSessionType = (type) => {
       coursesOffered.length > 0 &&
       Array.isArray(teachingMode) &&
       teachingMode.length > 0 &&
-      Array.isArray(sessionType) && sessionType.length > 0;
+      Array.isArray(sessionType) && sessionType.length > 0 &&
+      Array.isArray(availability) && availability.length > 0;
 
     if (!ok) {
       setError("Please complete all required fields.");
@@ -111,7 +119,7 @@ const removeSessionType = (type) => {
         coursesOffered,
         teachingMode,
         sessionType,
-        availability: [], // Default empty availability
+        availability,
         
       
       });
