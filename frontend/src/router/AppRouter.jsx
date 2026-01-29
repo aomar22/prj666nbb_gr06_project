@@ -15,32 +15,61 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<PublicRoute><Navigate to="/home" replace /></PublicRoute>} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/verify-email" element={<EmailVerification />} />
+        <Route
+          path='/'
+          element={
+            <PublicRoute>
+              <Navigate
+                to='/home'
+                replace
+              />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path='/home'
+          element={<Home />}
+        />
+        <Route
+          path='/signup'
+          element={
+            <PublicRoute>
+              <SignUp />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path='/login'
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path='/verify-email'
+          element={<EmailVerification />}
+        />
 
         {/* Protected routes - require authentication */}
-        <Route path="/onboarding" element={<Onboarding />} />
         <Route
-          path="/onboarding/learner"
+          path='/onboarding/learner'
           element={
-            <ProtectedRoute requiredRole="LEARNER">
+            <ProtectedRoute requiredRole='LEARNER'>
               <LearnerOnboarding />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/onboarding/tutor"
+          path='/onboarding/tutor'
           element={
-            <ProtectedRoute requiredRole="TUTOR">
+            <ProtectedRoute requiredRole='TUTOR'>
               <TutorOnboarding />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/dashboard"
+          path='/dashboard'
           element={
             <ProtectedRoute requireOnboarded>
               <Dashboard />
