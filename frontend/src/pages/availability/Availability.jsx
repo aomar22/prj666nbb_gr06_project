@@ -8,8 +8,6 @@ export default function Availability() {
 
     // Determine if user came from onboarding or has completed setup
     const fromOnboarding = location.state?.from?.startsWith("/onboarding");
-    const isOnboarded = Boolean(user?.isOnboarded);
-
     
     const backTo = fromOnboarding
         ? "/onboarding/tutor"
@@ -34,17 +32,10 @@ export default function Availability() {
                         className="rounded-lg border border-black/15 px-4 py-2"
                     >
                         {backLabel}
-                    </Link>
-                    {/* {isOnboarded && (
-                    <Link to="/dashboard">Back</Link>
-                    )}
-                    {!isOnboarded && (
-                    <Link to="/onboarding/tutor">Back</Link>
-                    )} */}
-
-                    
+                    </Link> 
                 </div>
             </div>
         </div>
     );
 }
+
