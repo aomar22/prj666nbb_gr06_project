@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { verifyEmail, resendVerification } from "../../api";
+import { verifyEmail, resendVerification, getUser } from "../../api";
 
 function maskEmail(email) {
   const value = String(email || "").trim();
@@ -32,6 +32,21 @@ export default function EmailVerification() {
       return null;
     }
   }, [state]);
+
+  const user = getUser();
+
+  useEffect(() => {
+    if (initialUser?.email) return;
+
+    if (user?.email) {
+      if (user.isVerified === false) {
+        return;
+      }
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+    navigate("/signup", { replace: true });
+  }, [initialUser, user, navigate]);
 
   const roleLabel =
     initialUser?.role?.toLowerCase() === "tutor" ? "Tutor" : "Learner";
