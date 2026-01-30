@@ -9,6 +9,7 @@ import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import Availability from "../pages/availability/Availability";
 
+
 export default function AppRouterDev() {
   return (
     <BrowserRouter>
@@ -61,9 +62,7 @@ export default function AppRouterDev() {
         />
         <Route
           path='/dashboard/availability'
-          element={
-            <Availability />
-          }
+          element={ <Availability />}
         />
 
         {/* Catch-all for dev: Redirect any unknown route to home */}

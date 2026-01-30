@@ -10,16 +10,14 @@ export default function Availability() {
     const fromOnboarding = location.state?.from?.startsWith("/onboarding");
     const isOnboarded = Boolean(user?.isOnboarded);
 
-    // If user is onboarded, always go back to dashboard
-    // Otherwise, use the provided back location or default to onboarding
-    const backTo = isOnboarded 
-        ? "/dashboard" 
-        : (location.state?.from || "/onboarding/tutor");
     
-    const backLabel = isOnboarded 
-        ? "Back to Dashboard" 
-        : "Back to Tutor Setup";
-
+    const backTo = fromOnboarding
+        ? "/onboarding/tutor"
+        : "/dashboard";
+    
+    const backLabel = fromOnboarding
+        ? "Back to Tutor Setup"
+        : "Back to Dashboard";
     console.log("USER:", user);
     
     return (
@@ -37,15 +35,14 @@ export default function Availability() {
                     >
                         {backLabel}
                     </Link>
-
-                    {isOnboarded && (
-                    <Link
-                        to="/dashboard"
-                        className="rounded-lg bg-black px-4 py-2 text-white"
-                    >
-                        Go to Dashboard
-                    </Link>
+                    {/* {isOnboarded && (
+                    <Link to="/dashboard">Back</Link>
                     )}
+                    {!isOnboarded && (
+                    <Link to="/onboarding/tutor">Back</Link>
+                    )} */}
+
+                    
                 </div>
             </div>
         </div>
