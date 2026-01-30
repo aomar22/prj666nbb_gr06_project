@@ -1,26 +1,19 @@
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
+import { loadTutorDraft, saveTutorDraft, clearTutorDraft } from "../../utils/tutorOnboardingDraft";
 import { getUser, setUser, setToken, onboardUser } from "../../api";
-import {PROGRAMS, CAMPUSES} from "../../constants/options";
-const COURSES = [
-  "WEB222",
-  "WEB322",
-  "WEB422",
-  "PRJ666",
-  "DBS211",
-  "DBS311",
-  "OOP244",
-  "OOP345",
-  "IPC144",
-  "CPP",
-  "Other",
-];
-const TEACHING_MODES = ["ONLINE", "IN_PERSON"];
-const SESSION_TYPES = ["INDIVIDUAL", "GROUP"];
+import {PROGRAMS, CAMPUSES, COURSES, TEACHING_MODES, SESSION_TYPES} from "../../constants/options";
+
+
 export default function TutorOnboarding() {
   const navigate = useNavigate();
   const user = getUser();
-
+  const location = useLocation();
+  const hasMountedRef = useRef(false);
+  const coursesDropdownRef = useRef(null);
+  const modesDropdownRef = useRef(null);
+  const sessionDropdownRef = useRef(null);
+  
   // Redirect to login if no user data (not logged in)
   if (!user?.email) {
     return <Navigate to="/login" replace />;
@@ -31,30 +24,95 @@ export default function TutorOnboarding() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [campus, setCampus] = useState("");
-  const [coursesOffered, setCoursesOffered] = useState([]);
+  // Initialize state from draft (runs only once on component creation)
+ //const draft = loadTutorDraft();
+ const [draft] = useState(() => loadTutorDraft());
+ useEffect(() => {
+  const handleBeforeUnload = () => {
+    clearTutorDraft();
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+}, []);
+
+//   const [draft] = useState(() => {
+//   const navEntry = performance.getEntriesByType?.("navigation")?.[0];
+//   const isReload = navEntry?.type === "reload";
+
+//   if (isReload) {
+//     clearTutorDraft();     // wipe storage
+//     return null;           // no draft => empty form
+//   }
+
+//   return loadTutorDraft(); // normal navigation => restore draft
+// });
+
+  const [firstName, setFirstName] = useState(draft?.firstName || "");
+  const [lastName, setLastName] = useState(draft?.lastName || "");
+  const [campus, setCampus] = useState(draft?.campus || "");
+  const [coursesOffered, setCoursesOffered] = useState(draft?.coursesOffered || []);
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [modesOpen, setModesOpen] = useState(false);
-  const [program, setProgram] = useState("");
-  const [about, setAbout] = useState("");
-  const [teachingMode, setTeachingMode] = useState([]);
-  const [sessionType, setSessionType] = useState([]);
+  const [program, setProgram] = useState(draft?.program || "");
+  const [about, setAbout] = useState(draft?.about || "");
+  const [teachingMode, setTeachingMode] = useState(draft?.teachingMode || []);
+  const [sessionType, setSessionType] = useState(draft?.sessionType || []);
   const [sessionOpen, setSessionOpen]=useState(false);
-  const [availability, setAvailability] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("tutorAvailabilityDraft")
-       || "[]");
-    } catch {
-      return [];
-    }
-  });
+  const [availability, setAvailability] = useState(draft?.availability || []);
   const hasAvailability = Array.isArray(availability) && availability.length > 0;
-
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (coursesDropdownRef.current && !coursesDropdownRef.current.contains(event.target)) {
+        setCoursesOpen(false);
+      }
+      if (modesDropdownRef.current && !modesDropdownRef.current.contains(event.target)) {
+        setModesOpen(false);
+      }
+      if (sessionDropdownRef.current && !sessionDropdownRef.current.contains(event.target)) {
+        setSessionOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Save draft whenever form data changes (skip first render after mount)
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    
+    saveTutorDraft({
+      firstName,
+      lastName,
+      campus,
+      program,
+      about,
+      coursesOffered,
+      teachingMode,
+      sessionType,
+      availability,
+    });
+  }, [
+    firstName,
+    lastName,
+    campus,
+    program,
+    about,
+    coursesOffered,
+    teachingMode,
+    sessionType,
+    availability,
+  ]);
 
   const toggleCourse = (course) => {
     setCoursesOffered((prev) => {
@@ -88,29 +146,37 @@ const removeSessionType = (type) => {
 };
 
   
+  const canSubmit = useMemo(() => {
+    return (
+      firstName.trim().length > 0 &&
+      lastName.trim().length > 0 &&
+      Boolean(campus) &&
+      Boolean(program) &&
+      Array.isArray(coursesOffered) && coursesOffered.length > 0 &&
+      Array.isArray(teachingMode) && teachingMode.length > 0 &&
+      Array.isArray(sessionType) && sessionType.length > 0 &&
+      hasAvailability
+    );
+  }, [
+    firstName,
+    lastName,
+    campus,
+    program,
+    coursesOffered,
+    teachingMode,
+    sessionType,
+    hasAvailability,
+  ]);
+
   const handleContinue = async (e) => {
     e.preventDefault();
     setError("");
 
-    const ok =
-      firstName.trim() &&
-      lastName.trim() &&
-      campus &&
-      program &&
-      Array.isArray(coursesOffered) &&
-      coursesOffered.length > 0 &&
-      Array.isArray(teachingMode) &&
-      teachingMode.length > 0 &&
-      Array.isArray(sessionType) && sessionType.length > 0 &&
-      Array.isArray(availability) && availability.length > 0;
-
-    if (!ok) {
-      setError("Please complete all required fields.");
-      return;
-    }
-
+    if (!canSubmit) {
+    setError("Please complete all required fields (availability is required).");
+    return;
+  }
     setLoading(true);
-
     try {
       const response = await onboardUser({
         firstName: firstName.trim(),
@@ -122,8 +188,6 @@ const removeSessionType = (type) => {
         teachingMode,
         sessionType,
         availability,
-        
-      
       });
 
       // Update stored token if a new one is returned
@@ -143,11 +207,12 @@ const removeSessionType = (type) => {
         coursesOffered: response?.coursesOffered || coursesOffered,
         teachingMode: response?.teachingMode || teachingMode,
         sessionType: response?.sessionType || sessionType,
-        availability: response?.availability || [],
+        availability: response?.availability || availability,
 
         isOnboarded: true,
       };
       setUser(updatedUser);
+      clearTutorDraft();
 
       // Redirect to dashboard
       navigate("/dashboard", { replace: true });
@@ -236,7 +301,7 @@ const removeSessionType = (type) => {
             </div>
 
             {/* 3) Program */}
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-2">
               <label className="font-mono text-black text-[18px]">
                 Program / Major <span className="text-red-600">*</span>
               </label>
@@ -250,7 +315,7 @@ const removeSessionType = (type) => {
                             shadow-[0px_0px_10px_0px_#00000059]"
                 >
                   <option value="" disabled>
-                    Select program
+                    {/* Select program */}
                   </option>
                   {PROGRAMS.map((p) => (
                     <option key={p} value={p}>
@@ -288,7 +353,7 @@ const removeSessionType = (type) => {
                             shadow-[0px_0px_10px_0px_#00000059]"
                 >
                   <option value="" disabled>
-                    Select campus
+                    {/* Select campus */}
                   </option>
                   {CAMPUSES.map((c) => (
                     <option key={c} value={c}>
@@ -317,7 +382,7 @@ const removeSessionType = (type) => {
                 Courses like to offer <span className="text-red-600">*</span>
               </label>
 
-              <div className="relative w-full">
+              <div className="relative w-full" ref={coursesDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setCoursesOpen((v) => !v)}
@@ -327,8 +392,8 @@ const removeSessionType = (type) => {
                             bg-white text-left shadow-[0px_0px_10px_0px_#00000059]"
                 >
                   <span className="font-mono text-[18px] text-black">
-                    {coursesOffered.length === 0
-                      ? "Select courses"
+                    {coursesOffered.length === 0 ? ""
+                      // ? "Select courses"
                       : coursesOffered.length <= 2
                       ? coursesOffered.join(", ")
                       : `${coursesOffered.slice(0, 2).join(", ")} +${
@@ -406,7 +471,9 @@ const removeSessionType = (type) => {
                 {coursesOffered.map((c) => (
                   <span
                     key={c}
-                    className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-3 py-1 font-mono text-[14px]"
+                    className="inline-flex items-center gap-2
+                               rounded-full border border-black/10
+                               bg-black/5 px-3 py-1 font-mono text-[14px]"
                   >
                     {c}
                     <button
@@ -428,7 +495,7 @@ const removeSessionType = (type) => {
                 Session Type <span className="text-red-600">*</span>
               </label>
 
-              <div className="relative w-full">
+              <div className="relative w-full" ref={sessionDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setSessionOpen((v) => !v)}
@@ -438,8 +505,8 @@ const removeSessionType = (type) => {
                             bg-white text-left shadow-[0px_0px_10px_0px_#00000059]"
                 >
                   <span className="font-mono text-[18px] text-black">
-                    {sessionType.length === 0
-                      ? "Select session type"
+                    {sessionType.length === 0 ? ""
+                      // ? "Select session type"
                       : sessionType.length <= 2
                       ? sessionType.join(", ")
                       : `${sessionType.slice(0, 2).join(", ")} +${
@@ -538,7 +605,7 @@ const removeSessionType = (type) => {
                 Teaching Mode <span className="text-red-600">*</span>
               </label>
 
-              <div className="relative w-full">
+              <div className="relative w-full" ref={modesDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setModesOpen((v) => !v)}
@@ -548,8 +615,8 @@ const removeSessionType = (type) => {
                             bg-white text-left shadow-[0px_0px_10px_0px_#00000059]"
                 >
                   <span className="font-mono text-[18px] text-black">
-                    {teachingMode.length === 0
-                      ? "Select teaching mode"
+                    {teachingMode.length === 0 ? ""
+                      // ? "Select teaching mode"
                       : teachingMode.length <= 2
                       ? teachingMode.join(", ")
                       : `${teachingMode.slice(0, 2).join(", ")} +${
@@ -643,7 +710,7 @@ const removeSessionType = (type) => {
             </div>
 
             {/* 8) Availability*/}
-            <div className="space-y-2">
+            <div className="space-y-2 justify-self-center col-span-2 w-full">
               <label className="font-mono text-black text-[18px]">
                 Availability <span className="text-red-600">*</span>
               </label>
@@ -657,7 +724,7 @@ const removeSessionType = (type) => {
                 }
                 className="w-full h-[53px] rounded-[10px]
                           border-2 border-[#0066CC]
-                          text-[blue]  py-3
+                          text-[blue] font-bold py-3
                           px-4 font-mono text-[18px]
                           text-left bg-[#E6F0FF]
                           shadow-[0px_0px_10px_0px_#00000059]
@@ -703,13 +770,13 @@ const removeSessionType = (type) => {
           <div className="mt-4 flex justify-center">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !canSubmit}
               className={`w-[466px] h-[54px] rounded-[10px]
                         bg-[#0066CC] text-white
                         font-mono text-[24px]
                         shadow-[0px_4px_4px_0px_#00000040] ${
-                          loading ? "opacity-70 cursor-not-allowed" : ""
-                        }`}
+                          (loading || !canSubmit) ? "opacity-70 cursor-not-allowed" :
+                             "hover:brightness-110"}`}
             >
               {loading ? "Completing Setup..." : "Complete Setup"}
             </button>
@@ -738,3 +805,5 @@ const removeSessionType = (type) => {
     </div>
   );
 }
+
+
