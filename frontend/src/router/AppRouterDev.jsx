@@ -4,10 +4,23 @@ import Login from "../auth/pages/Login";
 import EmailVerification from "../auth/pages/EmailVerification";
 import Home from "../auth/pages/Home";
 import Onboarding from "../auth/pages/Onboarding";
-import Dashboard from "../pages/Dashboard";
+import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
+import TutorDashboard from "../pages/dashboard/TutorDashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import Availability from "../pages/availability/Availability";
+import { getUser } from "../api";
+
+// Component to redirect to role-specific dashboard based on user's role
+function DashboardRedirect() {
+  const user = getUser();
+  const role = user?.role?.toUpperCase();
+  
+  if (role === "TUTOR") {
+    return <Navigate to="/dashboard/tutor" replace />;
+  }
+  return <Navigate to="/dashboard/learner" replace />;
+}
 
 
 export default function AppRouterDev() {
@@ -55,14 +68,22 @@ export default function AppRouterDev() {
           element={<Availability />}
         />
 
-        {/* Dashboard unlocked */}
+        {/* Dashboard unlocked - redirects based on user role */}
         <Route
           path='/dashboard'
-          element={<Dashboard />}
+          element={<DashboardRedirect />}
+        />
+        <Route
+          path='/dashboard/learner'
+          element={<LearnerDashboard />}
+        />
+        <Route
+          path='/dashboard/tutor'
+          element={<TutorDashboard />}
         />
         <Route
           path='/dashboard/availability'
-          element={ <Availability />}
+          element={<Availability />}
         />
 
         {/* Catch-all for dev: Redirect any unknown route to home */}

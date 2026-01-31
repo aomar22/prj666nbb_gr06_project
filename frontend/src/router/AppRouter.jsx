@@ -4,12 +4,25 @@ import Login from "../auth/pages/Login";
 import EmailVerification from "../auth/pages/EmailVerification";
 import Home from "../auth/pages/Home";
 import Onboarding from "../auth/pages/Onboarding";
-import Dashboard from "../pages/Dashboard";
+import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
+import TutorDashboard from "../pages/dashboard/TutorDashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import Availability from "../pages/availability/Availability";
+import { getUser } from "../api";
+
+// Component to redirect to role-specific dashboard
+function DashboardRedirect() {
+  const user = getUser();
+  const role = user?.role?.toUpperCase();
+  
+  if (role === "TUTOR") {
+    return <Navigate to="/dashboard/tutor" replace />;
+  }
+  return <Navigate to="/dashboard/learner" replace />;
+}
 
 export default function AppRouter() {
   return (
@@ -77,7 +90,23 @@ export default function AppRouter() {
           path='/dashboard'
           element={
             <ProtectedRoute requireOnboarded>
-              <Dashboard />
+              <DashboardRedirect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/dashboard/learner'
+          element={
+            <ProtectedRoute requiredRole='LEARNER' requireOnboarded>
+              <LearnerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/dashboard/tutor'
+          element={
+            <ProtectedRoute requiredRole='TUTOR' requireOnboarded>
+              <TutorDashboard />
             </ProtectedRoute>
           }
         />
