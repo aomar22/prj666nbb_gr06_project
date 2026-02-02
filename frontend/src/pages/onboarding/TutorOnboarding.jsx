@@ -187,7 +187,7 @@ const removeSessionType = (type) => {
         coursesOffered,
         teachingMode,
         sessionType,
-        availability,
+        availability: buildScheduleRequestFromUiAvailability(availability),
       });
 
       // Update stored token if a new one is returned
@@ -196,21 +196,23 @@ const removeSessionType = (type) => {
       }
 
       // Update stored user data
+      const profile = response?.profile || {};
       const updatedUser = {
         ...user,
         firstName: response?.firstName || firstName.trim(),
         lastName: response?.lastName || lastName.trim(),
         campus: response?.campus || campus,
-
-        program: response?.program || program,
-        about: response?.about || about.trim(),
-        coursesOffered: response?.coursesOffered || coursesOffered,
-        teachingMode: response?.teachingMode || teachingMode,
-        sessionType: response?.sessionType || sessionType,
-        availability: response?.availability || availability,
-
         isOnboarded: true,
-      };
+
+        profile: {
+          program: profile.program ?? program,
+          about: profile.about ?? about.trim(),
+          coursesOffered: profile.coursesOffered ?? coursesOffered,
+          teachingMode: profile.teachingMode ?? teachingMode,
+          sessionType: profile.sessionType ?? sessionType,
+        },
+      }
+      
       setUser(updatedUser);
       clearTutorDraft();
 
@@ -222,6 +224,81 @@ const removeSessionType = (type) => {
       setLoading(false);
     }
   };
+
+  // Helpers:
+
+  function dayKeyToDayOfWeek(dayKey) {
+    const map = {
+      SUN: "SUNDAY",
+      MON: "MONDAY",
+      TUE: "TUESDAY",
+      WED: "WEDNESDAY",
+      THU: "THURSDAY",
+      FRI: "FRIDAY",
+      SAT: "SATURDAY",
+    };
+    return map[dayKey] || null;
+  }
+
+  function toHHmm(timeStr) {
+    const s = String(timeStr || "").trim();
+
+    if (/^\d{2}:\d{2}$/.test(s)) return s;
+
+    const m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return null;
+
+    let hh = parseInt(m[1], 10);
+    const mm = m[2];
+    const ap = m[3].toUpperCase();
+
+    if (ap === "AM") {
+      if (hh === 12) hh = 0;
+    } else {
+      if (hh !== 12) hh += 12;
+    }
+
+    return `${String(hh).padStart(2, "0")}:${mm}`;
+  }
+
+  function minutesBetween(hhmmStart, hhmmEnd) {
+    const [sh, sm] = hhmmStart.split(":").map(Number);
+    const [eh, em] = hhmmEnd.split(":").map(Number);
+    return (eh * 60 + em) - (sh * 60 + sm);
+  }
+
+  function buildScheduleRequestFromUiAvailability(uiAvailability) {
+    if (!Array.isArray(uiAvailability) || uiAvailability.length === 0) return null;
+    const grouped = new Map();
+
+    for (const item of uiAvailability) {
+      const day = dayKeyToDayOfWeek(item.day);
+      const start = toHHmm(item.startTime);
+      const end = toHHmm(item.endTime);
+
+      if (!day || !start || !end) continue;
+
+      if (!grouped.has(day)) grouped.set(day, []);
+      grouped.get(day).push({ start, end });
+    }
+
+    const daySchedules = [...grouped.entries()].map(([day, blocks]) => ({ day, blocks }));
+    if (daySchedules.length === 0) return null;
+
+    const firstBlock = daySchedules[0].blocks[0];
+    let slotDuration = minutesBetween(firstBlock.start, firstBlock.end);
+    if (!Number.isFinite(slotDuration)) slotDuration = 60;
+    slotDuration = Math.max(15, Math.min(240, slotDuration));
+
+    const startDate = new Date().toISOString().slice(0, 10);
+
+    return {
+      startDate,
+      daySchedules,
+      recurring: true,
+      slotDuration,
+    };
+  }
 
   return (
     <div className="min-h-screen bg-[url('/seneca-5.jpg')] bg-cover bg-center flex items-center justify-center p-6">
