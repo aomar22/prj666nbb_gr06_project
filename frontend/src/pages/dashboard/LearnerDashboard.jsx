@@ -24,20 +24,16 @@ export default function Dashboard() {
     clearAuth();
     navigate("/login", { replace: true });
   };
-  const [currentMonth] = useState(10); 
-  const [currentYear] = useState(2025);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
 
   const generateCalendar = () => {
     const days = [];
-    const daysInMonth = 31;
-    const firstDay = new Date(2025, 9, 1).getDay(); 
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-        for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-    
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) days.push(d);
     return days;
   };
 
@@ -45,6 +41,26 @@ export default function Dashboard() {
   const highlightedDates = [20, 24, 25]; 
   const activeDate = 25; 
 
+  const goPrevMonth = () => {
+    setCurrentMonth((m) => {
+      if (m === 0) {
+        setCurrentYear((y) => y - 1);
+        return 11;
+      }
+      return m - 1;
+    });
+  };
+
+  const goNextMonth = () => {
+    setCurrentMonth((m) => {
+      if (m === 11) {
+        setCurrentYear((y) => y + 1);
+        return 0;
+      }
+      return m + 1;
+    });
+  };
+  
   return (
     <div style={styles.container}>
       {/* Sidebar */}
@@ -238,9 +254,13 @@ export default function Dashboard() {
             {/* Calendar */}
             <section style={styles.section}>
               <div style={styles.calendarHeader}>
-                <button style={styles.calendarNav}>←</button>
-                <h3 style={styles.calendarTitle}>October 2025</h3>
-                <button style={styles.calendarNav}>→</button>
+                <h3 style={styles.calendarTitle}>
+                  {new Date(currentYear, currentMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}
+                </h3>
+                <div style={styles.calendarNavButtons}>
+                  <button style={styles.calendarNavBtn} onClick={goPrevMonth}>‹</button>
+                  <button style={styles.calendarNavBtn} onClick={goNextMonth}>›</button>
+                </div>
               </div>
               <div style={styles.calendarWeekdays}>
                 <span>SUN</span>
