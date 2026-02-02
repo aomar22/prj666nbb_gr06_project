@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearAuth, getUser } from "../../api";
+import { NavLink } from "react-router-dom";
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
@@ -66,9 +67,19 @@ export default function TutorDashboard() {
           <a href="#" style={styles.navItem}>
             <span>📅</span> My Sessions
           </a>
-          <a href="#" style={styles.navItem}>
+          {/* <a href="#" style={styles.navItem}>
             <span>📋</span> Availability
-          </a>
+          </a> */}
+          <NavLink
+            to="/dashboard/availability"
+            style={({ isActive }) => ({
+              ...styles.navItem,
+              ...(isActive ? styles.navItemActive : {}),
+            })}
+          >
+            <span>📋</span> Availability
+          </NavLink>
+
           <a href="#" style={styles.navItem}>
             <span>👤</span> Find Students
           </a>

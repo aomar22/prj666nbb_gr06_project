@@ -84,7 +84,11 @@ export default function AppRouter() {
         />
         <Route
           path='/onboarding/tutor/availability'
-          element={<Availability/>}
+          element={
+            <ProtectedRoute requiredRole="TUTOR">
+              <Availability/>
+            </ProtectedRoute>
+          }
         />
         <Route
           path='/dashboard'
@@ -117,7 +121,12 @@ export default function AppRouter() {
             <Availability />
           </ProtectedRoute>
           }
-        />
+          />
+          {/* Catch-all */}
+          <Route
+            path="*"
+            element={<Navigate to="/home" replace />}
+          />
       </Routes>
     </BrowserRouter>
   );
