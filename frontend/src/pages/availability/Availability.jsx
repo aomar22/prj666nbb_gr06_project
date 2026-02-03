@@ -9,8 +9,8 @@ const WEEK_DAYS = [
   { key: "MON", label: "MON", dayNum: "9" },
   { key: "TUE", label: "TUE", dayNum: "10" },
   { key: "WED", label: "WED", dayNum: "11" },
-  { key: "FRI", label: "FRI", dayNum: "12" },
-  { key: "WED2", label: "WED", dayNum: "13" },
+  { key: "THU", label: "THU", dayNum: "12" },
+  { key: "FRI", label: "FRI", dayNum: "13" },
   { key: "SAT", label: "SAT", dayNum: "14" },
 ];
 
