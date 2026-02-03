@@ -1,13 +1,12 @@
-
 // "Availability is a reusable page accessed from onboarding and dashboard navigation"
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { getUser } from "../../api";
 import { loadTutorDraft, saveTutorDraft } from "../../utils/tutorOnboardingDraft";
 
 const WEEK_DAYS = [
   { key: "SUN", label: "SUN", dayNum: "8" },
-  { key: "MON", label: "MON", dayNum: "9", active: true },
+  { key: "MON", label: "MON", dayNum: "9" },
   { key: "TUE", label: "TUE", dayNum: "10" },
   { key: "WED", label: "WED", dayNum: "11" },
   { key: "THU", label: "THU", dayNum: "12" },
@@ -15,12 +14,14 @@ const WEEK_DAYS = [
   { key: "SAT", label: "SAT", dayNum: "14" },
 ];
 
-const MOCK_SLOTS = {
-  MON: ["1:00 PM", "4:00 PM"],
-  TUE: ["2:30 PM", "3:15 PM"],
-  WED: ["10:30 AM", "11:15 AM", "1:45 PM", "2:30 PM", "3:15 PM", "4:00 PM"],
-  FRI: ["9:00 AM", "9:45 AM"],
-  WED2: ["2:30 PM", "3:15 PM", "4:00 PM"],
+const DAY_TO_LABEL = {
+  SUN: "Sunday",
+  MON: "Monday",
+  TUE: "Tuesday",
+  WED: "Wednesday",
+  FRI: "Friday",
+  WED2: "Wednesday",
+  SAT: "Saturday",
 };
 
 const TIME_OPTIONS = [
@@ -31,61 +32,153 @@ const TIME_OPTIONS = [
   "8:00 PM","8:30 PM","9:00 PM","9:30 PM",
 ];
 
+function toMinutes(t) {
+  const m = String(t).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!m) return NaN;
+
+  let hh = parseInt(m[1], 10);
+  const mm = parseInt(m[2], 10);
+  const ap = m[3].toUpperCase();
+
+  if (hh === 12) hh = 0;
+  let minutes = hh * 60 + mm;
+  if (ap === "PM") minutes += 12 * 60;
+
+  return minutes;
+}
+
+function isValidRange(start, end) {
+  const s = toMinutes(start);
+  const e = toMinutes(end);
+  if (!Number.isFinite(s) || !Number.isFinite(e)) return false;
+  return e > s;
+}
+
 export default function Availability() {
   const location = useLocation();
-  const navigate = useNavigate();
   const user = getUser();
 
-  // Determine if user came from onboarding - check both state and current path
-  const fromOnboarding = 
-    location.state?.from?.startsWith("/onboarding") || 
+  const fromOnboarding =
+    location.state?.from?.startsWith("/onboarding") ||
     location.pathname.includes("/onboarding");
+
   const isOnboarded = Boolean(user?.isOnboarded);
 
   const backTo = fromOnboarding ? "/onboarding/tutor" : "/dashboard/tutor";
   const backLabel = fromOnboarding ? "Back to Tutor Setup" : "Back to Tutor Dashboard";
 
-  // Active route helper (works for /dashboard/availability and /onboarding/tutor/availability)
   const isAvailabilityRoute = location.pathname.includes("/availability");
 
-  // Draft-backed availability so onboarding can show "Edit availability"
   const initialAvailability = useMemo(() => {
     const draft = loadTutorDraft();
-    return Array.isArray(draft?.availability) ? draft.availability : [];
+    const raw = Array.isArray(draft?.availability) ? draft.availability : [];
+    return raw
+      .filter((x) => x && x.day && x.startTime && x.endTime)
+      .map(({ day, startTime, endTime }) => ({ day, startTime, endTime }));
   }, []);
 
   const [selectedDay, setSelectedDay] = useState("MON");
-  const [selectedDateText, setSelectedDateText] = useState("Monday Oct 9, 2025");
+  const [selectedDayNum, setSelectedDayNum] = useState(1); // Track the actual day number
+  const [selectedMonth, setSelectedMonth] = useState(1); // Track the month of selected day
+  const [selectedYear, setSelectedYear] = useState(2026); // Track the year of selected day
+  const [error, setError] = useState("");
+
+  // Base date for calendar (start of current week)
+  const today = new Date();
+  const [baseDate] = useState(() => {
+    const d = new Date(today);
+    // Start from the beginning of the current week (Sunday)
+    const dayOfWeek = d.getDay();
+    d.setDate(d.getDate() - dayOfWeek);
+    return d;
+  });
+
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  // Week navigation (now declared AFTER weekOffset exists)
+  const goPrevWeek = () => setWeekOffset((w) => w - 1);
+  const goNextWeek = () => setWeekOffset((w) => w + 1);
+
+  const visibleWeek = useMemo(() => {
+    // Calculate the start of the week
+    const weekStart = new Date(baseDate);
+    weekStart.setDate(baseDate.getDate() + weekOffset * 7);
+    
+    return WEEK_DAYS.map((d, index) => {
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(weekStart.getDate() + index);
+      
+      return {
+        ...d,
+        dayNum: currentDate.getDate(),
+        month: currentDate.getMonth(),
+        year: currentDate.getFullYear(),
+        fullDate: currentDate,
+      };
+    });
+  }, [weekOffset, baseDate]);
+
+  const monthLabel = useMemo(() => {
+    const names = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December",
+    ];
+    // Show the month of the first day in the visible week
+    if (visibleWeek.length > 0) {
+      const firstDay = visibleWeek[0];
+      return `${names[firstDay.month]} ${firstDay.year}`;
+    }
+    return `${names[today.getMonth()]} ${today.getFullYear()}`;
+  }, [visibleWeek, today]);
+
+  // Display the selected day with the actual date
+  const selectedDateText = useMemo(() => {
+    const monthNames = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December",
+    ];
+    return `${DAY_TO_LABEL[selectedDay] || "Monday"}, ${monthNames[selectedMonth]} ${selectedDayNum}, ${selectedYear}`;
+  }, [selectedDay, selectedDayNum, selectedMonth, selectedYear]);
+
   const [startTime, setStartTime] = useState("8:00 PM");
   const [endTime, setEndTime] = useState("8:40 PM");
   const [availability, setAvailability] = useState(initialAvailability);
 
-  console.log("USER:", user);
-
-  // -------- Handlers (UI-only) --------
   const handleReset = () => {
     setStartTime("8:00 PM");
     setEndTime("8:40 PM");
+    setError("");
   };
 
   const handleSave = () => {
-    const next = [
-      ...availability,
-      { day: selectedDay, dateLabel: selectedDateText, startTime, endTime },
-    ];
+    setError("");
 
+    if (!isValidRange(startTime, endTime)) {
+      setError("Invalid time range: End Time must be after Start Time.");
+      return;
+    }
+
+    const next = [...availability, { day: selectedDay, startTime, endTime }];
     setAvailability(next);
     saveTutorDraft({ availability: next });
-
-    navigate(backTo);
   };
 
   const handleDelete = () => {
     setAvailability([]);
     saveTutorDraft({ availability: [] });
+    setError("");
   };
 
-  // -------- Render --------
+  const goPrevMonth = () => {
+    // Jump back approximately 4 weeks to get to previous month
+    setWeekOffset((w) => w - 4);
+  };
+
+  const goNextMonth = () => {
+    // Jump forward approximately 4 weeks to get to next month
+    setWeekOffset((w) => w + 4);
+  };
+
   return (
     <div className="min-h-screen bg-[#F4E4D7]">
       <div className="mx-auto max-w-[1400px]">
@@ -102,9 +195,8 @@ export default function Availability() {
               </div>
             </div>
 
-            {/* Navigation links (real links + active styling) */}
             <nav className="mt-10 space-y-3 font-mono text-[18px]">
-              <NavLink to="/dashboard" active={location.pathname === "/dashboard"}>
+              <NavLink to="/dashboard/tutor" active={location.pathname === "/dashboard/tutor"}>
                 Dashboard
               </NavLink>
 
@@ -112,10 +204,7 @@ export default function Availability() {
                 My Sessions
               </NavLink>
 
-              <NavLink
-                to="/dashboard/availability"
-                active={isAvailabilityRoute && !fromOnboarding}
-              >
+              <NavLink to="/dashboard/availability" active={isAvailabilityRoute && !fromOnboarding}>
                 Availability
               </NavLink>
 
@@ -187,23 +276,63 @@ export default function Availability() {
             <div className="mt-8 grid grid-cols-[1fr_280px] gap-10 items-start">
               {/* Calendar */}
               <div className="relative">
+                {/* Week arrows on sides */}
                 <button
                   type="button"
+                  onClick={goPrevWeek}
                   className="absolute -left-10 top-1/2 -translate-y-1/2 text-black/60 hover:text-black"
+                  aria-label="Previous week"
                 >
                   <span className="text-3xl">←</span>
                 </button>
 
+                <button
+                  type="button"
+                  onClick={goNextWeek}
+                  className="absolute -right-10 top-1/2 -translate-y-1/2 text-black/60 hover:text-black"
+                  aria-label="Next week"
+                >
+                  <span className="text-3xl">→</span>
+                </button>
+
                 <div className="rounded-[10px] bg-white/70 border border-black/10 px-8 py-6">
+                  {/* Month header + arrows */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      type="button"
+                      onClick={goPrevMonth}
+                      className="h-9 w-9 rounded-full bg-white shadow flex items-center justify-center hover:bg-black/5"
+                      aria-label="Previous month"
+                    >
+                      ‹
+                    </button>
+
+                    <div className="text-[18px] font-extrabold text-black/80">{monthLabel}</div>
+
+                    <button
+                      type="button"
+                      onClick={goNextMonth}
+                      className="h-9 w-9 rounded-full bg-white shadow flex items-center justify-center hover:bg-black/5"
+                      aria-label="Next month"
+                    >
+                      ›
+                    </button>
+                  </div>
+
                   {/* Week header */}
                   <div className="grid grid-cols-7 gap-4 text-center">
-                    {WEEK_DAYS.map((d) => {
-                      const isActive = d.key === "MON"; // prototype highlight
+                    {visibleWeek.map((d) => {
+                      const isActive = d.key === selectedDay;
                       return (
                         <button
                           key={d.key}
                           type="button"
-                          onClick={() => setSelectedDay(d.key)}
+                          onClick={() => {
+                            setSelectedDay(d.key);
+                            setSelectedDayNum(d.dayNum);
+                            setSelectedMonth(d.month);
+                            setSelectedYear(d.year);
+                          }}
                           className="flex flex-col items-center gap-2"
                         >
                           <div className="text-[12px] font-bold text-black/60">{d.label}</div>
@@ -222,8 +351,11 @@ export default function Availability() {
 
                   {/* Slots grid */}
                   <div className="mt-6 grid grid-cols-7 gap-4">
-                    {WEEK_DAYS.map((d) => {
-                      const chips = MOCK_SLOTS[d.key] || [];
+                    {visibleWeek.map((d) => {
+                      const chips = availability
+                        .filter((slot) => slot.day === d.key)
+                        .map((slot) => `${slot.startTime} - ${slot.endTime}`);
+
                       return (
                         <div
                           key={d.key}
@@ -245,13 +377,6 @@ export default function Availability() {
                     })}
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  className="absolute -right-10 top-1/2 -translate-y-1/2 text-black/60 hover:text-black"
-                >
-                  <span className="text-3xl">→</span>
-                </button>
               </div>
 
               {/* Chart */}
@@ -320,6 +445,12 @@ export default function Availability() {
 
               {/* Buttons */}
               <div className="flex flex-col gap-4 pt-6">
+                {error && (
+                  <div className="rounded-[10px] bg-red-50 border border-red-200 px-3 py-2 text-[12px] font-semibold text-red-700">
+                    {error}
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleSave}
@@ -338,7 +469,7 @@ export default function Availability() {
                   Delete
                 </button>
 
-                {/* Keep your back navigation behavior */}
+                {/* Back navigation */}
                 <Link
                   to={backTo}
                   className="mt-6 h-[44px] rounded-[10px] bg-white/60 border border-black/10
@@ -347,7 +478,6 @@ export default function Availability() {
                   {backLabel}
                 </Link>
 
-                {/* Optional: show mode (doesn't change logic) */}
                 <div className="mt-2 text-xs text-black/50 text-center">
                   {fromOnboarding ? "Onboarding flow" : "Dashboard flow"} · Onboarded:{" "}
                   {isOnboarded ? "Yes" : "No"}
@@ -388,9 +518,7 @@ function Bar({ label, value, heightClass, active }) {
           active ? "bg-[#7A0000]" : "bg-[#A66A6A]",
         ].join(" ")}
       />
-      <div className="text-[12px] font-bold text-black/70 mt-2 text-center">
-        {label}
-      </div>
+      <div className="text-[12px] font-bold text-black/70 mt-2 text-center">{label}</div>
     </div>
   );
 }
