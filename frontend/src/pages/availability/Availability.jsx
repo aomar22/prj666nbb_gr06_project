@@ -53,21 +53,6 @@ function isValidRange(start, end) {
   if (!Number.isFinite(s) || !Number.isFinite(e)) return false;
   return e > s;
 }
-function startOfWeekSunday(date) {
-  const d = new Date(date);
-  d.setHours(12, 0, 0, 0); // avoids DST edge weirdness
-  const day = d.getDay(); // 0=Sun..6=Sat
-  d.setDate(d.getDate() - day);
-  return d;
-}
-
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-const DAY_INDEX = { SUN: 0, MON: 1, TUE: 2, WED: 3, FRI: 4, WED2: 5, SAT: 6 };
 
 export default function Availability() {
   const location = useLocation();
@@ -93,34 +78,67 @@ export default function Availability() {
   }, []);
 
   const [selectedDay, setSelectedDay] = useState("MON");
+  const [selectedDayNum, setSelectedDayNum] = useState(1); // Track the actual day number
+  const [selectedMonth, setSelectedMonth] = useState(1); // Track the month of selected day
+  const [selectedYear, setSelectedYear] = useState(2026); // Track the year of selected day
   const [error, setError] = useState("");
 
-  // One source of truth for month/year
-  const [calendar, setCalendar] = useState({ year: 2025, month: 9 }); // Oct 2025 (0-based month)
+  // Base date for calendar (start of current week)
+  const today = new Date();
+  const [baseDate] = useState(() => {
+    const d = new Date(today);
+    // Start from the beginning of the current week (Sunday)
+    const dayOfWeek = d.getDay();
+    d.setDate(d.getDate() - dayOfWeek);
+    return d;
+  });
+
   const [weekOffset, setWeekOffset] = useState(0);
 
   // Week navigation (now declared AFTER weekOffset exists)
   const goPrevWeek = () => setWeekOffset((w) => w - 1);
   const goNextWeek = () => setWeekOffset((w) => w + 1);
 
+  const visibleWeek = useMemo(() => {
+    // Calculate the start of the week
+    const weekStart = new Date(baseDate);
+    weekStart.setDate(baseDate.getDate() + weekOffset * 7);
+    
+    return WEEK_DAYS.map((d, index) => {
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(weekStart.getDate() + index);
+      
+      return {
+        ...d,
+        dayNum: currentDate.getDate(),
+        month: currentDate.getMonth(),
+        year: currentDate.getFullYear(),
+        fullDate: currentDate,
+      };
+    });
+  }, [weekOffset, baseDate]);
+
   const monthLabel = useMemo(() => {
     const names = [
       "January","February","March","April","May","June",
       "July","August","September","October","November","December",
     ];
-    return `${names[calendar.month]} ${calendar.year}`;
-  }, [calendar.month, calendar.year]);
+    // Show the month of the first day in the visible week
+    if (visibleWeek.length > 0) {
+      const firstDay = visibleWeek[0];
+      return `${names[firstDay.month]} ${firstDay.year}`;
+    }
+    return `${names[today.getMonth()]} ${today.getFullYear()}`;
+  }, [visibleWeek, today]);
 
-  const visibleWeek = useMemo(() => {
-    return WEEK_DAYS.map((d) => ({
-      ...d,
-      dayNum: String(Number(d.dayNum) + weekOffset * 7),
-    }));
-  }, [weekOffset]);
-
-  // NOTE: You’re still using a prototype “9, 2025” day-of-month.
-  // This keeps your UI stable while you work on week/month logic.
-  const selectedDateText = `${DAY_TO_LABEL[selectedDay] || "Monday"} ${monthLabel} 9, 2025`;
+  // Display the selected day with the actual date
+  const selectedDateText = useMemo(() => {
+    const monthNames = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December",
+    ];
+    return `${DAY_TO_LABEL[selectedDay] || "Monday"}, ${monthNames[selectedMonth]} ${selectedDayNum}, ${selectedYear}`;
+  }, [selectedDay, selectedDayNum, selectedMonth, selectedYear]);
 
   const [startTime, setStartTime] = useState("8:00 PM");
   const [endTime, setEndTime] = useState("8:40 PM");
@@ -152,17 +170,13 @@ export default function Availability() {
   };
 
   const goPrevMonth = () => {
-    setCalendar(({ year, month }) => {
-      if (month === 0) return { year: year - 1, month: 11 };
-      return { year, month: month - 1 };
-    });
+    // Jump back approximately 4 weeks to get to previous month
+    setWeekOffset((w) => w - 4);
   };
 
   const goNextMonth = () => {
-    setCalendar(({ year, month }) => {
-      if (month === 11) return { year: year + 1, month: 0 };
-      return { year, month: month + 1 };
-    });
+    // Jump forward approximately 4 weeks to get to next month
+    setWeekOffset((w) => w + 4);
   };
 
   return (
@@ -313,7 +327,12 @@ export default function Availability() {
                         <button
                           key={d.key}
                           type="button"
-                          onClick={() => setSelectedDay(d.key)}
+                          onClick={() => {
+                            setSelectedDay(d.key);
+                            setSelectedDayNum(d.dayNum);
+                            setSelectedMonth(d.month);
+                            setSelectedYear(d.year);
+                          }}
                           className="flex flex-col items-center gap-2"
                         >
                           <div className="text-[12px] font-bold text-black/60">{d.label}</div>
