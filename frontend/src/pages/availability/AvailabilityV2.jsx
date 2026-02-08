@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getUser, createTutorSchedule, replaceTutorSchedule } from "../../api";
+import { getUser, replaceTutorSchedule } from "../../api";
 import { loadTutorDraft, saveTutorDraft } from "../../utils/tutorOnboardingDraft";
 
 const DAYS = [
@@ -133,7 +133,7 @@ export default function AvailabilityV2() {
     location.pathname.includes("/onboarding");
 
   const backTo = fromOnboarding ? "/onboarding/tutor" : "/dashboard/tutor";
-  const isOnboarded = Boolean(user?.isOnboarded);
+  // const isOnboarded = Boolean(user?.isOnboarded);
 
   const TIME_OPTIONS = useMemo(() => buildTimeOptions(), []);
   const initialDraft = useMemo(() => {
@@ -291,8 +291,8 @@ export default function AvailabilityV2() {
   async function handleSaveAvailability() {
     setUiError("");
 
-    const user = getUser();
-    const tutorId = user?.id;
+    const currentUser = getUser();
+    const tutorId = currentUser?.id;
     if (!tutorId) {
       setUiError("Missing tutor id. Please log in again.");
       return;
@@ -307,17 +307,15 @@ export default function AvailabilityV2() {
 
     try {
       const startDate = schedule.startDate;
-      const endDate = new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 4))
+      const endDate = new Date(
+        new Date(startDate).setMonth(new Date(startDate).getMonth() + 4)
+      )
         .toISOString()
         .slice(0, 10);
 
-      if (user?.isOnboarded) {
-        await replaceTutorSchedule(tutorId, schedule, startDate, endDate);
-        navigate("/dashboard/tutor", { replace: true });
-      } else {
-        await createTutorSchedule(tutorId, schedule);
-        navigate("/onboarding/tutor", { replace: true });
-      }
+      await replaceTutorSchedule(tutorId, schedule, startDate, endDate);
+
+      navigate(backTo, { replace: true });
     } catch (e) {
       setUiError(e?.message ?? "Failed to save availability.");
     }

@@ -15,8 +15,9 @@ export function removeToken() {
 }
 
 export function getUser() {
-  if (import.meta.env.VITE_DISABLE_AUTH === 'true') {
+  if (import.meta.env.VITE_DISABLE_AUTH === "true") {
     return {
+      id: 1, 
       email: "dev-mode@seneca.ca",
       firstName: "Debug",
       lastName: "User",
