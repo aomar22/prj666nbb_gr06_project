@@ -795,7 +795,7 @@ const removeSessionType = (type) => {
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/onboarding/tutor/availability", {
+                  navigate("/onboarding/tutor/availability-v2", {
                     state: { from: "/onboarding/tutor" },
                   })
                 }
@@ -817,7 +817,7 @@ const removeSessionType = (type) => {
             </div>
           </div>
 
-          {/* Full-width field (only) */}
+          {/* Full-width field */}
           <div className="space-y-2">
             <label className="font-mono text-black text-[18px]">
               About <span className="text-black/50">(optional)</span>

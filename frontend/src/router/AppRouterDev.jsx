@@ -8,8 +8,9 @@ import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
 import TutorDashboard from "../pages/dashboard/TutorDashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
-import Availability from "../pages/availability/Availability";
+import AvailabilityV2 from "../pages/availability/AvailabilityV2";
 import { getUser } from "../api";
+
 
 // Component to redirect to role-specific dashboard based on user's role
 function DashboardRedirect() {
@@ -64,8 +65,8 @@ export default function AppRouterDev() {
           element={<TutorOnboarding />}
         />
         <Route
-          path='/onboarding/tutor/availability'
-          element={<Availability />}
+          path='/onboarding/tutor/availability-v2'
+          element={<AvailabilityV2 />}
         />
 
         {/* Dashboard unlocked - redirects based on user role */}
@@ -82,8 +83,8 @@ export default function AppRouterDev() {
           element={<TutorDashboard />}
         />
         <Route
-          path='/dashboard/availability'
-          element={<Availability />}
+          path='/dashboard/availability-v2'
+          element={<AvailabilityV2 />}
         />
 
         {/* Catch-all for dev: Redirect any unknown route to home */}
