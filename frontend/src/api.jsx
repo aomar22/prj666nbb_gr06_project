@@ -46,6 +46,21 @@ export function clearAuth() {
   localStorage.removeItem("scholarly_initial_user");
 }
 
+export async function createTutorSchedule(tutorId, schedule) {
+  return authRequest(`/api/availability/tutor/${tutorId}`, {
+    method: "POST",
+    body: JSON.stringify(schedule),
+  });
+}
+
+export async function replaceTutorSchedule(tutorId, schedule, startDate, endDate) {
+  const qs = new URLSearchParams({ startDate, endDate }).toString();
+  return authRequest(`/api/availability/tutor/${tutorId}/schedule?${qs}`, {
+    method: "PUT",
+    body: JSON.stringify(schedule),
+  });
+}
+
 // Base request without auth (for public routes)
 async function publicRequest(path, opts = {}) {
   const headers = {
@@ -159,6 +174,8 @@ export function onboardUser(payload) {
   });
 }
 
+
+
 export default {
   register,
   login,
@@ -172,4 +189,6 @@ export default {
   setUser,
   removeUser,
   clearAuth,
+  createTutorSchedule,
+  replaceTutorSchedule,
 };
