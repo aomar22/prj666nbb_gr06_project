@@ -88,7 +88,7 @@ export default function TutorDashboard() {
             <span>📋</span> Availability
           </a> */}
           <NavLink
-            to="/dashboard/availability"
+            to="/dashboard/availability-v2"
             style={({ isActive }) => ({
               ...styles.navItem,
               ...(isActive ? styles.navItemActive : {}),

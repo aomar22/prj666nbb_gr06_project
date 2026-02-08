@@ -10,8 +10,8 @@ import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
-import Availability from "../pages/availability/Availability";
 import { getUser } from "../api";
+import AvailabilityV2 from "../pages/availability/AvailabilityV2";
 
 // Component to redirect to role-specific dashboard
 function DashboardRedirect() {
@@ -83,10 +83,10 @@ export default function AppRouter() {
           }
         />
         <Route
-          path='/onboarding/tutor/availability'
+          path='/onboarding/tutor/availability-v2'
           element={
             <ProtectedRoute requiredRole="TUTOR">
-              <Availability/>
+              <AvailabilityV2/>
             </ProtectedRoute>
           }
         />
@@ -115,10 +115,10 @@ export default function AppRouter() {
           }
         />
         <Route
-          path='/dashboard/availability'
+          path='/dashboard/availability-v2'
           element={
           <ProtectedRoute requiredRole='TUTOR' requireOnboarded>
-            <Availability />
+            <AvailabilityV2 />
           </ProtectedRoute>
           }
           />
