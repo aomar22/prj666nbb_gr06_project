@@ -133,8 +133,6 @@ export default function AvailabilityV2() {
     location.pathname.includes("/onboarding");
 
   const backTo = fromOnboarding ? "/onboarding/tutor" : "/dashboard/tutor";
-  const isOnboarded = Boolean(user?.isOnboarded);
-
   const TIME_OPTIONS = useMemo(() => buildTimeOptions(), []);
   const initialDraft = useMemo(() => {
     const draft = loadTutorDraft();
@@ -312,27 +310,27 @@ export default function AvailabilityV2() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4E4D7]">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="flex min-h-screen">
+    <div className="h-screen bg-[#F4E4D7] overflow-hidden">
+      <div className="w-full">
+        <div className="flex h-screen">
           {/* Sidebar */}
-          <aside className="w-[210px] h-[870px] bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col">
+          <aside className="w-[217px] h-full bg-[#7A0000] text-white px-5 pt-6 pb-6 flex flex-col">
           {/* Brand */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center shrink-0">
             <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
               <img src="/hat.png" alt="logo" className="h-7 w-7" />
             </div>
 
             <div className="mt-3 text-center">
-              <div className="text-[22px] font-extrabold leading-none">Scholarly</div>
-              <div className="mt-1 text-[11px] font-semibold opacity-90">
+              <div className="text-[20px] font-extrabold leading-none">Scholarly</div>
+              <div className="mt-1 text-[12px] font-semibold opacity-90">
                 Connect. Learn. Grow.
               </div>
             </div>
           </div>
 
           {/* Nav */}
-          <nav className="mt-11 space-y-2 text-[15px] font-semibold">
+          <nav className="mt-11 space-y-2 text-[16px] font-semibold">
             <SideLink
               to="/dashboard/tutor"
               active={location.pathname === "/dashboard/tutor"}
@@ -382,25 +380,25 @@ export default function AvailabilityV2() {
             </SideLink>
           </nav>
 
-          {/* Bottom actions */}
-          <div className="mt-60 pt-6 space-y-2 text-[15px] font-semibold">
-            <SideLink
-              to="/dashboard/settings"
-              active={location.pathname.includes("/settings")}
-              icon={<SettingsIcon />}
-            >
-              Settings
-            </SideLink>
+        {/* Bottom actions */}
+        <div className="mt-auto pt-6 space-y-2 text-[16px] font-semibold shrink-0">
+          <SideLink
+            to="/dashboard/settings"
+            active={location.pathname.includes("/settings")}
+            icon={<SettingsIcon />}
+          >
+            Settings
+          </SideLink>
 
-            <SideLink to="/logout" active={false} icon={<LogoutIcon />}>
-              Log Out
-            </SideLink>
-          </div>
+          <SideLink to="/logout" active={false} icon={<LogoutIcon />}>
+            Log Out
+          </SideLink>
+        </div>
         </aside>
 
 
           {/* Main */}
-          <main className="flex-1 px-10 py-6">
+          <main className="flex-1 overflow-y-auto px-10 py-6">
             {/* Top bar */}
             <div className="flex items-center gap-6">
               <div className="relative flex-1">
@@ -455,7 +453,7 @@ export default function AvailabilityV2() {
                       <select
                         value={slotDuration}
                         onChange={(e) => setSlotDuration(Number(e.target.value))}
-                        className="h-[30px] rounded-full px-4 bg-[#EAEAEA] shadow-inner outline-none text-[13px] font-bold"
+                        className="h-[30px] rounded-full px-4 justify-center bg-[#EAEAEA] shadow-inner outline-none text-[13px] font-bold"
                       >
                         {SESSION_LENGTHS.map((m) => (
                           <option key={m} value={m}>
@@ -496,7 +494,7 @@ export default function AvailabilityV2() {
                         ].join(" ")}
                       >
                         {blocks.length === 0 ? (
-                          <div className="text-[12px] text-black/60">No time blocks yet</div>
+                          <div className="text-[14px] text-black/60">No time blocks yet</div>
                         ) : (
                           blocks.map((b, idx) => (
                             <div key={`${d.key}-${idx}`} className="flex items-center gap-2">
@@ -505,7 +503,7 @@ export default function AvailabilityV2() {
                                 onChange={(e) =>
                                   handleUpdateBlock(d.key, idx, { start: e.target.value })
                                 }
-                                className="h-[30px] w-[110px] rounded-full bg-white px-3 text-[12px] font-bold shadow outline-none"
+                                className="h-[30px] w-[140px] rounded-full bg-white px-3 text-[14px] text-center font-bold shadow outline-none"
                               >
                                 {TIME_OPTIONS.map((t) => (
                                   <option key={`s-${t}`} value={t}>
@@ -521,7 +519,7 @@ export default function AvailabilityV2() {
                                 onChange={(e) =>
                                   handleUpdateBlock(d.key, idx, { end: e.target.value })
                                 }
-                                className="h-[30px] w-[110px] rounded-full bg-white px-3 text-[12px] font-bold shadow outline-none"
+                                className="h-[30px] w-[140px] rounded-full bg-white px-3 text-[14px] text-center font-bold shadow outline-none"
                               >
                                 {TIME_OPTIONS.map((t) => (
                                   <option key={`e-${t}`} value={t}>
@@ -547,7 +545,7 @@ export default function AvailabilityV2() {
                       <button
                         type="button"
                         onClick={() => handleAddBlock(d.key)}
-                        className="mt-4 w-full text-right text-[12px] font-bold underline underline-offset-4"
+                        className="mt-4 w-full text-right text-[14px] font-bold underline underline-offset-4"
                       >
                         + Add time block
                       </button>
@@ -587,8 +585,8 @@ export default function AvailabilityV2() {
                       <div className="flex items-center justify-between mb-3 mt-4">
                         <button type="button" onClick={goPrevWeek} className="text-[14px] font-bold">&lt; Previous Week</button>
                       <div className="flex flex-col items-center">
-                      <div className="text-[16px] font-bold text-center font-mono text-black/70">{monthLabel}</div>
-                      <div className="text-[12px] text-black/50 font-semibold font-mono text-center">{weekRangeLabel}</div>
+                      <div className="text-[18px] font-bold text-center font-mono text-black/70">{monthLabel}</div>
+                      <div className="text-[14px] text-black/50 font-semibold font-mono text-center">{weekRangeLabel}</div>
                       </div>
                       <button type="button" onClick={goNextWeek} className="text-[14px] font-bold">Next Week &gt;</button>
                       </div>
@@ -697,7 +695,7 @@ function SideLink({ to, active, icon, children }) {
 
 function TrashIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -708,7 +706,7 @@ function TrashIcon() {
 
 function SearchIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"
         stroke="currentColor"
@@ -789,6 +787,8 @@ function ClockIcon() {
     </IconBase>
   );
 }
+
+
 
 function UsersIcon() {
   return (
