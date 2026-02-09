@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getUser } from "../../api";
+import { getUser, replaceTutorSchedule } from "../../api";
 import { loadTutorDraft, saveTutorDraft } from "../../utils/tutorOnboardingDraft";
 
 const DAYS = [
@@ -105,7 +105,7 @@ function buildPreviewSlots(weekly, slotDuration) {
 
       let cur = startM;
       while (cur + slotDuration <= endM) {
-        const id = `${day}-${bi}-${cur}-${slotDuration}`;
+        const id = `${day}-${cur}-${slotDuration}`;
         const label = minutesTo12h(cur);
 
         slots.push({
@@ -135,9 +135,9 @@ export default function AvailabilityV2() {
   const backTo = fromOnboarding ? "/onboarding/tutor" : "/dashboard/tutor";
   const TIME_OPTIONS = useMemo(() => buildTimeOptions(), []);
   const initialDraft = useMemo(() => {
-    const draft = loadTutorDraft();
-  return draft?.availabilityV2 || null;
-}, []);
+      const draft = loadTutorDraft();
+    return draft?.availabilityV2 || null;
+  }, []);
 
   const [slotDuration, setSlotDuration] = useState(
     initialDraft?.slotDuration ?? 60
@@ -201,19 +201,12 @@ export default function AvailabilityV2() {
 
   const [uiError, setUiError] = useState("");
   const [selectedPreviewId, setSelectedPreviewId] = useState(null);
-  const [removedPreviewIds, setRemovedPreviewIds] = useState(() => new Set());
 
   const previewSlots = useMemo(
     () => buildPreviewSlots(weekly, slotDuration),
     [weekly, slotDuration]
   );
-  const allPreviewIds = useMemo(() => {
-  return Object.values(previewSlots)
-    .flat()
-    .map((s) => s.id);
-}, [previewSlots]);
-
-
+ 
   const handleAddBlock = (dayKey) => {
     handleSelectDay(dayKey);
     setUiError("");
@@ -281,11 +274,10 @@ export default function AvailabilityV2() {
   const navigate = useNavigate();
   const handleSaveDraft = () => {
     setUiError("");
+    const existing = loadTutorDraft() || {};
     saveTutorDraft({
-      availabilityV2: {
-        slotDuration,
-        weekly,
-      },
+      ...existing,
+      availabilityV2: { slotDuration, weekly },
     });
     navigate(backTo);
   };
@@ -294,20 +286,134 @@ export default function AvailabilityV2() {
     setSelectedPreviewId(null);
   };
 
+  async function handleSaveAvailability() {
+    setUiError("");
+
+    const currentUser = getUser();
+    const tutorId = currentUser?.id;
+    if (!tutorId) {
+      setUiError("Missing tutor id. Please log in again.");
+      return;
+    }
+
+    const schedule = buildScheduleRequestFromWeekly(weekly, slotDuration);
+
+    if (!schedule.daySchedules.length) {
+      setUiError("Please add at least one availability block before saving.");
+      return;
+    }
+
+    try {
+      const startDate = schedule.startDate;
+      const endDate = new Date(
+        new Date(startDate).setMonth(new Date(startDate).getMonth() + 4)
+      )
+        .toISOString()
+        .slice(0, 10);
+
+      await replaceTutorSchedule(tutorId, schedule, startDate, endDate);
+
+      navigate(backTo, { replace: true });
+    } catch (e) {
+      setUiError(e?.message ?? "Failed to save availability.");
+    }
+  }
+
   const handleResetGenerated = () => {
     setSelectedPreviewId(null);
-    setRemovedPreviewIds(new Set(allPreviewIds));
+    setUiError("");
+    setWeekly(makeEmptyWeekly());
   };
 
   const handleDeleteGenerated = () => {
     if (!selectedPreviewId) return;
-    setRemovedPreviewIds((prev) => {
-      const next = new Set(prev);
-      next.add(selectedPreviewId);
-      return next;
+
+    const [dayKey, startMinsStr, durStr] = String(selectedPreviewId).split("-");
+    const startMins = Number(startMinsStr);
+    const dur = Number(durStr);
+    const endMins = startMins + dur;
+
+    setWeekly(prev => {
+      const dayBlocks = prev[dayKey] ? [...prev[dayKey]] : [];
+      const nextBlocks = subtractIntervalFromBlocks(dayBlocks, startMins, endMins);
+      return { ...prev, [dayKey]: normalizeBlocks(nextBlocks) };
     });
+
     setSelectedPreviewId(null);
   };
+
+  function toBlockMinutes(block) {
+    return { s: toMinutes(block.start), e: toMinutes(block.end) };
+  }
+
+  function minutesToBlock(s, e) {
+    return { start: minutesTo12h(s), end: minutesTo12h(e) };
+  }
+
+  function subtractIntervalFromBlocks(blocks, cutS, cutE) {
+    const out = [];
+    for (const b of blocks) {
+      const { s, e } = toBlockMinutes(b);
+      if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) continue;
+
+      if (cutE <= s || cutS >= e) {
+        out.push(b);
+        continue;
+      }
+      if (cutS > s) out.push(minutesToBlock(s, cutS));
+      if (cutE < e) out.push(minutesToBlock(cutE, e));
+    }
+    return out;
+  }
+
+  function minutesToHHmm(totalMins) {
+    const hh = String(Math.floor(totalMins / 60)).padStart(2, "0");
+    const mm = String(totalMins % 60).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  function normalizeBlocks(blocks) {
+    const mins = blocks
+      .map(toBlockMinutes)
+      .filter(({ s, e }) => Number.isFinite(s) && Number.isFinite(e) && e > s)
+      .sort((a, b) => a.s - b.s);
+
+    const merged = [];
+    for (const b of mins) {
+      const last = merged[merged.length - 1];
+      if (!last) merged.push({ ...b });
+      else if (b.s <= last.e) last.e = Math.max(last.e, b.e);
+      else merged.push({ ...b });
+    }
+
+    return merged.map(({ s, e }) => minutesToBlock(s, e));
+  }
+
+  function buildScheduleRequestFromWeekly(weekly, slotDuration) {
+    const startDate = new Date().toISOString().slice(0, 10);
+
+    const daySchedules = Object.entries(weekly)
+      .map(([day, blocks]) => {
+        const apiBlocks = (blocks || [])
+          .map(b => {
+            const startM = toMinutes(b.start);
+            const endM = toMinutes(b.end);
+            if (!Number.isFinite(startM) || !Number.isFinite(endM) || endM <= startM) return null;
+            return { start: minutesToHHmm(startM), end: minutesToHHmm(endM) };
+          })
+          .filter(Boolean);
+
+        return apiBlocks.length ? { day, blocks: apiBlocks } : null;
+      })
+    .filter(Boolean);
+
+    return {
+      startDate,
+      slotDuration,
+      recurring: true,
+      daySchedules,
+    };
+  }
 
   return (
     <div className="h-screen bg-[#F4E4D7] overflow-hidden">
@@ -619,9 +725,7 @@ export default function AvailabilityV2() {
                         </div>
                       </div>
                       <div className="px-3 pb-4 space-y-3 min-h-[220px]">
-                        {(previewSlots[c.key] || [])
-                          .filter((s) => !removedPreviewIds.has(s.id))
-                          .map((s) => {
+                        {(previewSlots[c.key] || []).map((s) => {
                             const active = s.id === selectedPreviewId;
                             return (
                               <button
@@ -662,7 +766,7 @@ export default function AvailabilityV2() {
 
               <button
                 type="button"
-                onClick={handleSaveDraft}
+                onClick={handleSaveAvailability}
                 className="h-[56px] w-[260px] rounded-[14px] bg-[#0B70FF] text-white hover:bg-[#0A5ACC] transition
                            flex items-center justify-center text-[22px] font-bold
                            shadow-[0px_10px_20px_rgba(0,0,0,0.18)] hover:brightness-95"

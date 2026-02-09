@@ -15,8 +15,9 @@ export function removeToken() {
 }
 
 export function getUser() {
-  if (import.meta.env.VITE_DISABLE_AUTH === 'true') {
+  if (import.meta.env.VITE_DISABLE_AUTH === "true") {
     return {
+      id: 1, 
       email: "dev-mode@seneca.ca",
       firstName: "Debug",
       lastName: "User",
@@ -44,6 +45,21 @@ export function clearAuth() {
   removeToken();
   removeUser();
   localStorage.removeItem("scholarly_initial_user");
+}
+
+export async function createTutorSchedule(tutorId, schedule) {
+  return authRequest(`/api/availability/tutor/${tutorId}`, {
+    method: "POST",
+    body: JSON.stringify(schedule),
+  });
+}
+
+export async function replaceTutorSchedule(tutorId, schedule, startDate, endDate) {
+  const qs = new URLSearchParams({ startDate, endDate }).toString();
+  return authRequest(`/api/availability/tutor/${tutorId}/schedule?${qs}`, {
+    method: "PUT",
+    body: JSON.stringify(schedule),
+  });
 }
 
 // Base request without auth (for public routes)
@@ -159,6 +175,8 @@ export function onboardUser(payload) {
   });
 }
 
+
+
 export default {
   register,
   login,
@@ -172,4 +190,6 @@ export default {
   setUser,
   removeUser,
   clearAuth,
+  createTutorSchedule,
+  replaceTutorSchedule,
 };
