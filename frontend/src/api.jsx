@@ -17,12 +17,12 @@ export function removeToken() {
 export function getUser() {
   if (import.meta.env.VITE_DISABLE_AUTH === "true") {
     return {
-      id: 1, 
+      id: 1,
       email: "dev-mode@seneca.ca",
       firstName: "Debug",
       lastName: "User",
-      role: "TUTOR", // or "LEARNER" depending on what you want to test
-      isOnboarded: false // Set to false so you can actually see the onboarding pages!
+      role: "LEARNER", // Change to "TUTOR" to test tutor pages
+      isOnboarded: true, // Set to false to test onboarding flow
     };
   }
   try {
@@ -175,7 +175,56 @@ export function onboardUser(payload) {
   });
 }
 
+/**
+ * Search learners by course - for Tutor dashboard (Find Students).
+ * GET /api/learners/search?course=...
+ * @param {string} course - Course code or name (e.g. "DBS311", "Computer Science")
+ * @returns {Promise<Array>} List of LearnerProfileDTO
+ */
+export function searchLearnersByCourse(course) {
+  if (!course || !String(course).trim()) {
+    return Promise.resolve([]);
+  }
+  const params = new URLSearchParams({ course: course.trim() });
+  return authRequest(`/api/learners/search?${params.toString()}`);
+}
 
+/**
+ * Search tutors with filters and pagination - for Learner dashboard (Find Tutors).
+ * GET /api/tutors/search?q=...&courses=...&campus=...&page=0&size=10&sortBy=rating&sortDirection=desc
+ * @param {Object} params
+ * @param {string} [params.q] - Free-text search (courses, program, about)
+ * @param {string[]} [params.courses] - Course codes (tutors offering ANY of these)
+ * @param {string} [params.campus] - Campus filter
+ * @param {string} [params.program] - Program filter
+ * @param {number} [params.minRating] - Minimum rating
+ * @param {string[]} [params.teachingMode] - ONLINE, IN_PERSON
+ * @param {string[]} [params.sessionType] - INDIVIDUAL, GROUP
+ * @param {number} [params.page=0]
+ * @param {number} [params.size=10]
+ * @param {string} [params.sortBy=rating]
+ * @param {string} [params.sortDirection=desc]
+ * @returns {Promise<{ content: Array, totalElements: number, totalPages: number, ... }>} Spring Page of TutorSearchResponseDTO
+ */
+export function searchTutors(params = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.q != null && String(params.q).trim()) searchParams.set("q", params.q.trim());
+  if (params.campus != null && String(params.campus).trim()) searchParams.set("campus", params.campus.trim());
+  if (params.program != null && String(params.program).trim()) searchParams.set("program", params.program.trim());
+  if (params.minRating != null) searchParams.set("minRating", String(params.minRating));
+  if (params.page != null) searchParams.set("page", String(params.page));
+  if (params.size != null) searchParams.set("size", String(params.size));
+  if (params.sortBy != null) searchParams.set("sortBy", params.sortBy);
+  if (params.sortDirection != null) searchParams.set("sortDirection", params.sortDirection);
+  ["courses", "teachingMode", "sessionType"].forEach((key) => {
+    const list = params[key];
+    if (Array.isArray(list) && list.length) {
+      list.forEach((v) => searchParams.append(key, String(v)));
+    }
+  });
+  const query = searchParams.toString();
+  return authRequest(`/api/tutors/search${query ? `?${query}` : ""}`);
+}
 
 export default {
   register,
@@ -192,4 +241,6 @@ export default {
   clearAuth,
   createTutorSchedule,
   replaceTutorSchedule,
+  searchLearnersByCourse,
+  searchTutors,
 };
