@@ -4,7 +4,10 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getUser, replaceTutorSchedule } from "../../api";
-import { loadTutorDraft, saveTutorDraft } from "../../utils/tutorOnboardingDraft";
+import {
+  loadTutorDraft,
+  saveTutorDraft,
+} from "../../utils/tutorOnboardingDraft";
 
 const DAYS = [
   { key: "MONDAY", label: "Monday" },
@@ -32,7 +35,9 @@ function format12h(hour24, minute) {
 
 // Parse "h:mm AM/PM" -> minutes since midnight
 function toMinutes(t) {
-  const m = String(t).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const m = String(t)
+    .trim()
+    .match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (!m) return NaN;
 
   let hh = parseInt(m[1], 10);
@@ -77,7 +82,7 @@ function buildTimeOptions() {
   const out = [];
   for (let h = 8; h <= 21; h++) {
     for (const m of [0, 15, 30, 45]) {
-      if (h === 21 && m > 30) continue; 
+      if (h === 21 && m > 30) continue;
       out.push(format12h(h, m));
     }
   }
@@ -100,8 +105,9 @@ function buildPreviewSlots(weekly, slotDuration) {
     blocks.forEach((b, bi) => {
       const startM = toMinutes(b.start);
       const endM = toMinutes(b.end);
-      
-      if (!Number.isFinite(startM) || !Number.isFinite(endM) || endM <= startM) return;
+
+      if (!Number.isFinite(startM) || !Number.isFinite(endM) || endM <= startM)
+        return;
 
       let cur = startM;
       while (cur + slotDuration <= endM) {
@@ -109,9 +115,9 @@ function buildPreviewSlots(weekly, slotDuration) {
         const label = minutesTo12h(cur);
 
         slots.push({
-           id,
-           label,
-           startMins: cur,
+          id,
+          label,
+          startMins: cur,
         });
         cur += slotDuration;
       }
@@ -135,42 +141,50 @@ export default function AvailabilityV2() {
   const backTo = fromOnboarding ? "/onboarding/tutor" : "/dashboard/tutor";
   const TIME_OPTIONS = useMemo(() => buildTimeOptions(), []);
   const initialDraft = useMemo(() => {
-      const draft = loadTutorDraft();
+    const draft = loadTutorDraft();
     return draft?.availabilityV2 || null;
   }, []);
 
   const [slotDuration, setSlotDuration] = useState(
-    initialDraft?.slotDuration ?? 60
+    initialDraft?.slotDuration ?? 60,
   );
-
+  const [recurring, setRecurring] = useState(initialDraft?.recurring ?? true);
   const [weekly, setWeekly] = useState(() => {
     const fallback = makeEmptyWeekly();
     const saved = initialDraft?.weekly;
-      if (!saved) return fallback;
+    if (!saved) return fallback;
     const merged = { ...fallback };
-      for (const d of Object.keys(fallback)) {
-        if (Array.isArray(saved[d])) merged[d] = saved[d];
-      }
-      return merged;
-    });
+    for (const d of Object.keys(fallback)) {
+      if (Array.isArray(saved[d])) merged[d] = saved[d];
+    }
+    return merged;
+  });
   const [weekOffset, setWeekOffset] = useState(0);
 
   const baseWeekStart = useMemo(() => {
     const d = new Date();
-    const day = d.getDay(); 
-    const diffToMonday = (day + 6) % 7; 
+    const day = d.getDay();
+    const diffToMonday = (day + 6) % 7;
     d.setDate(d.getDate() - diffToMonday);
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
   const WeekColumns = useMemo(() => {
-  const start = new Date(baseWeekStart);
-  start.setDate(start.getDate() + weekOffset * 7);
+    const start = new Date(baseWeekStart);
+    start.setDate(start.getDate() + weekOffset * 7);
 
-  const labels = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
-  const keys = ["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
+    const labels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const keys = [
+      "SUNDAY",
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+    ];
 
-  return keys.map((key, i) => {
+    return keys.map((key, i) => {
       const dt = new Date(start);
       dt.setDate(start.getDate() + i);
       return {
@@ -183,7 +197,7 @@ export default function AvailabilityV2() {
       };
     });
   }, [baseWeekStart, weekOffset]);
-    const monthLabel = useMemo(() => {
+  const monthLabel = useMemo(() => {
     const dt = WeekColumns[0]?.date;
     if (!dt) return "";
     return dt.toLocaleString("en-US", { month: "long", year: "numeric" });
@@ -204,9 +218,9 @@ export default function AvailabilityV2() {
 
   const previewSlots = useMemo(
     () => buildPreviewSlots(weekly, slotDuration),
-    [weekly, slotDuration]
+    [weekly, slotDuration],
   );
- 
+
   const handleAddBlock = (dayKey) => {
     handleSelectDay(dayKey);
     setUiError("");
@@ -227,7 +241,10 @@ export default function AvailabilityV2() {
 
       const candidate = { start, end };
 
-      if (!isValidRange(candidate.start, candidate.end) || overlapsAny(blocks, candidate)) {
+      if (
+        !isValidRange(candidate.start, candidate.end) ||
+        overlapsAny(blocks, candidate)
+      ) {
         candidate.start = "10:00 AM";
         candidate.end = "11:00 AM";
       }
@@ -238,7 +255,7 @@ export default function AvailabilityV2() {
   };
 
   const handleUpdateBlock = (dayKey, index, patch) => {
-   handleSelectDay(dayKey);
+    handleSelectDay(dayKey);
     setUiError("");
 
     setWeekly((prev) => {
@@ -277,9 +294,14 @@ export default function AvailabilityV2() {
     const existing = loadTutorDraft() || {};
     saveTutorDraft({
       ...existing,
-      availabilityV2: { slotDuration, weekly },
+      availabilityV2: { slotDuration, weekly, recurring },
     });
-    navigate(backTo);
+    const schedule = buildScheduleRequestFromWeekly(
+      weekly,
+      slotDuration,
+      recurring,
+    );
+    navigate(backTo, { state: { availability: schedule } });
   };
   const handleSelectDay = (dayKey) => {
     setSelectedDay(dayKey);
@@ -288,7 +310,11 @@ export default function AvailabilityV2() {
 
   async function handleSaveAvailability() {
     setUiError("");
-
+    // during onboarding process, save availability button will create "draft" schedule. Onboarding will handle api request.
+    if (fromOnboarding) {
+      handleSaveDraft();
+      return;
+    }
     const currentUser = getUser();
     const tutorId = currentUser?.id;
     if (!tutorId) {
@@ -296,7 +322,11 @@ export default function AvailabilityV2() {
       return;
     }
 
-    const schedule = buildScheduleRequestFromWeekly(weekly, slotDuration);
+    const schedule = buildScheduleRequestFromWeekly(
+      weekly,
+      slotDuration,
+      recurring,
+    );
 
     if (!schedule.daySchedules.length) {
       setUiError("Please add at least one availability block before saving.");
@@ -306,14 +336,14 @@ export default function AvailabilityV2() {
     try {
       const startDate = schedule.startDate;
       const endDate = new Date(
-        new Date(startDate).setMonth(new Date(startDate).getMonth() + 4)
+        new Date(startDate).setMonth(new Date(startDate).getMonth() + 4),
       )
         .toISOString()
         .slice(0, 10);
 
       await replaceTutorSchedule(tutorId, schedule, startDate, endDate);
 
-      navigate(backTo, { replace: true });
+      navigate(backTo, { replace: true, state: { availability: schedule } });
     } catch (e) {
       setUiError(e?.message ?? "Failed to save availability.");
     }
@@ -333,9 +363,13 @@ export default function AvailabilityV2() {
     const dur = Number(durStr);
     const endMins = startMins + dur;
 
-    setWeekly(prev => {
+    setWeekly((prev) => {
       const dayBlocks = prev[dayKey] ? [...prev[dayKey]] : [];
-      const nextBlocks = subtractIntervalFromBlocks(dayBlocks, startMins, endMins);
+      const nextBlocks = subtractIntervalFromBlocks(
+        dayBlocks,
+        startMins,
+        endMins,
+      );
       return { ...prev, [dayKey]: normalizeBlocks(nextBlocks) };
     });
 
@@ -389,198 +423,235 @@ export default function AvailabilityV2() {
     return merged.map(({ s, e }) => minutesToBlock(s, e));
   }
 
-  function buildScheduleRequestFromWeekly(weekly, slotDuration) {
+  function buildScheduleRequestFromWeekly(weekly, slotDuration, recurring) {
     const startDate = new Date().toISOString().slice(0, 10);
 
     const daySchedules = Object.entries(weekly)
       .map(([day, blocks]) => {
         const apiBlocks = (blocks || [])
-          .map(b => {
+          .map((b) => {
             const startM = toMinutes(b.start);
             const endM = toMinutes(b.end);
-            if (!Number.isFinite(startM) || !Number.isFinite(endM) || endM <= startM) return null;
+            if (
+              !Number.isFinite(startM) ||
+              !Number.isFinite(endM) ||
+              endM <= startM
+            )
+              return null;
             return { start: minutesToHHmm(startM), end: minutesToHHmm(endM) };
           })
           .filter(Boolean);
 
         return apiBlocks.length ? { day, blocks: apiBlocks } : null;
       })
-    .filter(Boolean);
+      .filter(Boolean);
 
     return {
       startDate,
       slotDuration,
-      recurring: true,
+      recurring,
       daySchedules,
     };
   }
 
   return (
-    <div className="h-screen bg-[#F4E4D7] overflow-hidden">
-      <div className="w-full">
-        <div className="flex h-screen">
+    <div className='h-screen bg-[#F4E4D7] overflow-hidden'>
+      <div className='w-full'>
+        <div className='flex h-screen'>
           {/* Sidebar */}
-          <aside className="w-[217px] h-full bg-[#7A0000] text-white px-5 pt-6 pb-6 flex flex-col">
-          {/* Brand */}
-          <div className="flex flex-col items-center shrink-0">
-            <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <img src="/hat.png" alt="logo" className="h-7 w-7" />
-            </div>
-
-            <div className="mt-3 text-center">
-              <div className="text-[20px] font-extrabold leading-none">Scholarly</div>
-              <div className="mt-1 text-[12px] font-semibold opacity-90">
-                Connect. Learn. Grow.
-              </div>
-            </div>
-          </div>
-
-          {/* Nav */}
-          <nav className="mt-11 space-y-2 text-[16px] font-semibold">
-            <SideLink
-              to="/dashboard/tutor"
-              active={location.pathname === "/dashboard/tutor"}
-              icon={<HomeIcon />}
-            >
-              Dashboard
-            </SideLink>
-
-            <SideLink
-              to="/dashboard/sessions"
-              active={location.pathname.includes("/sessions")}
-              icon={<CalendarIcon />}
-            >
-              My Sessions
-            </SideLink>
-
-            <SideLink
-              to="/dashboard/availability-v2"
-              active={location.pathname.includes("/availability")}
-              icon={<ClockIcon />}
-            >
-              Availability
-            </SideLink>
-
-            <SideLink
-              to="/dashboard/find-students"
-              active={location.pathname.includes("/find")}
-              icon={<UsersIcon />}
-            >
-              Find Students
-            </SideLink>
-
-            <SideLink
-              to="/dashboard/messages"
-              active={location.pathname.includes("/messages")}
-              icon={<ChatIcon />}
-            >
-              Messages
-            </SideLink>
-
-            <SideLink
-              to="/dashboard/reviews"
-              active={location.pathname.includes("/reviews")}
-              icon={<StarIcon />}
-            >
-              My Reviews
-            </SideLink>
-          </nav>
-
-        {/* Bottom actions */}
-        <div className="mt-auto pt-6 space-y-2 text-[16px] font-semibold shrink-0">
-          <SideLink
-            to="/dashboard/settings"
-            active={location.pathname.includes("/settings")}
-            icon={<SettingsIcon />}
-          >
-            Settings
-          </SideLink>
-
-          <SideLink to="/logout" active={false} icon={<LogoutIcon />}>
-            Log Out
-          </SideLink>
-        </div>
-        </aside>
-
-
-          {/* Main */}
-          <main className="flex-1 overflow-y-auto px-10 py-6">
-            {/* Top bar */}
-            <div className="flex items-center gap-6">
-              <div className="relative flex-1">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70">
-                  <SearchIcon />
-                </div>
-                <input
-                  className="w-full h-[54px] rounded-full bg-white px-14 text-[18px] font-mono
-                             shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none"
-                  placeholder="Search Student or Courses"
+          <aside className='w-[217px] h-full bg-[#7A0000] text-white px-5 pt-6 pb-6 flex flex-col'>
+            {/* Brand */}
+            <div className='flex flex-col items-center shrink-0'>
+              <div className='h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm'>
+                <img
+                  src='/hat.png'
+                  alt='logo'
+                  className='h-7 w-7'
                 />
               </div>
 
-              <div className="flex items-center gap-6">
-                <button className="relative" type="button">
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500" />
+              <div className='mt-3 text-center'>
+                <div className='text-[20px] font-extrabold leading-none'>
+                  Scholarly
+                </div>
+                <div className='mt-1 text-[12px] font-semibold opacity-90'>
+                  Connect. Learn. Grow.
+                </div>
+              </div>
+            </div>
+
+            {/* Nav */}
+            <nav className='mt-11 space-y-2 text-[16px] font-semibold'>
+              <SideLink
+                to='/dashboard/tutor'
+                active={location.pathname === "/dashboard/tutor"}
+                icon={<HomeIcon />}
+              >
+                Dashboard
+              </SideLink>
+
+              <SideLink
+                to='/dashboard/sessions'
+                active={location.pathname.includes("/sessions")}
+                icon={<CalendarIcon />}
+              >
+                My Sessions
+              </SideLink>
+
+              <SideLink
+                to='/dashboard/availability-v2'
+                active={location.pathname.includes("/availability")}
+                icon={<ClockIcon />}
+              >
+                Availability
+              </SideLink>
+
+              <SideLink
+                to='/dashboard/find-students'
+                active={location.pathname.includes("/find")}
+                icon={<UsersIcon />}
+              >
+                Find Students
+              </SideLink>
+
+              <SideLink
+                to='/dashboard/messages'
+                active={location.pathname.includes("/messages")}
+                icon={<ChatIcon />}
+              >
+                Messages
+              </SideLink>
+
+              <SideLink
+                to='/dashboard/reviews'
+                active={location.pathname.includes("/reviews")}
+                icon={<StarIcon />}
+              >
+                My Reviews
+              </SideLink>
+            </nav>
+
+            {/* Bottom actions */}
+            <div className='mt-auto pt-6 space-y-2 text-[16px] font-semibold shrink-0'>
+              <SideLink
+                to='/dashboard/settings'
+                active={location.pathname.includes("/settings")}
+                icon={<SettingsIcon />}
+              >
+                Settings
+              </SideLink>
+
+              <SideLink
+                to='/logout'
+                active={false}
+                icon={<LogoutIcon />}
+              >
+                Log Out
+              </SideLink>
+            </div>
+          </aside>
+
+          {/* Main */}
+          <main className='flex-1 overflow-y-auto px-10 py-6'>
+            {/* Top bar */}
+            <div className='flex items-center gap-6'>
+              <div className='relative flex-1'>
+                <div className='absolute left-5 top-1/2 -translate-y-1/2 opacity-70'>
+                  <SearchIcon />
+                </div>
+                <input
+                  className='w-full h-[54px] rounded-full bg-white px-14 text-[18px] font-mono
+                             shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none'
+                  placeholder='Search Student or Courses'
+                />
+              </div>
+
+              <div className='flex items-center gap-6'>
+                <button
+                  className='relative'
+                  type='button'
+                >
+                  <span className='absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500' />
                   <BellIcon />
                 </button>
 
-                <div className="h-10 w-10 rounded-full bg-black/20 overflow-hidden">
+                <div className='h-10 w-10 rounded-full bg-black/20 overflow-hidden'>
                   <img
-                    alt="profile"
-                    src="/avatar.png"
-                    className="h-full w-full object-cover"
+                    alt='profile'
+                    src='/avatar.png'
+                    className='h-full w-full object-cover'
                   />
                 </div>
               </div>
             </div>
 
             {/* Title */}
-            <div className="mt-10 font-mono">
-              <h1 className="text-[44px] font-extrabold tracking-tight">
-                Set Your Availability <span className="ml-2 text-[28px] opacity-80">📅</span>
+            <div className='mt-10 font-mono'>
+              <h1 className='text-[44px] font-extrabold tracking-tight'>
+                Set Your Availability{" "}
+                <span className='ml-2 text-[28px] opacity-80'>📅</span>
               </h1>
-              <p className="text-[18px] font-bold text-black/70 -mt-1">
+              <p className='text-[18px] font-bold text-black/70 -mt-1'>
                 Set the times you are available each week.
                 <br />
                 We will automatically create bookable session slots.
               </p>
             </div>
-            
 
             {/* Weekly Availability */}
-            <section className="mt-8 rounded-[22px] bg-white/70 border border-black/10 px-8 py-7">
-              <div className="flex items-center justify-between">
-                <div className="w-full">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[22px] font-semibold">Weekly Availability</div>
+            <section className='mt-8 rounded-[22px] bg-white/70 border border-black/10 px-8 py-7'>
+              <div className='flex items-center justify-between'>
+                <div className='w-full'>
+                  <div className='flex items-center justify-between'>
+                    <div className='text-[22px] font-semibold'>
+                      Weekly Availability
+                    </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="text-[14px] font-semibold text-black/70">Session length:</div>
+                    <div className='flex items-center gap-3'>
+                      <div className='text-[14px] font-semibold text-black/70'>
+                        Session length:
+                      </div>
                       <select
                         value={slotDuration}
-                        onChange={(e) => setSlotDuration(Number(e.target.value))}
-                        className="h-[30px] rounded-full px-4 justify-center bg-[#EAEAEA] shadow-inner outline-none text-[13px] font-bold"
+                        onChange={(e) =>
+                          setSlotDuration(Number(e.target.value))
+                        }
+                        className='h-[30px] rounded-full px-4 justify-center bg-[#EAEAEA] shadow-inner outline-none text-[13px] font-bold'
                       >
                         {SESSION_LENGTHS.map((m) => (
-                          <option key={m} value={m}>
+                          <option
+                            key={m}
+                            value={m}
+                          >
                             {m} min
                           </option>
                         ))}
                       </select>
+                      <span className='text-[14px] font-semibold text-black/70'>
+                        Recurring weekly
+                      </span>
+                      <label className='flex items-center gap-2 cursor-pointer'>
+                        <input
+                          type='checkbox'
+                          checked={recurring}
+                          onChange={(e) => setRecurring(e.target.checked)}
+                          className='h-4 w-4 accent-[#0066CC]'
+                        />
+                      </label>
                     </div>
                   </div>
 
-                  <div className="mt-3 h-[2px] w-full bg-black/20" />
+                  <div className='mt-3 h-[2px] w-full bg-black/20' />
                 </div>
               </div>
 
               {uiError && (
-                <div className="mt-4 rounded-[10px] bg-red-50 border border-red-200 px-3 py-2 text-[12px] font-semibold text-red-700">
+                <div className='mt-4 rounded-[10px] bg-red-50 border border-red-200 px-3 py-2 text-[12px] font-semibold text-red-700'>
                   {uiError}
                 </div>
               )}
 
-              <div className="mt-6 grid grid-cols-3 gap-6">
+              <div className='mt-6 grid grid-cols-3 gap-6'>
                 {DAYS.map((d) => {
                   const blocks = weekly[d.key] || [];
                   const needsScroll = blocks.length > 2;
@@ -588,10 +659,10 @@ export default function AvailabilityV2() {
                   return (
                     <div
                       key={d.key}
-                      className="rounded-[14px] bg-[#BBD9FF] p-4
-                                 shadow-[0px_6px_10px_rgba(0,0,0,0.18)]"
+                      className='rounded-[14px] bg-[#BBD9FF] p-4
+                                 shadow-[0px_6px_10px_rgba(0,0,0,0.18)]'
                     >
-                      <div className="text-[16px] font-bold">{d.label}:</div>
+                      <div className='text-[16px] font-bold'>{d.label}:</div>
 
                       <div
                         className={[
@@ -600,46 +671,63 @@ export default function AvailabilityV2() {
                         ].join(" ")}
                       >
                         {blocks.length === 0 ? (
-                          <div className="text-[14px] text-black/60">No time blocks yet</div>
+                          <div className='text-[14px] text-black/60'>
+                            No time blocks yet
+                          </div>
                         ) : (
                           blocks.map((b, idx) => (
-                            <div key={`${d.key}-${idx}`} className="flex items-center gap-2">
+                            <div
+                              key={`${d.key}-${idx}`}
+                              className='flex items-center gap-2'
+                            >
                               <select
                                 value={b.start}
                                 onChange={(e) =>
-                                  handleUpdateBlock(d.key, idx, { start: e.target.value })
+                                  handleUpdateBlock(d.key, idx, {
+                                    start: e.target.value,
+                                  })
                                 }
-                                className="h-[30px] w-[140px] rounded-full bg-white px-3 text-[14px] text-center font-bold shadow outline-none"
+                                className='h-[30px] w-[140px] rounded-full bg-white px-3 text-[14px] text-center font-bold shadow outline-none'
                               >
                                 {TIME_OPTIONS.map((t) => (
-                                  <option key={`s-${t}`} value={t}>
+                                  <option
+                                    key={`s-${t}`}
+                                    value={t}
+                                  >
                                     {t}
                                   </option>
                                 ))}
                               </select>
 
-                              <div className="text-[16px] font-bold text-black/70">to</div>
+                              <div className='text-[16px] font-bold text-black/70'>
+                                to
+                              </div>
 
                               <select
                                 value={b.end}
                                 onChange={(e) =>
-                                  handleUpdateBlock(d.key, idx, { end: e.target.value })
+                                  handleUpdateBlock(d.key, idx, {
+                                    end: e.target.value,
+                                  })
                                 }
-                                className="h-[30px] w-[140px] rounded-full bg-white px-3 text-[14px] text-center font-bold shadow outline-none"
+                                className='h-[30px] w-[140px] rounded-full bg-white px-3 text-[14px] text-center font-bold shadow outline-none'
                               >
                                 {TIME_OPTIONS.map((t) => (
-                                  <option key={`e-${t}`} value={t}>
+                                  <option
+                                    key={`e-${t}`}
+                                    value={t}
+                                  >
                                     {t}
                                   </option>
                                 ))}
                               </select>
 
                               <button
-                                type="button"
+                                type='button'
                                 onClick={() => handleDeleteBlock(d.key, idx)}
-                                className="ml-auto opacity-70 hover:opacity-100"
-                                aria-label="Delete time block"
-                                title="Delete"
+                                className='ml-auto opacity-70 hover:opacity-100'
+                                aria-label='Delete time block'
+                                title='Delete'
                               >
                                 <TrashIcon />
                               </button>
@@ -649,9 +737,9 @@ export default function AvailabilityV2() {
                       </div>
 
                       <button
-                        type="button"
+                        type='button'
                         onClick={() => handleAddBlock(d.key)}
-                        className="mt-4 w-full text-right text-[14px] font-bold underline underline-offset-4"
+                        className='mt-4 w-full text-right text-[14px] font-bold underline underline-offset-4'
                       >
                         + Add time block
                       </button>
@@ -662,48 +750,76 @@ export default function AvailabilityV2() {
             </section>
 
             {/* Generated Session Slots */}
-                  <section className="mt-10 rounded-[22px] bg-white/70 border border-black/10 px-8 py-7">
-                    <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-[28px] font-mono font-extrabold leading-none">Generated Session Slots</div>
-                      <div className="mt-2 text-[14px] font-mono font-semibold text-black/70">Automatically created from your availability</div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <button 
-                        type="button"
-                        onClick={handleDeleteGenerated}
-                        disabled={!selectedPreviewId}
-                        className={["h-[38px] px-6 rounded-[10px] font-bold shadow",
-                         selectedPreviewId ? "bg-[#C00000] text-white" 
-                                          : "bg-[#C87A7A]/40 text-white/70 cursor-not-allowed"]
-                                          .join(" ")}>
-                                            Delete
-                                            </button>
-                      <button type="button" 
-                              onClick={handleResetGenerated}
-                              className="h-[38px] px-6 rounded-[10px] bg-[#0B2F86] text-white font-bold shadow">
-                                Reset
-                                </button>
-                    </div>
-                    </div>
-                    
-                      {/*Week Navigation*/}
-                      <div className="flex items-center justify-between mb-3 mt-4">
-                        <button type="button" onClick={goPrevWeek} className="text-[14px] font-bold">&lt; Previous Week</button>
-                      <div className="flex flex-col items-center">
-                      <div className="text-[18px] font-bold text-center font-mono text-black/70">{monthLabel}</div>
-                      <div className="text-[14px] text-black/50 font-semibold font-mono text-center">{weekRangeLabel}</div>
-                      </div>
-                      <button type="button" onClick={goNextWeek} className="text-[14px] font-bold">Next Week &gt;</button>
-                      </div>
-                      
-                   
-                    <div className="mt-6 rounded-[14px] bg-white border border-black/10 overflow-hidden">
-                    <div className="grid grid-cols-7">
-                      {WeekColumns.map((c) => (
-                      <div key={c.key} className="border-r border-black/10 last:border-r-0">
-                        <div className="px-4 pt-4 pb-3 text-center">
-                        <button type="button"
+            <section className='mt-10 rounded-[22px] bg-white/70 border border-black/10 px-8 py-7'>
+              <div className='flex items-start justify-between'>
+                <div>
+                  <div className='text-[28px] font-mono font-extrabold leading-none'>
+                    Generated Session Slots
+                  </div>
+                  <div className='mt-2 text-[14px] font-mono font-semibold text-black/70'>
+                    Automatically created from your availability
+                  </div>
+                </div>
+                <div className='flex items-center gap-4'>
+                  <button
+                    type='button'
+                    onClick={handleDeleteGenerated}
+                    disabled={!selectedPreviewId}
+                    className={[
+                      "h-[38px] px-6 rounded-[10px] font-bold shadow",
+                      selectedPreviewId
+                        ? "bg-[#C00000] text-white"
+                        : "bg-[#C87A7A]/40 text-white/70 cursor-not-allowed",
+                    ].join(" ")}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type='button'
+                    onClick={handleResetGenerated}
+                    className='h-[38px] px-6 rounded-[10px] bg-[#0B2F86] text-white font-bold shadow'
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {/*Week Navigation*/}
+              <div className='flex items-center justify-between mb-3 mt-4'>
+                <button
+                  type='button'
+                  onClick={goPrevWeek}
+                  className='text-[14px] font-bold'
+                >
+                  &lt; Previous Week
+                </button>
+                <div className='flex flex-col items-center'>
+                  <div className='text-[18px] font-bold text-center font-mono text-black/70'>
+                    {monthLabel}
+                  </div>
+                  <div className='text-[14px] text-black/50 font-semibold font-mono text-center'>
+                    {weekRangeLabel}
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  onClick={goNextWeek}
+                  className='text-[14px] font-bold'
+                >
+                  Next Week &gt;
+                </button>
+              </div>
+
+              <div className='mt-6 rounded-[14px] bg-white border border-black/10 overflow-hidden'>
+                <div className='grid grid-cols-7'>
+                  {WeekColumns.map((c) => (
+                    <div
+                      key={c.key}
+                      className='border-r border-black/10 last:border-r-0'
+                    >
+                      <div className='px-4 pt-4 pb-3 text-center'>
+                        <button
+                          type='button'
                           //onClick={() => setSelectedDay(c.key)}
                           onClick={() => handleSelectDay(c.key)}
                           className={[
@@ -718,34 +834,36 @@ export default function AvailabilityV2() {
                         <div
                           className={[
                             "mx-auto mt-2 h-9 w-9 rounded-full flex items-center justify-center text-[22px] font-bold",
-                            selectedDay === c.key ? "bg-[#0B2F86] text-white" : "text-black/70",
+                            selectedDay === c.key
+                              ? "bg-[#0B2F86] text-white"
+                              : "text-black/70",
                           ].join(" ")}
                         >
                           {c.dayNum}
                         </div>
                       </div>
-                      <div className="px-3 pb-4 space-y-3 min-h-[220px]">
+                      <div className='px-3 pb-4 space-y-3 min-h-[220px]'>
                         {(previewSlots[c.key] || []).map((s) => {
-                            const active = s.id === selectedPreviewId;
-                            return (
-                              <button
-                                key={s.id}
-                                type="button"
-                                onClick={() => {
-                                  handleSelectDay(c.key);
-                                  setSelectedPreviewId(active ? null : s.id);
-                                }}
-                                className={[
-                                  "w-full rounded-full px-3 py-2 text-center text-[12px] font-extrabold shadow-sm",
-                                  active
-                                    ? "bg-black/20 text-black"
-                                    : "bg-black/10 text-black/70 hover:bg-black/15",
-                                ].join(" ")}
-                              >
-                                {s.label}
-                              </button>
-                            );
-                          })}
+                          const active = s.id === selectedPreviewId;
+                          return (
+                            <button
+                              key={s.id}
+                              type='button'
+                              onClick={() => {
+                                handleSelectDay(c.key);
+                                setSelectedPreviewId(active ? null : s.id);
+                              }}
+                              className={[
+                                "w-full rounded-full px-3 py-2 text-center text-[12px] font-extrabold shadow-sm",
+                                active
+                                  ? "bg-black/20 text-black"
+                                  : "bg-black/10 text-black/70 hover:bg-black/15",
+                              ].join(" ")}
+                            >
+                              {s.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -754,22 +872,22 @@ export default function AvailabilityV2() {
             </section>
 
             {/* Bottom actions */}
-            <div className="mt-10 flex items-center justify-center gap-8 pb-10">
+            <div className='mt-10 flex items-center justify-center gap-8 pb-10'>
               <Link
                 to={backTo}
-                className="h-[56px] w-[210px] rounded-[14px] bg-black/35 text-white/95
+                className='h-[56px] w-[210px] rounded-[14px] bg-black/35 text-white/95
                            flex items-center justify-center text-[22px] font-bold
-                           shadow-[0px_10px_20px_rgba(0,0,0,0.18)] hover:bg-black/40"
+                           shadow-[0px_10px_20px_rgba(0,0,0,0.18)] hover:bg-black/40'
               >
                 Cancel
               </Link>
 
               <button
-                type="button"
+                type='button'
                 onClick={handleSaveAvailability}
-                className="h-[56px] w-[260px] rounded-[14px] bg-[#0B70FF] text-white hover:bg-[#0A5ACC] transition
+                className='h-[56px] w-[260px] rounded-[14px] bg-[#0B70FF] text-white hover:bg-[#0A5ACC] transition
                            flex items-center justify-center text-[22px] font-bold
-                           shadow-[0px_10px_20px_rgba(0,0,0,0.18)] hover:brightness-95"
+                           shadow-[0px_10px_20px_rgba(0,0,0,0.18)] hover:brightness-95'
               >
                 Save Availability
               </button>
@@ -790,32 +908,63 @@ function SideLink({ to, active, icon, children }) {
         active ? "bg-white/15" : "hover:bg-white/10",
       ].join(" ")}
     >
-      <span className="opacity-95">{icon}</span>
+      <span className='opacity-95'>{icon}</span>
       <span>{children}</span>
     </Link>
   );
 }
 
-
 function TrashIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M10 11v7M14 11v7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg
+      width='22'
+      height='22'
+      viewBox='0 0 24 24'
+      fill='none'
+      aria-hidden='true'
+    >
+      <path
+        d='M3 6h18'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+      />
+      <path
+        d='M8 6V4h8v2'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+      />
+      <path
+        d='M6 6l1 16h10l1-16'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinejoin='round'
+      />
+      <path
+        d='M10 11v7M14 11v7'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+      />
     </svg>
   );
 }
 
 function SearchIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width='22'
+      height='22'
+      viewBox='0 0 24 24'
+      fill='none'
+      aria-hidden='true'
+    >
       <path
-        d="M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
     </svg>
   );
@@ -823,25 +972,37 @@ function SearchIcon() {
 
 function BellIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width='24'
+      height='24'
+      viewBox='0 0 24 24'
+      fill='none'
+      aria-hidden='true'
+    >
       <path
-        d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        d="M13.7 21a2 2 0 01-3.4 0"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M13.7 21a2 2 0 01-3.4 0'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
     </svg>
   );
 }
 function IconBase({ children }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width='18'
+      height='18'
+      viewBox='0 0 24 24'
+      fill='none'
+      aria-hidden='true'
+    >
       {children}
     </svg>
   );
@@ -851,10 +1012,10 @@ function HomeIcon() {
   return (
     <IconBase>
       <path
-        d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
+        d='M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinejoin='round'
       />
     </IconBase>
   );
@@ -864,10 +1025,10 @@ function CalendarIcon() {
   return (
     <IconBase>
       <path
-        d="M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
     </IconBase>
   );
@@ -877,48 +1038,46 @@ function ClockIcon() {
   return (
     <IconBase>
       <path
-        d="M12 22a10 10 0 110-20 10 10 0 010 20z"
-        stroke="currentColor"
-        strokeWidth="2"
+        d='M12 22a10 10 0 110-20 10 10 0 010 20z'
+        stroke='currentColor'
+        strokeWidth='2'
       />
       <path
-        d="M12 6v6l4 2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M12 6v6l4 2'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </IconBase>
   );
 }
 
-
-
 function UsersIcon() {
   return (
     <IconBase>
       <path
-        d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        d="M9 11a4 4 0 100-8 4 4 0 000 8z"
-        stroke="currentColor"
-        strokeWidth="2"
+        d='M9 11a4 4 0 100-8 4 4 0 000 8z'
+        stroke='currentColor'
+        strokeWidth='2'
       />
       <path
-        d="M22 21v-2a4 4 0 00-3-3.87"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M22 21v-2a4 4 0 00-3-3.87'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        d="M16 3.13a4 4 0 010 7.75"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M16 3.13a4 4 0 010 7.75'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
     </IconBase>
   );
@@ -928,10 +1087,10 @@ function ChatIcon() {
   return (
     <IconBase>
       <path
-        d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
+        d='M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinejoin='round'
       />
     </IconBase>
   );
@@ -941,10 +1100,10 @@ function StarIcon() {
   return (
     <IconBase>
       <path
-        d="M12 2l3 7 7 .5-5.3 4.6L18.5 21 12 17.2 5.5 21l1.8-6.9L2 9.5 9 9l3-7z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
+        d='M12 2l3 7 7 .5-5.3 4.6L18.5 21 12 17.2 5.5 21l1.8-6.9L2 9.5 9 9l3-7z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinejoin='round'
       />
     </IconBase>
   );
@@ -954,15 +1113,15 @@ function SettingsIcon() {
   return (
     <IconBase>
       <path
-        d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
-        stroke="currentColor"
-        strokeWidth="2"
+        d='M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z'
+        stroke='currentColor'
+        strokeWidth='2'
       />
       <path
-        d="M19.4 15a7.8 7.8 0 000-6l2-1.1-2-3.5-2.3.7a8 8 0 00-5.2-3L11.5 0h-3L8 2a8 8 0 00-5.2 3l-2.3-.7-2 3.5L.5 9a7.8 7.8 0 000 6l-2 1.1 2 3.5 2.3-.7a8 8 0 005.2 3l.5 2h3l.4-2a8 8 0 005.2-3l2.3.7 2-3.5-2-1.1z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
+        d='M19.4 15a7.8 7.8 0 000-6l2-1.1-2-3.5-2.3.7a8 8 0 00-5.2-3L11.5 0h-3L8 2a8 8 0 00-5.2 3l-2.3-.7-2 3.5L.5 9a7.8 7.8 0 000 6l-2 1.1 2 3.5 2.3-.7a8 8 0 005.2 3l.5 2h3l.4-2a8 8 0 005.2-3l2.3.7 2-3.5-2-1.1z'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinejoin='round'
       />
     </IconBase>
   );
@@ -972,25 +1131,24 @@ function LogoutIcon() {
   return (
     <IconBase>
       <path
-        d="M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        d="M15 12H8"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
+        d='M15 12H8'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        d="M18 9l3 3-3 3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d='M18 9l3 3-3 3'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </IconBase>
   );
 }
-
