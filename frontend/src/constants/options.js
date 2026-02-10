@@ -23,13 +23,10 @@ export const COURSES = [
 export const TEACHING_MODES = ["ONLINE", "IN_PERSON"];
 export const SESSION_TYPES = ["INDIVIDUAL", "GROUP"];
 
-/** Human-readable labels for teaching mode (backend uses enum values) */
 export const TEACHING_MODE_LABELS = { ONLINE: "Online", IN_PERSON: "In Person" };
 
-/** Human-readable labels for session type (backend uses enum values) */
 export const SESSION_TYPE_LABELS = { INDIVIDUAL: "One-on-one", GROUP: "Group" };
 
-/** Min rating options for tutor search */
 export const RATING_OPTIONS = [
   { value: "", label: "Any" },
   { value: 3, label: "3+" },
