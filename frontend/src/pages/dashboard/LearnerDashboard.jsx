@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate, NavLink } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { clearAuth, getUser, searchTutors } from "../../api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = getUser();
 
   // Tutor search state (for "Find Tutors" / header search)
@@ -97,46 +98,61 @@ export default function Dashboard() {
   
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
-      <aside style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
-          <span style={styles.graduationCap}>🎓</span>
-          <div>
-            <h2 style={styles.logoText}>Scholarly</h2>
-            <p style={styles.tagline}>Connect. Learn. Grow.</p>
+      {/* Sidebar - same design as AvailabilityV2 */}
+      <aside className="w-[210px] min-h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
+        <div className="flex flex-col items-center">
+          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <img src="/hat.png" alt="logo" className="h-7 w-7" />
+          </div>
+          <div className="mt-3 text-center">
+            <div className="text-[22px] font-extrabold leading-none">Scholarly</div>
+            <div className="mt-1 text-[11px] font-semibold opacity-90">Connect. Learn. Grow.</div>
           </div>
         </div>
-        
-        <nav style={styles.nav}>
-          <NavLink
+        <nav className="mt-11 space-y-2 text-[15px] font-semibold">
+          <Link
             to="/dashboard/learner"
-            style={({ isActive }) => ({ ...styles.navItem, ...(isActive ? styles.navItemActive : {}) })}
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition ${location.pathname === "/dashboard/learner" ? "bg-white/15" : "hover:bg-white/10"}`}
           >
-            <span>🏠</span> Dashboard
-          </NavLink>
-          <a href="#" style={styles.navItem}>
-            <span>📅</span> My Sessions
+            <span className="opacity-95"><HomeIcon /></span>
+            <span>Dashboard</span>
+          </Link>
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><CalendarIcon /></span>
+            <span>My Sessions</span>
           </a>
-          <NavLink
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><ClockIcon /></span>
+            <span>Availability</span>
+          </a>
+          <Link
             to="/dashboard/learner/find-tutors"
-            style={({ isActive }) => ({ ...styles.navItem, ...(isActive ? styles.navItemActive : {}) })}
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/find-tutors") ? "bg-white/15" : "hover:bg-white/10"}`}
           >
-            <span>👤</span> Find Tutors
-          </NavLink>
-          <a href="#" style={styles.navItem}>
-            <span>💬</span> Messages
+            <span className="opacity-95"><UsersIcon /></span>
+            <span>Find Tutors</span>
+          </Link>
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><ChatIcon /></span>
+            <span>Messages</span>
           </a>
-          <a href="#" style={styles.navItem}>
-            <span>⭐</span> My Reviews
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><StarIcon /></span>
+            <span>My Reviews</span>
           </a>
         </nav>
-
-        <div style={styles.sidebarFooter}>
-          <a href="#" style={styles.navItem}>
-            <span>⚙️</span> Settings
+        <div className="mt-auto pt-6 space-y-2 text-[15px] font-semibold">
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><SettingsIcon /></span>
+            <span>Settings</span>
           </a>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            <span>➡️</span> Log Out
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white border-0 bg-transparent cursor-pointer text-[15px] font-semibold w-full text-left"
+          >
+            <span className="opacity-95"><LogoutIcon /></span>
+            <span>Log Out</span>
           </button>
         </div>
       </aside>
@@ -246,12 +262,18 @@ export default function Dashboard() {
           {/* Left Column */}
           <div style={styles.leftColumn}>
             {/* Upcoming Sessions */}
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Upcoming Sessions</h2>
+            <section style={styles.upcomingSection}>
+              <h2 style={styles.upcomingSectionTitle}>Upcoming Sessions</h2>
               <div style={styles.sessionsGrid}>
                 <div style={styles.sessionCard}>
                   <div style={styles.tutorInfo}>
-                    <div style={styles.tutorAvatar}>👨</div>
+                    <div style={styles.tutorAvatar}>
+                      <img
+                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face"
+                        alt="Brad Pitt"
+                        style={styles.avatarImage}
+                      />
+                    </div>
                     <div>
                       <h3 style={styles.tutorName}>Brad Pitt - DSA456</h3>
                       <p style={styles.sessionDate}>Oct 25, 2025</p>
@@ -267,7 +289,13 @@ export default function Dashboard() {
 
                 <div style={styles.sessionCard}>
                   <div style={styles.tutorInfo}>
-                    <div style={styles.tutorAvatar}>👩</div>
+                    <div style={styles.tutorAvatar}>
+                      <img
+                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face"
+                        alt="Jennifer Aniston"
+                        style={styles.avatarImage}
+                      />
+                    </div>
                     <div>
                       <h3 style={styles.tutorName}>Jennifer Aniston - PRJ566</h3>
                       <p style={styles.sessionDate}>Nov 2, 2025</p>
@@ -288,7 +316,13 @@ export default function Dashboard() {
               <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
               <div style={styles.recommendedGrid}>
                 <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>👨</div>
+                  <div style={styles.recommendedAvatar}>
+                    <img
+                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
+                      alt="Tom Holland"
+                      style={styles.avatarImage}
+                    />
+                  </div>
                   <h3 style={styles.recommendedName}>Tom Holland</h3>
                   <p style={styles.recommendedExpertise}>Expert in APD545</p>
                   <div style={styles.rating}>
@@ -298,7 +332,13 @@ export default function Dashboard() {
                 </div>
 
                 <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>👨</div>
+                  <div style={styles.recommendedAvatar}>
+                    <img
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
+                      alt="Chris Evans"
+                      style={styles.avatarImage}
+                    />
+                  </div>
                   <h3 style={styles.recommendedName}>Chris Evans</h3>
                   <p style={styles.recommendedExpertise}>Expert in IPC144</p>
                   <div style={styles.rating}>
@@ -308,7 +348,13 @@ export default function Dashboard() {
                 </div>
 
                 <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>👩</div>
+                  <div style={styles.recommendedAvatar}>
+                    <img
+                      src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"
+                      alt="Margot Robbie"
+                      style={styles.avatarImage}
+                    />
+                  </div>
                   <h3 style={styles.recommendedName}>Margot Robbie</h3>
                   <p style={styles.recommendedExpertise}>Expert in PRJ666</p>
                   <div style={styles.rating}>
@@ -324,32 +370,30 @@ export default function Dashboard() {
 
           {/* Right Column */}
           <div style={styles.rightColumn}>
-            {/* Progress/Analytics */}
+            {/* Progress/Analytics - vertical bar chart */}
             <section style={styles.section}>
               <h2 style={styles.sectionTitle}>Progress / Analytics</h2>
               <div style={styles.progressContainer}>
                 <div style={styles.progressItem}>
-                  <div style={styles.progressBar}>
-                    <div style={{...styles.progressFill, height: '60%'}}></div>
-                  </div>
-                  <p style={styles.progressLabel}>Sessions Completed</p>
                   <p style={styles.progressValue}>10</p>
-                </div>
-
-                <div style={styles.progressItem}>
-                  <div style={styles.progressBar}>
-                    <div style={{...styles.progressFill, height: '70%'}}></div>
+                  <div style={styles.progressBarWrap}>
+                    <div style={{ ...styles.progressBarVertical, ...styles.progressBar1 }} />
                   </div>
-                  <p style={styles.progressLabel}>Hours Studied</p>
+                  <p style={styles.progressLabel}>Sessions<br />Completed</p>
+                </div>
+                <div style={styles.progressItem}>
                   <p style={styles.progressValue}>12</p>
-                </div>
-
-                <div style={styles.progressItem}>
-                  <div style={styles.progressBar}>
-                    <div style={{...styles.progressFill, height: '50%'}}></div>
+                  <div style={styles.progressBarWrap}>
+                    <div style={{ ...styles.progressBarVertical, ...styles.progressBar2 }} />
                   </div>
-                  <p style={styles.progressLabel}>Average Rating</p>
+                  <p style={styles.progressLabel}>Hours<br />Studied</p>
+                </div>
+                <div style={styles.progressItem}>
                   <p style={styles.progressValue}>04</p>
+                  <div style={styles.progressBarWrap}>
+                    <div style={{ ...styles.progressBarVertical, ...styles.progressBar3 }} />
+                  </div>
+                  <p style={styles.progressLabel}>Average<br />Rating</p>
                 </div>
               </div>
             </section>
@@ -426,6 +470,15 @@ const styles = {
     gap: '10px',
     marginBottom: '40px',
   },
+  logoCircle: {
+    width: '50px',
+    height: '50px',
+    borderRadius: '50%',
+    backgroundColor: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   graduationCap: {
     fontSize: '24px',
   },
@@ -482,7 +535,7 @@ const styles = {
   },
   mainContent: {
     flex: 1,
-    backgroundColor: '#F5F5DC',
+    backgroundColor: '#F8E9DC',
     padding: '30px',
   },
   header: {
@@ -500,10 +553,12 @@ const styles = {
   },
   searchInput: {
     width: '100%',
-    padding: '12px 40px 12px 15px',
+    padding: '12px 44px 12px 16px',
     borderRadius: '25px',
-    border: '1px solid #ddd',
+    border: '1px solid #d1d5db',
     fontSize: '14px',
+    backgroundColor: 'white',
+    outline: 'none',
   },
   searchIcon: {
     position: 'absolute',
@@ -530,11 +585,12 @@ const styles = {
     borderRadius: '50%',
   },
   profilePic: {
-    width: '40px',
-    height: '40px',
+    width: '42px',
+    height: '42px',
     borderRadius: '50%',
     overflow: 'hidden',
-    border: '2px solid #ddd',
+    border: '2px solid #e5e7eb',
+    backgroundColor: 'white',
   },
   profileImage: {
     width: '100%',
@@ -545,13 +601,14 @@ const styles = {
     marginBottom: '30px',
   },
   welcomeTitle: {
-    fontSize: '32px',
+    fontSize: '28px',
     fontWeight: 'bold',
-    margin: '0 0 10px 0',
+    margin: '0 0 8px 0',
+    color: '#111827',
   },
   welcomeSubtitle: {
     fontSize: '16px',
-    color: '#666',
+    color: '#6b7280',
     margin: 0,
   },
   searchErrorSection: {
@@ -608,13 +665,26 @@ const styles = {
   section: {
     backgroundColor: 'white',
     padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
   },
   sectionTitle: {
     fontSize: '20px',
     fontWeight: 'bold',
     marginBottom: '20px',
+    color: '#111827',
+  },
+  upcomingSection: {
+    backgroundColor: 'white',
+    padding: '20px',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  },
+  upcomingSectionTitle: {
+    fontSize: '20px',
+    fontWeight: 'bold',
+    marginBottom: '16px',
+    color: '#000',
   },
   sessionsGrid: {
     display: 'grid',
@@ -622,34 +692,38 @@ const styles = {
     gap: '15px',
   },
   sessionCard: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
+    border: 'none',
+    borderRadius: '12px',
     padding: '15px',
+    backgroundColor: '#D9D9D9',
   },
   tutorInfo: {
     display: 'flex',
-    gap: '10px',
-    marginBottom: '15px',
+    gap: '12px',
+    marginBottom: '12px',
   },
   tutorAvatar: {
     width: '50px',
     height: '50px',
     borderRadius: '50%',
-    backgroundColor: '#ddd',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '24px',
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
   tutorName: {
     margin: 0,
-    fontSize: '16px',
-    fontWeight: 'bold',
+    fontSize: '15px',
+    fontWeight: 'normal',
+    color: '#000',
   },
   sessionDate: {
-    margin: '5px 0 0 0',
+    margin: '4px 0 0 0',
     fontSize: '14px',
-    color: '#666',
+    color: '#000',
   },
   sessionActions: {
     display: 'flex',
@@ -657,29 +731,40 @@ const styles = {
     alignItems: 'center',
   },
   onlineBadge: {
-    padding: '5px 10px',
-    backgroundColor: '#90EE90',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '12px',
-    cursor: 'pointer',
-  },
-  inPersonBadge: {
-    padding: '5px 10px',
-    backgroundColor: '#90EE90',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '12px',
-    cursor: 'pointer',
-  },
-  joinButton: {
-    padding: '8px 20px',
-    backgroundColor: '#DC143C',
+    padding: '6px 14px',
+    backgroundColor: '#59855C',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '8px',
+    fontSize: '13px',
     cursor: 'pointer',
-    fontWeight: 'bold',
+    fontWeight: '500',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  inPersonBadge: {
+    padding: '6px 14px',
+    backgroundColor: '#59855C',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  joinButton: {
+    padding: '6px 16px',
+    backgroundColor: '#F4685A',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontSize: '13px',
   },
   recommendedGrid: {
     display: 'flex',
@@ -687,21 +772,18 @@ const styles = {
     position: 'relative',
   },
   recommendedCard: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
     padding: '15px',
     textAlign: 'center',
     minWidth: '180px',
+    backgroundColor: '#C8D1FF',
   },
   recommendedAvatar: {
     width: '60px',
     height: '60px',
     borderRadius: '50%',
-    backgroundColor: '#ddd',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '30px',
+    overflow: 'hidden',
     margin: '0 auto 10px',
   },
   recommendedName: {
@@ -723,9 +805,11 @@ const styles = {
     backgroundColor: '#DC143C',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '8px',
     cursor: 'pointer',
     width: '100%',
+    fontSize: '14px',
+    fontWeight: '500',
   },
   arrowButton: {
     position: 'absolute',
@@ -736,41 +820,62 @@ const styles = {
     border: 'none',
     fontSize: '24px',
     cursor: 'pointer',
+    color: '#374151',
   },
   progressContainer: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    gap: '16px',
+    height: '200px',
+    paddingBottom: '8px',
   },
   progressItem: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '5px',
+    alignItems: 'center',
+    flex: 1,
+    gap: '6px',
   },
-  progressBar: {
+  progressBarWrap: {
     width: '100%',
-    height: '100px',
-    backgroundColor: '#E0E0E0',
-    borderRadius: '5px',
-    position: 'relative',
-    overflow: 'hidden',
+    maxWidth: '60px',
+    height: '140px',
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
-  progressFill: {
-    position: 'absolute',
-    bottom: 0,
+  progressBarVertical: {
     width: '100%',
-    backgroundColor: '#4CAF50',
-    borderRadius: '5px',
+    minHeight: '20px',
+    borderRadius: '4px',
+  },
+  progressBar1: {
+    height: '83%',
+    backgroundColor: '#A66B6C',
+  },
+  progressBar2: {
+    height: '100%',
+    backgroundColor: '#8C2727',
+  },
+  progressBar3: {
+    height: '33%',
+    backgroundColor: '#CDB3AD',
   },
   progressLabel: {
-    margin: '10px 0 0 0',
-    fontSize: '14px',
-    color: '#666',
+    margin: 0,
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    lineHeight: 1.3,
   },
   progressValue: {
     margin: 0,
-    fontSize: '24px',
+    fontSize: '16px',
     fontWeight: 'bold',
+    color: '#000',
   },
   calendarHeader: {
     display: 'flex',
@@ -823,3 +928,31 @@ const styles = {
     borderRadius: '50%',
   },
 };
+
+function IconBase({ children }) {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">{children}</svg>;
+}
+function HomeIcon() {
+  return <IconBase><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function CalendarIcon() {
+  return <IconBase><path d="M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></IconBase>;
+}
+function ClockIcon() {
+  return <IconBase><path d="M12 22a10 10 0 110-20 10 10 0 010 20z" stroke="currentColor" strokeWidth="2" /><path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
+}
+function UsersIcon() {
+  return <IconBase><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M9 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" /><path d="M22 21v-2a4 4 0 00-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></IconBase>;
+}
+function ChatIcon() {
+  return <IconBase><path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function StarIcon() {
+  return <IconBase><path d="M12 2l3 7 7 .5-5.3 4.6L18.5 21 12 17.2 5.5 21l1.8-6.9L2 9.5 9 9l3-7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function SettingsIcon() {
+  return <IconBase><path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" stroke="currentColor" strokeWidth="2" /><path d="M19.4 15a7.8 7.8 0 000-6l2-1.1-2-3.5-2.3.7a8 8 0 00-5.2-3L11.5 0h-3L8 2a8 8 0 00-5.2 3l-2.3-.7-2 3.5L.5 9a7.8 7.8 0 000 6l-2 1.1 2 3.5 2.3-.7a8 8 0 005.2 3l.5 2h3l.4-2a8 8 0 005.2-3l2.3.7 2-3.5-2-1.1z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function LogoutIcon() {
+  return <IconBase><path d="M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18 9l3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
+}

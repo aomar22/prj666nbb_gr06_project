@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { clearAuth, getUser, searchLearnersByCourse } from "../../api";
-import { NavLink } from "react-router-dom";
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = getUser();
 
   // Learner (student) search state - search by course
@@ -93,55 +93,61 @@ export default function TutorDashboard() {
 
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
-      <aside style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
-          <div style={styles.logoCircle}>
-            <span style={styles.graduationCap}>🎓</span>
+      {/* Sidebar - same design as AvailabilityV2 */}
+      <aside className="w-[210px] min-h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
+        <div className="flex flex-col items-center">
+          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <img src="/hat.png" alt="logo" className="h-7 w-7" />
           </div>
-          <div>
-            <h2 style={styles.logoText}>Scholarly</h2>
-            <p style={styles.tagline}>Connect. Learn. Grow.</p>
+          <div className="mt-3 text-center">
+            <div className="text-[22px] font-extrabold leading-none">Scholarly</div>
+            <div className="mt-1 text-[11px] font-semibold opacity-90">Connect. Learn. Grow.</div>
           </div>
         </div>
-        
-        <nav style={styles.nav}>
-          <a href="#" style={{...styles.navItem, ...styles.navItemActive}}>
-            <span>🏠</span> Dashboard
-          </a>
-          <a href="#" style={styles.navItem}>
-            <span>📅</span> My Sessions
-          </a>
-          {/* <a href="#" style={styles.navItem}>
-            <span>📋</span> Availability
-          </a> */}
-          <NavLink
-            to="/dashboard/availability-v2"
-            style={({ isActive }) => ({
-              ...styles.navItem,
-              ...(isActive ? styles.navItemActive : {}),
-            })}
+        <nav className="mt-11 space-y-2 text-[15px] font-semibold">
+          <Link
+            to="/dashboard/tutor"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname === "/dashboard/tutor" ? "bg-white/15" : "hover:bg-white/10"}`}
           >
-            <span>📋</span> Availability
-          </NavLink>
-
-          <a href="#" style={styles.navItem}>
-            <span>👤</span> Find Students
+            <span className="opacity-95"><HomeIcon /></span>
+            <span>Dashboard</span>
+          </Link>
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><CalendarIcon /></span>
+            <span>My Sessions</span>
           </a>
-          <a href="#" style={styles.navItem}>
-            <span>💬</span> Messages
+          <Link
+            to="/dashboard/availability-v2"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/availability") ? "bg-white/15" : "hover:bg-white/10"}`}
+          >
+            <span className="opacity-95"><ClockIcon /></span>
+            <span>Availability</span>
+          </Link>
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><UsersIcon /></span>
+            <span>Find Students</span>
           </a>
-          <a href="#" style={styles.navItem}>
-            <span>⭐</span> My Reviews
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><ChatIcon /></span>
+            <span>Messages</span>
+          </a>
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><StarIcon /></span>
+            <span>My Reviews</span>
           </a>
         </nav>
-
-        <div style={styles.sidebarFooter}>
-          <a href="#" style={styles.navItem}>
-            <span>⚙️</span> Settings
+        <div className="mt-auto pt-6 space-y-2 text-[15px] font-semibold">
+          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+            <span className="opacity-95"><SettingsIcon /></span>
+            <span>Settings</span>
           </a>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            <span>➡️</span> Log Out
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white border-0 bg-transparent cursor-pointer text-[15px] font-semibold w-full text-left"
+          >
+            <span className="opacity-95"><LogoutIcon /></span>
+            <span>Log Out</span>
           </button>
         </div>
       </aside>
@@ -192,7 +198,7 @@ export default function TutorDashboard() {
             Welcome Back, {userName} 👋
           </h1>
           <p style={styles.welcomeSubtitle}>
-            Here's what's happening with your tutoring today.
+            Here's what's happening with your learning today.
           </p>
         </section>
 
@@ -517,7 +523,7 @@ const styles = {
   },
   mainContent: {
     flex: 1,
-    backgroundColor: '#F5F5DC',
+    backgroundColor: '#F8E9DC',
     padding: '30px',
   },
   header: {
@@ -581,16 +587,15 @@ const styles = {
     marginBottom: '30px',
   },
   welcomeTitle: {
-    fontSize: '32px',
+    fontSize: '28px',
     fontWeight: 'bold',
-    margin: '0 0 10px 0',
-    fontFamily: 'monospace',
+    margin: '0 0 8px 0',
+    color: '#111827',
   },
   welcomeSubtitle: {
     fontSize: '16px',
-    color: '#666',
+    color: '#6b7280',
     margin: 0,
-    fontFamily: 'monospace',
   },
   searchErrorSection: {
     marginBottom: '15px',
@@ -687,16 +692,16 @@ const styles = {
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
   reviewsSection: {
-    backgroundColor: '#B8D4E8',
+    backgroundColor: 'white',
     padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
   },
   sectionTitle: {
     fontSize: '20px',
     fontWeight: 'bold',
     marginBottom: '20px',
-    fontFamily: 'monospace',
+    color: '#000',
   },
   sessionsGrid: {
     display: 'grid',
@@ -707,7 +712,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '8px',
     padding: '15px',
-    backgroundColor: 'white',
+    backgroundColor: '#D9D9D9',
   },
   studentInfo: {
     display: 'flex',
@@ -742,7 +747,7 @@ const styles = {
   },
   onlineBadge: {
     padding: '8px 15px',
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#59855C',
     border: 'none',
     borderRadius: '20px',
     fontSize: '12px',
@@ -751,7 +756,7 @@ const styles = {
   },
   inPersonBadge: {
     padding: '8px 15px',
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#59855C',
     border: 'none',
     borderRadius: '20px',
     fontSize: '12px',
@@ -773,8 +778,8 @@ const styles = {
     gap: '15px',
   },
   reviewCard: {
-    backgroundColor: '#F5F0E6',
-    borderRadius: '10px',
+    backgroundColor: '#C8D1FF',
+    borderRadius: '12px',
     padding: '15px',
     display: 'flex',
     justifyContent: 'space-between',
@@ -800,10 +805,11 @@ const styles = {
     margin: 0,
     fontSize: '16px',
     fontWeight: 'bold',
+    color: '#000',
   },
   reviewRating: {
     fontSize: '14px',
-    color: '#666',
+    color: '#000',
   },
   starIcon: {
     color: '#FFD700',
@@ -811,19 +817,19 @@ const styles = {
   reviewText: {
     margin: 0,
     fontSize: '14px',
-    color: '#666',
-    fontFamily: 'monospace',
+    color: '#000',
   },
   readMore: {
     color: '#0066CC',
     cursor: 'pointer',
+    textDecoration: 'underline',
   },
   readReviewButton: {
-    padding: '10px 20px',
+    padding: '10px 24px',
     backgroundColor: '#DC143C',
     color: 'white',
     border: 'none',
-    borderRadius: '20px',
+    borderRadius: '24px',
     cursor: 'pointer',
     fontWeight: '500',
     fontSize: '14px',
@@ -939,3 +945,31 @@ const styles = {
     fontWeight: 'bold',
   },
 };
+
+function IconBase({ children }) {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">{children}</svg>;
+}
+function HomeIcon() {
+  return <IconBase><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function CalendarIcon() {
+  return <IconBase><path d="M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></IconBase>;
+}
+function ClockIcon() {
+  return <IconBase><path d="M12 22a10 10 0 110-20 10 10 0 010 20z" stroke="currentColor" strokeWidth="2" /><path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
+}
+function UsersIcon() {
+  return <IconBase><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M9 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" /><path d="M22 21v-2a4 4 0 00-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></IconBase>;
+}
+function ChatIcon() {
+  return <IconBase><path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function StarIcon() {
+  return <IconBase><path d="M12 2l3 7 7 .5-5.3 4.6L18.5 21 12 17.2 5.5 21l1.8-6.9L2 9.5 9 9l3-7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function SettingsIcon() {
+  return <IconBase><path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" stroke="currentColor" strokeWidth="2" /><path d="M19.4 15a7.8 7.8 0 000-6l2-1.1-2-3.5-2.3.7a8 8 0 00-5.2-3L11.5 0h-3L8 2a8 8 0 00-5.2 3l-2.3-.7-2 3.5L.5 9a7.8 7.8 0 000 6l-2 1.1 2 3.5 2.3-.7a8 8 0 005.2 3l.5 2h3l.4-2a8 8 0 005.2-3l2.3.7 2-3.5-2-1.1z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
+}
+function LogoutIcon() {
+  return <IconBase><path d="M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18 9l3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
+}
