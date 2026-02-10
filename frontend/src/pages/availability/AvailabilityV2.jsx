@@ -139,6 +139,8 @@ export default function AvailabilityV2() {
     location.pathname.includes("/onboarding");
 
   const backTo = fromOnboarding ? "/onboarding/tutor" : "/dashboard/tutor";
+  // const isOnboarded = Boolean(user?.isOnboarded);
+
   const TIME_OPTIONS = useMemo(() => buildTimeOptions(), []);
   const initialDraft = useMemo(() => {
     const draft = loadTutorDraft();
@@ -592,7 +594,9 @@ export default function AvailabilityV2() {
                 <span className='ml-2 text-[28px] opacity-80'>📅</span>
               </h1>
               <p className='text-[18px] font-bold text-black/70 -mt-1'>
-                Set the times you are available each week.
+                {recurring
+                  ? "Set the times you are available each week."
+                  : "Set the times for a one-time appointment."}
                 <br />
                 We will automatically create bookable session slots.
               </p>

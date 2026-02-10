@@ -1,10 +1,44 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { clearAuth, getUser } from "../../api";
+import { useNavigate, NavLink } from "react-router-dom";
+import { clearAuth, getUser, searchTutors } from "../../api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const user = getUser();
+
+  // Tutor search state (for "Find Tutors" / header search)
+  const [tutorSearchQuery, setTutorSearchQuery] = useState("");
+  const [tutorSearchResults, setTutorSearchResults] = useState(null);
+  const [tutorSearchLoading, setTutorSearchLoading] = useState(false);
+  const [tutorSearchError, setTutorSearchError] = useState(null);
+
+  const handleTutorSearch = async () => {
+    setTutorSearchError(null);
+    setTutorSearchResults(null);
+    const trimmed = (tutorSearchQuery || "").trim();
+    if (!trimmed) return;
+    setTutorSearchLoading(true);
+    try {
+      const page = await searchTutors({
+        q: trimmed,
+        page: 0,
+        size: 20,
+        sortBy: "rating",
+        sortDirection: "desc",
+      });
+      setTutorSearchResults(page);
+    } catch (err) {
+      const msg = err?.message || "Search failed. Please try again.";
+      const isNetwork = msg === "Failed to fetch" || msg.includes("NetworkError");
+      setTutorSearchError(
+        isNetwork
+          ? "Cannot reach the server. Is the backend running on http://localhost:8080?"
+          : msg
+      );
+    } finally {
+      setTutorSearchLoading(false);
+    }
+  };
   
   // Get user's full name
   const getUserName = () => {
@@ -74,15 +108,21 @@ export default function Dashboard() {
         </div>
         
         <nav style={styles.nav}>
-          <a href="#" style={{...styles.navItem, ...styles.navItemActive}}>
+          <NavLink
+            to="/dashboard/learner"
+            style={({ isActive }) => ({ ...styles.navItem, ...(isActive ? styles.navItemActive : {}) })}
+          >
             <span>🏠</span> Dashboard
-          </a>
+          </NavLink>
           <a href="#" style={styles.navItem}>
             <span>📅</span> My Sessions
           </a>
-          <a href="#" style={styles.navItem}>
+          <NavLink
+            to="/dashboard/learner/find-tutors"
+            style={({ isActive }) => ({ ...styles.navItem, ...(isActive ? styles.navItemActive : {}) })}
+          >
             <span>👤</span> Find Tutors
-          </a>
+          </NavLink>
           <a href="#" style={styles.navItem}>
             <span>💬</span> Messages
           </a>
@@ -106,12 +146,25 @@ export default function Dashboard() {
         {/* Header */}
         <header style={styles.header}>
           <div style={styles.searchBar}>
-            <input 
-              type="text" 
-              placeholder="Search Tutor or Courses" 
+            <input
+              type="text"
+              placeholder="Search Tutor or Courses"
               style={styles.searchInput}
+              value={tutorSearchQuery}
+              onChange={(e) => setTutorSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleTutorSearch()}
+              disabled={tutorSearchLoading}
             />
-            <span style={styles.searchIcon}>🔍</span>
+            <span
+              style={styles.searchIcon}
+              onClick={handleTutorSearch}
+              onKeyDown={(e) => e.key === "Enter" && handleTutorSearch()}
+              role="button"
+              tabIndex={0}
+              aria-label="Search tutors"
+            >
+              🔍
+            </span>
           </div>
           <div style={styles.headerRight}>
             <div style={styles.notification}>
@@ -137,6 +190,56 @@ export default function Dashboard() {
             Here's what's happening with your learning today.
           </p>
         </section>
+
+        {/* Tutor Search Results */}
+        {tutorSearchError && (
+          <section style={styles.searchErrorSection}>
+            <p style={styles.searchErrorText}>{tutorSearchError}</p>
+          </section>
+        )}
+        {tutorSearchLoading && (
+          <section style={styles.searchLoadingSection}>
+            <p style={styles.searchLoadingText}>Searching tutors…</p>
+          </section>
+        )}
+        {tutorSearchResults && !tutorSearchLoading && (
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>
+              Tutor search results
+              {tutorSearchResults.totalElements != null && (
+                <span style={styles.resultCount}> ({tutorSearchResults.totalElements})</span>
+              )}
+            </h2>
+            {(!tutorSearchResults.content || tutorSearchResults.content.length === 0) ? (
+              <p style={styles.noResultsText}>No tutors found. Try a different search.</p>
+            ) : (
+              <div style={styles.tutorSearchGrid}>
+                {tutorSearchResults.content.map((tutor) => (
+                  <div key={tutor.id || tutor.userId} style={styles.recommendedCard}>
+                    <div style={styles.recommendedAvatar}>
+                      {tutor.firstName?.[0] || "👤"}
+                    </div>
+                    <h3 style={styles.recommendedName}>
+                      {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
+                    </h3>
+                    <p style={styles.recommendedExpertise}>
+                      {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
+                        ? tutor.coursesOffered.join(", ")
+                        : tutor.program || "—"}
+                    </p>
+                    {(tutor.rating != null || tutor.reviewCount != null) && (
+                      <div style={styles.rating}>
+                        ⭐ {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
+                        {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
+                      </div>
+                    )}
+                    <button style={styles.bookButton}>Book session</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Content Grid */}
         <div style={styles.contentGrid}>
@@ -450,6 +553,42 @@ const styles = {
     fontSize: '16px',
     color: '#666',
     margin: 0,
+  },
+  searchErrorSection: {
+    marginBottom: '15px',
+    padding: '12px 20px',
+    backgroundColor: '#ffebee',
+    borderRadius: '8px',
+    border: '1px solid #ef9a9a',
+  },
+  searchErrorText: {
+    margin: 0,
+    color: '#c62828',
+    fontSize: '14px',
+  },
+  searchLoadingSection: {
+    marginBottom: '15px',
+    padding: '12px 20px',
+  },
+  searchLoadingText: {
+    margin: 0,
+    color: '#666',
+    fontSize: '14px',
+  },
+  resultCount: {
+    fontWeight: 'normal',
+    color: '#666',
+    fontSize: '16px',
+  },
+  noResultsText: {
+    margin: 0,
+    color: '#666',
+    fontSize: '14px',
+  },
+  tutorSearchGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gap: '15px',
   },
   contentGrid: {
     display: 'grid',

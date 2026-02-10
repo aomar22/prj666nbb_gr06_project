@@ -1,11 +1,39 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { clearAuth, getUser } from "../../api";
+import { clearAuth, getUser, searchLearnersByCourse } from "../../api";
 import { NavLink } from "react-router-dom";
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
   const user = getUser();
+
+  // Learner (student) search state - search by course
+  const [learnerSearchQuery, setLearnerSearchQuery] = useState("");
+  const [learnerSearchResults, setLearnerSearchResults] = useState(null);
+  const [learnerSearchLoading, setLearnerSearchLoading] = useState(false);
+  const [learnerSearchError, setLearnerSearchError] = useState(null);
+
+  const handleLearnerSearch = async () => {
+    setLearnerSearchError(null);
+    setLearnerSearchResults(null);
+    const trimmed = (learnerSearchQuery || "").trim();
+    if (!trimmed) return;
+    setLearnerSearchLoading(true);
+    try {
+      const list = await searchLearnersByCourse(trimmed);
+      setLearnerSearchResults(Array.isArray(list) ? list : []);
+    } catch (err) {
+      const msg = err?.message || "Search failed. Please try again.";
+      const isNetwork = msg === "Failed to fetch" || msg.includes("NetworkError");
+      setLearnerSearchError(
+        isNetwork
+          ? "Cannot reach the server. Is the backend running on http://localhost:8080?"
+          : msg
+      );
+    } finally {
+      setLearnerSearchLoading(false);
+    }
+  };
   
   // Get user's full name
   const getUserName = () => {
@@ -123,12 +151,25 @@ export default function TutorDashboard() {
         {/* Header */}
         <header style={styles.header}>
           <div style={styles.searchBar}>
-            <input 
-              type="text" 
-              placeholder="Search Student or Courses" 
+            <input
+              type="text"
+              placeholder="Search by course (e.g. DBS311, OOP345)"
               style={styles.searchInput}
+              value={learnerSearchQuery}
+              onChange={(e) => setLearnerSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLearnerSearch()}
+              disabled={learnerSearchLoading}
             />
-            <span style={styles.searchIcon}>🔍</span>
+            <span
+              style={styles.searchIcon}
+              onClick={handleLearnerSearch}
+              onKeyDown={(e) => e.key === "Enter" && handleLearnerSearch()}
+              role="button"
+              tabIndex={0}
+              aria-label="Search students by course"
+            >
+              🔍
+            </span>
           </div>
           <div style={styles.headerRight}>
             <div style={styles.notification}>
@@ -154,6 +195,50 @@ export default function TutorDashboard() {
             Here's what's happening with your tutoring today.
           </p>
         </section>
+
+        {/* Learner (Student) Search Results */}
+        {learnerSearchError && (
+          <section style={styles.searchErrorSection}>
+            <p style={styles.searchErrorText}>{learnerSearchError}</p>
+          </section>
+        )}
+        {learnerSearchLoading && (
+          <section style={styles.searchLoadingSection}>
+            <p style={styles.searchLoadingText}>Searching students…</p>
+          </section>
+        )}
+        {learnerSearchResults && !learnerSearchLoading && (
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>
+              Students in course
+              {learnerSearchResults.length >= 0 && (
+                <span style={styles.resultCount}> ({learnerSearchResults.length})</span>
+              )}
+            </h2>
+            {learnerSearchResults.length === 0 ? (
+              <p style={styles.noResultsText}>No students found for this course. Try a different course code.</p>
+            ) : (
+              <div style={styles.learnerSearchGrid}>
+                {learnerSearchResults.map((learner) => (
+                  <div key={learner.id || learner.userId} style={styles.learnerCard}>
+                    <div style={styles.learnerCardAvatar}>
+                      {learner.firstName?.[0] || "👤"}
+                    </div>
+                    <h3 style={styles.learnerCardName}>
+                      {[learner.firstName, learner.lastName].filter(Boolean).join(" ") || "Student"}
+                    </h3>
+                    {(learner.program || learner.campus) && (
+                      <p style={styles.learnerCardMeta}>
+                        {[learner.program, learner.campus].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                    <button style={styles.contactButton}>Contact</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Content Grid */}
         <div style={styles.contentGrid}>
@@ -506,6 +591,79 @@ const styles = {
     color: '#666',
     margin: 0,
     fontFamily: 'monospace',
+  },
+  searchErrorSection: {
+    marginBottom: '15px',
+    padding: '12px 20px',
+    backgroundColor: '#ffebee',
+    borderRadius: '8px',
+    border: '1px solid #ef9a9a',
+  },
+  searchErrorText: {
+    margin: 0,
+    color: '#c62828',
+    fontSize: '14px',
+  },
+  searchLoadingSection: {
+    marginBottom: '15px',
+    padding: '12px 20px',
+  },
+  searchLoadingText: {
+    margin: 0,
+    color: '#666',
+    fontSize: '14px',
+  },
+  resultCount: {
+    fontWeight: 'normal',
+    color: '#666',
+    fontSize: '16px',
+  },
+  noResultsText: {
+    margin: 0,
+    color: '#666',
+    fontSize: '14px',
+  },
+  learnerSearchGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '15px',
+  },
+  learnerCard: {
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    padding: '15px',
+    backgroundColor: 'white',
+    textAlign: 'center',
+  },
+  learnerCardAvatar: {
+    width: '50px',
+    height: '50px',
+    borderRadius: '50%',
+    backgroundColor: '#E0E0E0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    margin: '0 auto 10px',
+  },
+  learnerCardName: {
+    margin: '0 0 6px 0',
+    fontSize: '16px',
+    fontWeight: 'bold',
+  },
+  learnerCardMeta: {
+    margin: '0 0 12px 0',
+    fontSize: '13px',
+    color: '#666',
+  },
+  contactButton: {
+    padding: '8px 20px',
+    backgroundColor: '#8B1A1A',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '14px',
   },
   contentGrid: {
     display: 'grid',

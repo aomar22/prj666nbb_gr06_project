@@ -12,10 +12,12 @@ import { getToken, getUser } from "../api";
 export default function ProtectedRoute({ children, requireOnboarded = false, requiredRole = null }) {
   const token = getToken();
   const user = getUser();
+  const authDisabled = import.meta.env.VITE_DISABLE_AUTH === "true";
 
   // No token or incomplete user data - redirect to login
   // Must have both a valid token AND user object with email to be considered authenticated
-  if (!token || !user || !user.email) {
+  // Exception: when auth is disabled (dev mode), allow access if user object exists
+  if (!authDisabled && (!token || !user || !user.email)) {
     //try to detect an initial (unverified) user from localStorage
     let initialUser = null;
     try {
