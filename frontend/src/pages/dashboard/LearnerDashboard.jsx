@@ -59,43 +59,7 @@ export default function Dashboard() {
     clearAuth();
     navigate("/login", { replace: true });
   };
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-
-  const generateCalendar = () => {
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let d = 1; d <= daysInMonth; d++) days.push(d);
-    return days;
-  };
-
-  const calendarDays = generateCalendar();
-  const highlightedDates = [20, 24, 25]; 
-  const activeDate = 25; 
-
-  const goPrevMonth = () => {
-    setCurrentMonth((m) => {
-      if (m === 0) {
-        setCurrentYear((y) => y - 1);
-        return 11;
-      }
-      return m - 1;
-    });
-  };
-
-  const goNextMonth = () => {
-    setCurrentMonth((m) => {
-      if (m === 11) {
-        setCurrentYear((y) => y + 1);
-        return 0;
-      }
-      return m + 1;
-    });
-  };
-  
   return (
     <div style={styles.container}>
       {/* Sidebar - same design as AvailabilityV2 */}
@@ -257,14 +221,12 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* Content Grid */}
+        {/* Content: Upcoming Sessions and Recommended Tutors stacked, full width */}
         <div style={styles.contentGrid}>
-          {/* Left Column */}
-          <div style={styles.leftColumn}>
-            {/* Upcoming Sessions */}
-            <section style={styles.upcomingSection}>
-              <h2 style={styles.upcomingSectionTitle}>Upcoming Sessions</h2>
-              <div style={styles.sessionsGrid}>
+          {/* Upcoming Sessions */}
+          <section style={styles.upcomingSection}>
+            <h2 style={styles.upcomingSectionTitle}>Upcoming Sessions</h2>
+            <div style={styles.sessionsGrid}>
                 <div style={styles.sessionCard}>
                   <div style={styles.tutorInfo}>
                     <div style={styles.tutorAvatar}>
@@ -308,13 +270,35 @@ export default function Dashboard() {
                     <button style={styles.joinButton}>Join</button>
                   </div>
                 </div>
-              </div>
-            </section>
 
-            {/* Recommended Tutors */}
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
-              <div style={styles.recommendedGrid}>
+                <div style={styles.sessionCard}>
+                  <div style={styles.tutorInfo}>
+                    <div style={styles.tutorAvatar}>
+                      <img
+                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
+                        alt="Tom Holland"
+                        style={styles.avatarImage}
+                      />
+                    </div>
+                    <div>
+                      <h3 style={styles.tutorName}>Tom Holland - APD545</h3>
+                      <p style={styles.sessionDate}>Nov 10, 2025</p>
+                    </div>
+                  </div>
+                  <div style={styles.sessionActions}>
+                    <button style={styles.onlineBadge}>
+                      📍 Online
+                    </button>
+                    <button style={styles.joinButton}>Join</button>
+                  </div>
+                </div>
+              </div>
+          </section>
+
+          {/* Recommended Tutors */}
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
+            <div style={styles.recommendedGrid}>
                 <div style={styles.recommendedCard}>
                   <div style={styles.recommendedAvatar}>
                     <img
@@ -363,84 +347,57 @@ export default function Dashboard() {
                   <button style={styles.bookButton}>Book session</button>
                 </div>
 
+                <div style={styles.recommendedCard}>
+                  <div style={styles.recommendedAvatar}>
+                    <img
+                      src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face"
+                      alt="James Wilson"
+                      style={styles.avatarImage}
+                    />
+                  </div>
+                  <h3 style={styles.recommendedName}>James Wilson</h3>
+                  <p style={styles.recommendedExpertise}>Expert in OOP345</p>
+                  <div style={styles.rating}>
+                    <span>⭐</span> 4.8
+                  </div>
+                  <button style={styles.bookButton}>Book session</button>
+                </div>
+
+                <div style={styles.recommendedCard}>
+                  <div style={styles.recommendedAvatar}>
+                    <img
+                      src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face"
+                      alt="Sarah Chen"
+                      style={styles.avatarImage}
+                    />
+                  </div>
+                  <h3 style={styles.recommendedName}>Sarah Chen</h3>
+                  <p style={styles.recommendedExpertise}>Expert in DBS311</p>
+                  <div style={styles.rating}>
+                    <span>⭐</span> 4.7
+                  </div>
+                  <button style={styles.bookButton}>Book session</button>
+                </div>
+
+                <div style={styles.recommendedCard}>
+                  <div style={styles.recommendedAvatar}>
+                    <img
+                      src="https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face"
+                      alt="Emma Davis"
+                      style={styles.avatarImage}
+                    />
+                  </div>
+                  <h3 style={styles.recommendedName}>Emma Davis</h3>
+                  <p style={styles.recommendedExpertise}>Expert in WEB222</p>
+                  <div style={styles.rating}>
+                    <span>⭐</span> 4.6
+                  </div>
+                  <button style={styles.bookButton}>Book session</button>
+                </div>
+
                 <button style={styles.arrowButton}>→</button>
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column */}
-          <div style={styles.rightColumn}>
-            {/* Progress/Analytics - vertical bar chart */}
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Progress / Analytics</h2>
-              <div style={styles.progressContainer}>
-                <div style={styles.progressItem}>
-                  <p style={styles.progressValue}>10</p>
-                  <div style={styles.progressBarWrap}>
-                    <div style={{ ...styles.progressBarVertical, ...styles.progressBar1 }} />
-                  </div>
-                  <p style={styles.progressLabel}>Sessions<br />Completed</p>
-                </div>
-                <div style={styles.progressItem}>
-                  <p style={styles.progressValue}>12</p>
-                  <div style={styles.progressBarWrap}>
-                    <div style={{ ...styles.progressBarVertical, ...styles.progressBar2 }} />
-                  </div>
-                  <p style={styles.progressLabel}>Hours<br />Studied</p>
-                </div>
-                <div style={styles.progressItem}>
-                  <p style={styles.progressValue}>04</p>
-                  <div style={styles.progressBarWrap}>
-                    <div style={{ ...styles.progressBarVertical, ...styles.progressBar3 }} />
-                  </div>
-                  <p style={styles.progressLabel}>Average<br />Rating</p>
-                </div>
-              </div>
-            </section>
-
-            {/* Calendar */}
-            <section style={styles.section}>
-              <div style={styles.calendarHeader}>
-                <h3 style={styles.calendarTitle}>
-                  {new Date(currentYear, currentMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}
-                </h3>
-                <div style={styles.calendarNavButtons}>
-                  <button style={styles.calendarNavBtn} onClick={goPrevMonth}>‹</button>
-                  <button style={styles.calendarNavBtn} onClick={goNextMonth}>›</button>
-                </div>
-              </div>
-              <div style={styles.calendarWeekdays}>
-                <span>SUN</span>
-                <span>MON</span>
-                <span>TUE</span>
-                <span>WED</span>
-                <span>THU</span>
-                <span>FRI</span>
-                <span>SAT</span>
-              </div>
-              <div style={styles.calendarGrid}>
-                {calendarDays.map((day, index) => {
-                  if (day === null) {
-                    return <div key={index} style={styles.calendarDay}></div>;
-                  }
-                  const isHighlighted = highlightedDates.includes(day);
-                  const isActive = day === activeDate;
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        ...styles.calendarDay,
-                        ...(isHighlighted && styles.calendarDayHighlighted),
-                        ...(isActive && styles.calendarDayActive)
-                      }}
-                    >
-                      {day}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -599,17 +556,25 @@ const styles = {
   },
   welcomeSection: {
     marginBottom: '30px',
+    padding: '28px 32px',
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
   welcomeTitle: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    margin: '0 0 8px 0',
-    color: '#111827',
+    fontSize: '44px',
+    fontWeight: 800,
+    margin: '0 0 4px 0',
+    color: '#000000',
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    letterSpacing: '-0.025em',
+    lineHeight: 1.2,
   },
   welcomeSubtitle: {
-    fontSize: '16px',
-    color: '#6b7280',
+    fontSize: '18px',
+    fontWeight: 700,
+    color: 'rgba(0,0,0,0.7)',
     margin: 0,
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    lineHeight: 1.4,
   },
   searchErrorSection: {
     marginBottom: '15px',
@@ -648,25 +613,17 @@ const styles = {
     gap: '15px',
   },
   contentGrid: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
-    gap: '30px',
-  },
-  leftColumn: {
     display: 'flex',
     flexDirection: 'column',
     gap: '30px',
-  },
-  rightColumn: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '30px',
+    width: '100%',
   },
   section: {
     backgroundColor: 'white',
     padding: '20px',
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    width: '100%',
   },
   sectionTitle: {
     fontSize: '20px',
@@ -679,6 +636,7 @@ const styles = {
     padding: '20px',
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    width: '100%',
   },
   upcomingSectionTitle: {
     fontSize: '20px',
@@ -688,14 +646,16 @@ const styles = {
   },
   sessionsGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: '1fr 1fr 1fr',
     gap: '15px',
+    width: '100%',
   },
   sessionCard: {
     border: 'none',
     borderRadius: '12px',
-    padding: '15px',
+    padding: '12px',
     backgroundColor: '#D9D9D9',
+    minWidth: 0,
   },
   tutorInfo: {
     display: 'flex',
@@ -770,6 +730,7 @@ const styles = {
     display: 'flex',
     gap: '15px',
     position: 'relative',
+    width: '100%',
   },
   recommendedCard: {
     border: '1px solid #e5e7eb',

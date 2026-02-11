@@ -54,43 +54,6 @@ export default function TutorDashboard() {
     navigate("/login", { replace: true });
   };
 
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-
-  const generateCalendar = () => {
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let d = 1; d <= daysInMonth; d++) days.push(d);
-    return days;
-  };
-
-  const calendarDays = generateCalendar();
-  const highlightedDates = [20, 25]; 
-  const activeDate = 25; 
-
-  const goPrevMonth = () => {
-    setCurrentMonth((m) => {
-      if (m === 0) {
-        setCurrentYear((y) => y - 1);
-        return 11;
-      }
-      return m - 1;
-    });
-  };
-
-  const goNextMonth = () => {
-    setCurrentMonth((m) => {
-      if (m === 11) {
-        setCurrentYear((y) => y + 1);
-        return 0;
-      }
-      return m + 1;
-    });
-  };
-
   return (
     <div style={styles.container}>
       {/* Sidebar - same design as AvailabilityV2 */}
@@ -198,7 +161,7 @@ export default function TutorDashboard() {
             Welcome Back, {userName} 👋
           </h1>
           <p style={styles.welcomeSubtitle}>
-            Here's what's happening with your learning today.
+            Here's what's happening with your tutoring today.
           </p>
         </section>
 
@@ -246,14 +209,12 @@ export default function TutorDashboard() {
           </section>
         )}
 
-        {/* Content Grid */}
+        {/* Content: Upcoming Sessions and My Reviews stacked, full width */}
         <div style={styles.contentGrid}>
-          {/* Left Column */}
-          <div style={styles.leftColumn}>
-            {/* Upcoming Sessions */}
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Upcoming Sessions</h2>
-              <div style={styles.sessionsGrid}>
+          {/* Upcoming Sessions */}
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Upcoming Sessions</h2>
+            <div style={styles.sessionsGrid}>
                 <div style={styles.sessionCard}>
                   <div style={styles.studentInfo}>
                     <div style={styles.studentAvatar}>
@@ -297,13 +258,35 @@ export default function TutorDashboard() {
                     <button style={styles.joinButton}>Join</button>
                   </div>
                 </div>
-              </div>
-            </section>
 
-            {/* My Reviews */}
-            <section style={styles.reviewsSection}>
-              <h2 style={styles.sectionTitle}>My Reviews</h2>
-              <div style={styles.reviewsList}>
+                <div style={styles.sessionCard}>
+                  <div style={styles.studentInfo}>
+                    <div style={styles.studentAvatar}>
+                      <img 
+                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
+                        alt="Ryan Reynolds" 
+                        style={styles.avatarImage}
+                      />
+                    </div>
+                    <div>
+                      <h3 style={styles.studentName}>Ryan Reynolds - DSA456</h3>
+                      <p style={styles.sessionDate}>Nov 20, 2025</p>
+                    </div>
+                  </div>
+                  <div style={styles.sessionActions}>
+                    <button style={styles.onlineBadge}>
+                      📍 Online
+                    </button>
+                    <button style={styles.joinButton}>Join</button>
+                  </div>
+                </div>
+              </div>
+          </section>
+
+          {/* My Reviews */}
+          <section style={styles.reviewsSection}>
+            <h2 style={styles.sectionTitle}>My Reviews</h2>
+            <div style={styles.reviewsList}>
                 <div style={styles.reviewCard}>
                   <div style={styles.reviewerInfo}>
                     <div style={styles.reviewerAvatar}>
@@ -348,87 +331,7 @@ export default function TutorDashboard() {
                   <button style={styles.readReviewButton}>Read Review</button>
                 </div>
               </div>
-            </section>
-          </div>
-
-          {/* Right Column */}
-          <div style={styles.rightColumn}>
-            {/* Performance per week */}
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Performance per week</h2>
-              <div style={styles.performanceContainer}>
-                <div style={styles.performanceItem}>
-                  <div style={styles.performanceBar}>
-                    <div style={{...styles.performanceFill, height: '60%'}}>
-                      <span style={styles.performanceNumber}>10</span>
-                    </div>
-                  </div>
-                  <p style={styles.performanceLabel}>Sessions<br/>Completed</p>
-                </div>
-
-                <div style={styles.performanceItem}>
-                  <div style={styles.performanceBar}>
-                    <div style={{...styles.performanceFill, height: '75%'}}>
-                      <span style={styles.performanceNumber}>12</span>
-                    </div>
-                  </div>
-                  <p style={styles.performanceLabel}>Hours<br/>Tutored</p>
-                </div>
-
-                <div style={styles.performanceItem}>
-                  <div style={styles.performanceBar}>
-                    <div style={{...styles.performanceFillLight, height: '45%'}}>
-                      <span style={styles.performanceNumber}>04</span>
-                    </div>
-                  </div>
-                  <p style={styles.performanceLabel}>Average<br/>Rating</p>
-                </div>
-              </div>
-            </section>
-
-            {/* Calendar */}
-            <section style={styles.section}>
-              <div style={styles.calendarHeader}>
-                <h3 style={styles.calendarTitle}>
-                  {new Date(currentYear, currentMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}
-                </h3>
-                <div style={styles.calendarNavButtons}>
-                  <button style={styles.calendarNavBtn} onClick={goPrevMonth}>‹</button>
-                  <button style={styles.calendarNavBtn} onClick={goNextMonth}>›</button>
-                </div>
-              </div>
-              <div style={styles.calendarWeekdays}>
-                <span>SUN</span>
-                <span>MON</span>
-                <span>TUE</span>
-                <span>WED</span>
-                <span>THU</span>
-                <span>FRI</span>
-                <span>SAT</span>
-              </div>
-              <div style={styles.calendarGrid}>
-                {calendarDays.map((day, index) => {
-                  if (day === null) {
-                    return <div key={index} style={styles.calendarDay}></div>;
-                  }
-                  const isHighlighted = highlightedDates.includes(day);
-                  const isActive = day === activeDate;
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        ...styles.calendarDay,
-                        ...(isHighlighted && styles.calendarDayHighlighted),
-                        ...(isActive && styles.calendarDayActive)
-                      }}
-                    >
-                      {day}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
+          </section>
         </div>
       </main>
     </div>
@@ -585,17 +488,25 @@ const styles = {
   },
   welcomeSection: {
     marginBottom: '30px',
+    padding: '28px 32px',
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
   welcomeTitle: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    margin: '0 0 8px 0',
-    color: '#111827',
+    fontSize: '44px',
+    fontWeight: 800,
+    margin: '0 0 4px 0',
+    color: '#000000',
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    letterSpacing: '-0.025em',
+    lineHeight: 1.2,
   },
   welcomeSubtitle: {
-    fontSize: '16px',
-    color: '#6b7280',
+    fontSize: '18px',
+    fontWeight: 700,
+    color: 'rgba(0,0,0,0.7)',
     margin: 0,
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    lineHeight: 1.4,
   },
   searchErrorSection: {
     marginBottom: '15px',
@@ -671,31 +582,24 @@ const styles = {
     fontSize: '14px',
   },
   contentGrid: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
-    gap: '30px',
-  },
-  leftColumn: {
     display: 'flex',
     flexDirection: 'column',
     gap: '30px',
-  },
-  rightColumn: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '30px',
+    width: '100%',
   },
   section: {
     backgroundColor: 'white',
     padding: '20px',
     borderRadius: '10px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    width: '100%',
   },
   reviewsSection: {
     backgroundColor: 'white',
     padding: '20px',
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    width: '100%',
   },
   sectionTitle: {
     fontSize: '20px',
@@ -705,13 +609,15 @@ const styles = {
   },
   sessionsGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: '1fr 1fr 1fr',
     gap: '15px',
+    width: '100%',
   },
   sessionCard: {
     border: '1px solid #ddd',
     borderRadius: '8px',
-    padding: '15px',
+    minWidth: 0,
+    padding: '12px',
     backgroundColor: '#D9D9D9',
   },
   studentInfo: {
@@ -776,6 +682,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '15px',
+    width: '100%',
   },
   reviewCard: {
     backgroundColor: '#C8D1FF',
