@@ -155,138 +155,205 @@ export default function FindTutors() {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content - white area matching design */}
       <main style={styles.mainContent}>
-        <h1 style={styles.pageTitle}>Search Tutor or Courses</h1>
+        <div style={styles.contentCard}>
+          <h1 style={styles.pageTitle}>Search Tutor or Courses</h1>
 
-        {/* Search Bar */}
-        <div style={styles.searchRow}>
-          <input
-            type="text"
-            placeholder="Search"
-            style={styles.searchInput}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          />
-          <span style={styles.searchIcon}>🔍</span>
-        </div>
-
-        {/* Filters */}
-        <h3 style={styles.filtersHeading}>Filters:</h3>
-        {appliedFilters.length > 0 && (
-          <div style={styles.appliedFilters}>
-            {appliedFilters.map((f) => (
-              <span key={f.key} style={styles.filterTag}>
-                {f.label}
-                <button
-                  type="button"
-                  style={styles.filterTagRemove}
-                  onClick={f.onRemove}
-                  aria-label={`Remove ${f.label}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-        <div style={styles.filtersGrid}>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Program / Major</label>
-            <select
-              style={styles.select}
-              value={program}
-              onChange={(e) => setProgram(e.target.value)}
-            >
-              <option value="">Select program</option>
-              {PROGRAMS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Campus</label>
-            <select style={styles.select} value={campus} onChange={(e) => setCampus(e.target.value)}>
-              <option value="">Select campus</option>
-              {CAMPUSES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Course</label>
-            <select style={styles.select} value={course} onChange={(e) => setCourse(e.target.value)}>
-              <option value="">Select course</option>
-              {COURSES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Tutor Rating</label>
-            <select
-              style={styles.select}
-              value={minRating}
-              onChange={(e) => setMinRating(e.target.value)}
-            >
-              {RATING_OPTIONS.map((r) => (
-                <option key={r.value || "any"} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Session Type</label>
-            <select
-              style={styles.select}
-              value={sessionType}
-              onChange={(e) => setSessionType(e.target.value)}
-            >
-              <option value="">Select session type</option>
-              {SESSION_TYPES.map((s) => (
-                <option key={s} value={s}>
-                  {SESSION_TYPE_LABELS[s] || s}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Teaching Mode</label>
-            <select
-              style={styles.select}
-              value={teachingMode}
-              onChange={(e) => setTeachingMode(e.target.value)}
-            >
-              <option value="">Select teaching mode</option>
-              {TEACHING_MODES.map((m) => (
-                <option key={m} value={m}>
-                  {TEACHING_MODE_LABELS[m] || m}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Availability</label>
+          {/* Search Bar */}
+          <div style={styles.searchRow}>
             <input
-              type="date"
-              style={styles.dateInput}
-              value={availabilityDate}
-              onChange={(e) => setAvailabilityDate(e.target.value)}
+              type="text"
+              placeholder="Search"
+              style={styles.searchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
+            <span style={styles.searchIcon}>🔍</span>
           </div>
-        </div>
-        <div style={styles.searchButtonRow}>
-          <button style={styles.searchButton} onClick={handleSearch} disabled={loading}>
-            {loading ? "Searching…" : "Search"}
-          </button>
+
+          {/* Filters */}
+          <h3 style={styles.filtersHeading}>Filters:</h3>
+          {appliedFilters.length > 0 && (
+            <div style={styles.appliedFilters}>
+              {appliedFilters.map((f) => (
+                <span key={f.key} style={styles.filterTag}>
+                  {f.label}
+                  <button
+                    type="button"
+                    style={styles.filterTagRemove}
+                    onClick={f.onRemove}
+                    aria-label={`Remove ${f.label}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div style={styles.filtersGrid}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Program / major</label>
+              <div
+                style={styles.selectWrapper}
+                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
+              >
+                <select
+                  style={styles.select}
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                >
+                  <option value="">Select program</option>
+                  {PROGRAMS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Campus</label>
+              <div
+                style={styles.selectWrapper}
+                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
+              >
+                <select style={styles.select} value={campus} onChange={(e) => setCampus(e.target.value)}>
+                  <option value="">Select campus</option>
+                  {CAMPUSES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Course</label>
+              <div
+                style={styles.selectWrapper}
+                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
+              >
+                <select style={styles.select} value={course} onChange={(e) => setCourse(e.target.value)}>
+                  <option value="">Select course</option>
+                  {COURSES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Tutor Rating</label>
+              <div
+                style={styles.selectWrapper}
+                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
+              >
+                <select
+                  style={styles.select}
+                  value={minRating}
+                  onChange={(e) => setMinRating(e.target.value)}
+                >
+                  {RATING_OPTIONS.map((r) => (
+                    <option key={r.value || "any"} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Session Type</label>
+              <div
+                style={styles.selectWrapper}
+                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
+              >
+                <select
+                  style={styles.select}
+                  value={sessionType}
+                  onChange={(e) => setSessionType(e.target.value)}
+                >
+                  <option value="">Select session type</option>
+                  {SESSION_TYPES.map((s) => (
+                    <option key={s} value={s}>
+                      {SESSION_TYPE_LABELS[s] || s}
+                    </option>
+                  ))}
+                </select>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Teaching Mode</label>
+              <div
+                style={styles.selectWrapper}
+                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
+              >
+                <select
+                  style={styles.select}
+                  value={teachingMode}
+                  onChange={(e) => setTeachingMode(e.target.value)}
+                >
+                  <option value="">Select teaching mode</option>
+                  {TEACHING_MODES.map((m) => (
+                    <option key={m} value={m}>
+                      {TEACHING_MODE_LABELS[m] || m}
+                    </option>
+                  ))}
+                </select>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div style={styles.filterGroupAvailability}>
+              <label style={styles.filterLabel}>Availability</label>
+              <div style={styles.dateInputWrap}>
+                <input
+                  type="date"
+                  style={styles.dateInput}
+                  value={availabilityDate}
+                  onChange={(e) => setAvailabilityDate(e.target.value)}
+                />
+                <div style={styles.dateCalendarBtn}>
+                  <span style={styles.calendarIcon}>📅</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={styles.searchButtonRow}>
+            <button style={styles.searchButton} onClick={handleSearch} disabled={loading}>
+              {loading ? "Searching…" : "Search"}
+            </button>
+          </div>
         </div>
 
         {/* Error */}
@@ -399,28 +466,70 @@ const styles = {
     fontFamily: "inherit",
     textAlign: "left",
   },
-  mainContent: { flex: 1, backgroundColor: "#F5F5DC", padding: "30px" },
-  pageTitle: { fontSize: "28px", fontWeight: "bold", margin: "0 0 20px 0" },
-  searchRow: { position: "relative", maxWidth: "500px", marginBottom: "24px" },
+  mainContent: {
+    flex: 1,
+    backgroundColor: "#F8E9DC",
+    padding: "32px",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  contentCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    padding: "40px 48px 48px",
+    maxWidth: "900px",
+    margin: "0 auto",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  },
+  pageTitle: {
+    fontSize: "32px",
+    fontWeight: "bold",
+    margin: "0 0 24px 0",
+    color: "#000000",
+    textAlign: "center",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  searchRow: {
+    position: "relative",
+    width: "100%",
+    marginBottom: "28px",
+  },
   searchInput: {
     width: "100%",
-    padding: "12px 40px 12px 15px",
-    borderRadius: "25px",
-    border: "1px solid #ddd",
-    fontSize: "14px",
+    height: "48px",
+    padding: "0 48px 0 18px",
+    borderRadius: "12px",
+    border: "1px solid #e0e0e0",
+    fontSize: "16px",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+    outline: "none",
   },
-  searchIcon: { position: "absolute", right: "15px", top: "50%", transform: "translateY(-50%)" },
-  filtersHeading: { fontSize: "16px", fontWeight: "600", margin: "0 0 12px 0" },
-  appliedFilters: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" },
+  searchIcon: {
+    position: "absolute",
+    right: "18px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    fontSize: "18px",
+    pointerEvents: "none",
+  },
+  filtersHeading: {
+    fontSize: "18px",
+    fontWeight: "bold",
+    margin: "0 0 14px 0",
+    color: "#000000",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  appliedFilters: { display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px" },
   filterTag: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
-    padding: "6px 12px",
-    backgroundColor: "#8B4513",
+    gap: "8px",
+    padding: "8px 14px",
+    backgroundColor: "#7A0000",
     color: "white",
-    borderRadius: "20px",
+    borderRadius: "24px",
     fontSize: "14px",
+    fontWeight: "500",
   },
   filterTagRemove: {
     background: "none",
@@ -429,42 +538,134 @@ const styles = {
     cursor: "pointer",
     fontSize: "18px",
     lineHeight: 1,
+    padding: "0 0 0 4px",
   },
   filtersGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "16px",
-    marginBottom: "24px",
+    gap: "20px 24px",
+    marginBottom: "32px",
   },
-  filterGroup: { display: "flex", flexDirection: "column", gap: "6px" },
-  filterLabel: { fontSize: "14px", fontWeight: "500", color: "#333" },
-  select: {
-    padding: "10px 12px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    fontSize: "14px",
-    backgroundColor: "white",
+  filterGroup: { display: "flex", flexDirection: "column", gap: "8px" },
+  filterGroupAvailability: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    gridColumn: "1 / -1",
   },
-  dateInput: {
-    padding: "10px 12px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    fontSize: "14px",
+  filterLabel: {
+    fontSize: "15px",
+    fontWeight: "bold",
+    color: "#000000",
+    fontFamily: "Arial, Helvetica, sans-serif",
+    marginBottom: "2px",
   },
-  searchButtonRow: { marginBottom: "24px" },
-  searchButton: {
-    padding: "12px 32px",
-    backgroundColor: "#DC143C",
-    color: "white",
-    border: "none",
-    borderRadius: "25px",
-    fontSize: "16px",
-    fontWeight: "600",
+  selectWrapper: {
+    display: "flex",
+    alignItems: "stretch",
+    position: "relative",
+    minHeight: "48px",
+    borderRadius: "24px",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)",
+    overflow: "hidden",
     cursor: "pointer",
   },
-  errorBox: { padding: "12px 20px", backgroundColor: "#ffebee", borderRadius: "8px", marginBottom: "20px" },
+  select: {
+    flex: 1,
+    minWidth: 0,
+    height: "48px",
+    padding: "0 52px 0 18px",
+    border: "none",
+    borderRadius: "24px",
+    fontSize: "15px",
+    backgroundColor: "transparent",
+    outline: "none",
+    cursor: "pointer",
+    appearance: "none",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  selectChevronBtn: {
+    position: "absolute",
+    right: "6px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
+  },
+  chevronSvg: { display: "block" },
+  dateInputWrap: {
+    position: "relative",
+    width: "100%",
+    minHeight: "48px",
+    borderRadius: "24px",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)",
+    overflow: "hidden",
+  },
+  dateInput: {
+    width: "100%",
+    height: "48px",
+    padding: "0 52px 0 18px",
+    border: "none",
+    borderRadius: "24px",
+    fontSize: "15px",
+    backgroundColor: "transparent",
+    outline: "none",
+    cursor: "pointer",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  dateCalendarBtn: {
+    position: "absolute",
+    right: "6px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
+  },
+  calendarIcon: {
+    fontSize: "16px",
+    lineHeight: 1,
+  },
+  searchButtonRow: { display: "flex", justifyContent: "center", marginBottom: "0" },
+  searchButton: {
+    padding: "16px 56px",
+    backgroundColor: "#C00000",
+    color: "white",
+    border: "none",
+    borderRadius: "12px",
+    fontSize: "18px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(192,0,0,0.35)",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  errorBox: {
+    padding: "12px 20px",
+    backgroundColor: "#ffebee",
+    borderRadius: "8px",
+    marginTop: "24px",
+    marginBottom: "20px",
+    maxWidth: "900px",
+    marginLeft: "auto",
+    marginRight: "auto",
+  },
   errorText: { margin: 0, color: "#c62828", fontSize: "14px" },
-  resultsSection: { marginTop: "24px" },
+  resultsSection: { marginTop: "28px", maxWidth: "900px", marginLeft: "auto", marginRight: "auto" },
   resultsTitle: { fontSize: "20px", fontWeight: "bold", marginBottom: "16px" },
   resultCount: { fontWeight: "normal", color: "#666", fontSize: "16px" },
   noResults: { margin: 0, color: "#666", fontSize: "14px" },
