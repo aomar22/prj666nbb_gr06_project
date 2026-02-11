@@ -473,7 +473,7 @@ const styles = {
     fontFamily: "Arial, Helvetica, sans-serif",
   },
   contentCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
     borderRadius: "12px",
     padding: "40px 48px 48px",
     maxWidth: "900px",
