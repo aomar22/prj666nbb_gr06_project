@@ -209,8 +209,11 @@ export function searchLearnersByCourse(course) {
 export function searchTutors(params = {}) {
   const searchParams = new URLSearchParams();
   if (params.q != null && String(params.q).trim()) searchParams.set("q", params.q.trim());
-  if (params.campus != null && String(params.campus).trim()) searchParams.set("campus", params.campus.trim());
-  if (params.program != null && String(params.program).trim()) searchParams.set("program", params.program.trim());
+  ["campus", "program"].forEach((key) => {
+    const val = params[key];
+    if (Array.isArray(val) && val.length) val.forEach((v) => searchParams.append(key, String(v)));
+    else if (val != null && String(val).trim()) searchParams.set(key, String(val).trim());
+  });
   if (params.minRating != null) searchParams.set("minRating", String(params.minRating));
   if (params.page != null) searchParams.set("page", String(params.page));
   if (params.size != null) searchParams.set("size", String(params.size));

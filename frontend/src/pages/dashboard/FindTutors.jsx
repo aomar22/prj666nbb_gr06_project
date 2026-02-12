@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { clearAuth, getUser, searchTutors } from "../../api";
 import {
@@ -17,15 +17,17 @@ export default function FindTutors() {
   const location = useLocation();
   const user = getUser();
 
-  // Search state
+  // Search state - all filters support multiple selection
   const [searchQuery, setSearchQuery] = useState("");
-  const [program, setProgram] = useState("");
-  const [course, setCourse] = useState("");
-  const [campus, setCampus] = useState("");
-  const [minRating, setMinRating] = useState("");
-  const [sessionType, setSessionType] = useState("");
-  const [teachingMode, setTeachingMode] = useState("");
-  const [availabilityDate, setAvailabilityDate] = useState(""); 
+  const [selectedPrograms, setSelectedPrograms] = useState([]);
+  const [selectedCourses, setSelectedCourses] = useState([]);
+  const [selectedCampuses, setSelectedCampuses] = useState([]);
+  const [selectedRatings, setSelectedRatings] = useState([]);
+  const [selectedSessionTypes, setSelectedSessionTypes] = useState([]);
+  const [selectedTeachingModes, setSelectedTeachingModes] = useState([]);
+  const [availabilityDate, setAvailabilityDate] = useState("");
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const dropdownRef = useRef(null);
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,22 +35,37 @@ export default function FindTutors() {
 
   // Applied filters shown as removable tags
   const appliedFilters = [];
-  if (campus) appliedFilters.push({ key: "campus", label: `Campus: ${campus}`, onRemove: () => setCampus("") });
-  if (program) appliedFilters.push({ key: "program", label: `Program: ${program}`, onRemove: () => setProgram("") });
-  if (course) appliedFilters.push({ key: "course", label: `Course: ${course}`, onRemove: () => setCourse("") });
-  if (minRating) appliedFilters.push({ key: "rating", label: `Rating: ${minRating}+`, onRemove: () => setMinRating("") });
-  if (sessionType)
+  selectedCampuses.forEach((c) =>
+    appliedFilters.push({ key: `campus-${c}`, label: `Campus: ${c}`, onRemove: () => setSelectedCampuses((prev) => prev.filter((x) => x !== c)) })
+  );
+  selectedPrograms.forEach((p) =>
+    appliedFilters.push({ key: `program-${p}`, label: `Program: ${p}`, onRemove: () => setSelectedPrograms((prev) => prev.filter((x) => x !== p)) })
+  );
+  selectedCourses.forEach((c) =>
+    appliedFilters.push({ key: `course-${c}`, label: `Course: ${c}`, onRemove: () => setSelectedCourses((prev) => prev.filter((x) => x !== c)) })
+  );
+  selectedRatings.forEach((r) => {
+    const opt = RATING_OPTIONS.find((o) => o.value === r);
     appliedFilters.push({
-      key: "sessionType",
-      label: `Session Type: ${SESSION_TYPE_LABELS[sessionType] || sessionType}`,
-      onRemove: () => setSessionType(""),
+      key: `rating-${r}`,
+      label: `Rating: ${opt?.label ?? r}+`,
+      onRemove: () => setSelectedRatings((prev) => prev.filter((x) => x !== r)),
     });
-  if (teachingMode)
+  });
+  selectedSessionTypes.forEach((s) =>
     appliedFilters.push({
-      key: "teachingMode",
-      label: `Teaching Mode: ${TEACHING_MODE_LABELS[teachingMode] || teachingMode}`,
-      onRemove: () => setTeachingMode(""),
-    });
+      key: `sessionType-${s}`,
+      label: `Session: ${SESSION_TYPE_LABELS[s] || s}`,
+      onRemove: () => setSelectedSessionTypes((prev) => prev.filter((x) => x !== s)),
+    })
+  );
+  selectedTeachingModes.forEach((m) =>
+    appliedFilters.push({
+      key: `teachingMode-${m}`,
+      label: `Mode: ${TEACHING_MODE_LABELS[m] || m}`,
+      onRemove: () => setSelectedTeachingModes((prev) => prev.filter((x) => x !== m)),
+    })
+  );
 
   const handleSearch = async () => {
     setError(null);
@@ -62,12 +79,12 @@ export default function FindTutors() {
         sortDirection: "desc",
       };
       if (searchQuery?.trim()) params.q = searchQuery.trim();
-      if (campus) params.campus = campus;
-      if (program) params.program = program;
-      if (course) params.courses = [course];
-      if (minRating) params.minRating = parseFloat(minRating);
-      if (sessionType) params.sessionType = [sessionType];
-      if (teachingMode) params.teachingMode = [teachingMode];
+      if (selectedCampuses.length) params.campus = selectedCampuses;
+      if (selectedPrograms.length) params.program = selectedPrograms;
+      if (selectedCourses.length) params.courses = selectedCourses;
+      if (selectedRatings.length) params.minRating = Math.min(...selectedRatings);
+      if (selectedSessionTypes.length) params.sessionType = selectedSessionTypes;
+      if (selectedTeachingModes.length) params.teachingMode = selectedTeachingModes;
 
       const page = await searchTutors(params);
       setResults(page);
@@ -93,6 +110,25 @@ export default function FindTutors() {
     clearAuth();
     navigate("/login", { replace: true });
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    }
+    if (openDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [openDropdown]);
+
+  const toggleMulti = (setter, value) => {
+    setter((prev) => (prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]));
+  };
+
+  const ratingOptionsWithValues = RATING_OPTIONS.filter((r) => r.value !== "");
 
   return (
     <div style={styles.container}>
@@ -192,147 +228,210 @@ export default function FindTutors() {
               ))}
             </div>
           )}
-          <div style={styles.filtersGrid}>
-            <div style={styles.filterGroup}>
+          <div style={styles.filtersGrid} ref={dropdownRef}>
+            {/* Program - multi-select */}
+            <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Program / major</label>
-              <div
-                style={styles.selectWrapper}
-                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
-              >
-                <select
-                  style={styles.select}
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                >
-                  <option value="">Select program</option>
+              <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "program" ? null : "program"))}>
+                <div style={styles.courseSelectDisplay}>
+                  {selectedPrograms.length === 0 ? "Select program(s)" : selectedPrograms.join(", ")}
+                </div>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              {openDropdown === "program" && (
+                <div style={styles.courseDropdownPanel}>
                   {PROGRAMS.map((p) => (
-                    <option key={p} value={p}>
+                    <div
+                      key={p}
+                      role="option"
+                      aria-selected={selectedPrograms.includes(p)}
+                      style={{
+                        ...styles.courseDropdownOption,
+                        ...(selectedPrograms.includes(p) ? styles.courseDropdownOptionSelected : {}),
+                      }}
+                      onClick={() => toggleMulti(setSelectedPrograms, p)}
+                    >
                       {p}
-                    </option>
+                      {selectedPrograms.includes(p) && <span style={styles.courseDropdownCheck}>✓</span>}
+                    </div>
                   ))}
-                </select>
-                <div style={styles.selectChevronBtn}>
-                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
-                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </div>
-              </div>
+              )}
             </div>
-            <div style={styles.filterGroup}>
+            {/* Campus - multi-select */}
+            <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Campus</label>
-              <div
-                style={styles.selectWrapper}
-                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
-              >
-                <select style={styles.select} value={campus} onChange={(e) => setCampus(e.target.value)}>
-                  <option value="">Select campus</option>
+              <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "campus" ? null : "campus"))}>
+                <div style={styles.courseSelectDisplay}>
+                  {selectedCampuses.length === 0 ? "Select campus(es)" : selectedCampuses.join(", ")}
+                </div>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              {openDropdown === "campus" && (
+                <div style={styles.courseDropdownPanel}>
                   {CAMPUSES.map((c) => (
-                    <option key={c} value={c}>
+                    <div
+                      key={c}
+                      role="option"
+                      aria-selected={selectedCampuses.includes(c)}
+                      style={{
+                        ...styles.courseDropdownOption,
+                        ...(selectedCampuses.includes(c) ? styles.courseDropdownOptionSelected : {}),
+                      }}
+                      onClick={() => toggleMulti(setSelectedCampuses, c)}
+                    >
                       {c}
-                    </option>
+                      {selectedCampuses.includes(c) && <span style={styles.courseDropdownCheck}>✓</span>}
+                    </div>
                   ))}
-                </select>
-                <div style={styles.selectChevronBtn}>
-                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
-                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </div>
-              </div>
+              )}
             </div>
-            <div style={styles.filterGroup}>
+            {/* Course - multi-select */}
+            <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Course</label>
-              <div
-                style={styles.selectWrapper}
-                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
-              >
-                <select style={styles.select} value={course} onChange={(e) => setCourse(e.target.value)}>
-                  <option value="">Select course</option>
+              <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "course" ? null : "course"))}>
+                <div style={styles.courseSelectDisplay}>
+                  {selectedCourses.length === 0 ? "Select course(s)" : selectedCourses.join(", ")}
+                </div>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              {openDropdown === "course" && (
+                <div style={styles.courseDropdownPanel}>
                   {COURSES.map((c) => (
-                    <option key={c} value={c}>
+                    <div
+                      key={c}
+                      role="option"
+                      aria-selected={selectedCourses.includes(c)}
+                      style={{
+                        ...styles.courseDropdownOption,
+                        ...(selectedCourses.includes(c) ? styles.courseDropdownOptionSelected : {}),
+                      }}
+                      onClick={() => toggleMulti(setSelectedCourses, c)}
+                    >
                       {c}
-                    </option>
+                      {selectedCourses.includes(c) && <span style={styles.courseDropdownCheck}>✓</span>}
+                    </div>
                   ))}
-                </select>
-                <div style={styles.selectChevronBtn}>
-                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
-                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </div>
-              </div>
+              )}
             </div>
-            <div style={styles.filterGroup}>
+            {/* Tutor Rating - multi-select */}
+            <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Tutor Rating</label>
-              <div
-                style={styles.selectWrapper}
-                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
-              >
-                <select
-                  style={styles.select}
-                  value={minRating}
-                  onChange={(e) => setMinRating(e.target.value)}
-                >
-                  {RATING_OPTIONS.map((r) => (
-                    <option key={r.value || "any"} value={r.value}>
+              <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "rating" ? null : "rating"))}>
+                <div style={styles.courseSelectDisplay}>
+                  {selectedRatings.length === 0
+                    ? "Select rating(s)"
+                    : selectedRatings.map((r) => RATING_OPTIONS.find((o) => o.value === r)?.label ?? r).join(", ")}
+                </div>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              {openDropdown === "rating" && (
+                <div style={styles.courseDropdownPanel}>
+                  {ratingOptionsWithValues.map((r) => (
+                    <div
+                      key={r.value}
+                      role="option"
+                      aria-selected={selectedRatings.includes(r.value)}
+                      style={{
+                        ...styles.courseDropdownOption,
+                        ...(selectedRatings.includes(r.value) ? styles.courseDropdownOptionSelected : {}),
+                      }}
+                      onClick={() => toggleMulti(setSelectedRatings, r.value)}
+                    >
                       {r.label}
-                    </option>
+                      {selectedRatings.includes(r.value) && <span style={styles.courseDropdownCheck}>✓</span>}
+                    </div>
                   ))}
-                </select>
-                <div style={styles.selectChevronBtn}>
-                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
-                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </div>
-              </div>
+              )}
             </div>
-            <div style={styles.filterGroup}>
+            {/* Session Type - multi-select */}
+            <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Session Type</label>
-              <div
-                style={styles.selectWrapper}
-                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
-              >
-                <select
-                  style={styles.select}
-                  value={sessionType}
-                  onChange={(e) => setSessionType(e.target.value)}
-                >
-                  <option value="">Select session type</option>
+              <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "sessionType" ? null : "sessionType"))}>
+                <div style={styles.courseSelectDisplay}>
+                  {selectedSessionTypes.length === 0
+                    ? "Select session type(s)"
+                    : selectedSessionTypes.map((s) => SESSION_TYPE_LABELS[s] || s).join(", ")}
+                </div>
+                <div style={styles.selectChevronBtn}>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
+                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              {openDropdown === "sessionType" && (
+                <div style={styles.courseDropdownPanel}>
                   {SESSION_TYPES.map((s) => (
-                    <option key={s} value={s}>
+                    <div
+                      key={s}
+                      role="option"
+                      aria-selected={selectedSessionTypes.includes(s)}
+                      style={{
+                        ...styles.courseDropdownOption,
+                        ...(selectedSessionTypes.includes(s) ? styles.courseDropdownOptionSelected : {}),
+                      }}
+                      onClick={() => toggleMulti(setSelectedSessionTypes, s)}
+                    >
                       {SESSION_TYPE_LABELS[s] || s}
-                    </option>
+                      {selectedSessionTypes.includes(s) && <span style={styles.courseDropdownCheck}>✓</span>}
+                    </div>
                   ))}
-                </select>
-                <div style={styles.selectChevronBtn}>
-                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
-                    <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </div>
-              </div>
+              )}
             </div>
-            <div style={styles.filterGroup}>
+            {/* Teaching Mode - multi-select */}
+            <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Teaching Mode</label>
-              <div
-                style={styles.selectWrapper}
-                onClick={(e) => e.target.tagName !== "SELECT" && e.currentTarget.querySelector("select")?.click()}
-              >
-                <select
-                  style={styles.select}
-                  value={teachingMode}
-                  onChange={(e) => setTeachingMode(e.target.value)}
-                >
-                  <option value="">Select teaching mode</option>
-                  {TEACHING_MODES.map((m) => (
-                    <option key={m} value={m}>
-                      {TEACHING_MODE_LABELS[m] || m}
-                    </option>
-                  ))}
-                </select>
+              <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "teachingMode" ? null : "teachingMode"))}>
+                <div style={styles.courseSelectDisplay}>
+                  {selectedTeachingModes.length === 0
+                    ? "Select teaching mode(s)"
+                    : selectedTeachingModes.map((m) => TEACHING_MODE_LABELS[m] || m).join(", ")}
+                </div>
                 <div style={styles.selectChevronBtn}>
                   <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
                     <path d="M1 1L6 6L11 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
+              {openDropdown === "teachingMode" && (
+                <div style={styles.courseDropdownPanel}>
+                  {TEACHING_MODES.map((m) => (
+                    <div
+                      key={m}
+                      role="option"
+                      aria-selected={selectedTeachingModes.includes(m)}
+                      style={{
+                        ...styles.courseDropdownOption,
+                        ...(selectedTeachingModes.includes(m) ? styles.courseDropdownOptionSelected : {}),
+                      }}
+                      onClick={() => toggleMulti(setSelectedTeachingModes, m)}
+                    >
+                      {TEACHING_MODE_LABELS[m] || m}
+                      {selectedTeachingModes.includes(m) && <span style={styles.courseDropdownCheck}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div style={styles.filterGroupAvailability}>
               <label style={styles.filterLabel}>Availability</label>
@@ -548,6 +647,58 @@ const styles = {
     marginBottom: "32px",
   },
   filterGroup: { display: "flex", flexDirection: "column", gap: "8px" },
+  filterGroupCourse: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    position: "relative",
+  },
+  courseDropdownPanel: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    marginTop: "4px",
+    maxHeight: "220px",
+    overflowY: "auto",
+    borderRadius: "12px",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.1)",
+    border: "1px solid #e0e0e0",
+    zIndex: 10,
+  },
+  courseDropdownOption: {
+    padding: "10px 18px",
+    fontSize: "15px",
+    fontFamily: "Arial, Helvetica, sans-serif",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  courseDropdownOptionSelected: {
+    backgroundColor: "rgba(122, 0, 0, 0.1)",
+    fontWeight: "600",
+  },
+  courseDropdownCheck: {
+    color: "#7A0000",
+    fontWeight: "bold",
+  },
+  courseSelectDisplay: {
+    flex: 1,
+    minWidth: 0,
+    height: "48px",
+    padding: "0 52px 0 18px",
+    border: "none",
+    borderRadius: "24px",
+    fontSize: "15px",
+    backgroundColor: "transparent",
+    outline: "none",
+    cursor: "pointer",
+    fontFamily: "Arial, Helvetica, sans-serif",
+    display: "flex",
+    alignItems: "center",
+  },
   filterGroupAvailability: {
     display: "flex",
     flexDirection: "column",
