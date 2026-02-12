@@ -97,7 +97,7 @@ export default function FindTutors() {
   return (
     <div style={styles.container}>
       {/* Sidebar - same design as AvailabilityV2 */}
-      <aside className="w-[210px] min-h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
+      <aside className="fixed left-0 top-0 z-10 w-[210px] h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
         <div className="flex flex-col items-center">
           <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
             <img src="/hat.png" alt="logo" className="h-7 w-7" />
@@ -468,6 +468,7 @@ const styles = {
   },
   mainContent: {
     flex: 1,
+    marginLeft: "210px",
     backgroundColor: "#F8E9DC",
     padding: "32px",
     fontFamily: "Arial, Helvetica, sans-serif",
