@@ -3,8 +3,9 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { clearAuth, getUser, searchTutors } from "../../api";
 import {
   CAMPUSES,
-  COURSES,
   PROGRAMS,
+  COURSES_BY_PROGRAM,
+  ALL_COURSES,
   TEACHING_MODES,
   SESSION_TYPES,
   TEACHING_MODE_LABELS,
@@ -29,7 +30,12 @@ export default function FindTutors() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
-  const [results, setResults] = useState(null);
+  // Courses available for selection: when no program selected, show all; otherwise only courses for selected program(s)
+  const availableCourses =
+    selectedPrograms.length === 0
+      ? ALL_COURSES
+      : [...new Set(selectedPrograms.flatMap((p) => COURSES_BY_PROGRAM[p] ?? []))].sort();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -69,12 +75,11 @@ export default function FindTutors() {
 
   const handleSearch = async () => {
     setError(null);
-    setResults(null);
     setLoading(true);
     try {
       const params = {
         page: 0,
-        size: 20,
+        size: 8,
         sortBy: "rating",
         sortDirection: "desc",
       };
@@ -87,7 +92,9 @@ export default function FindTutors() {
       if (selectedTeachingModes.length) params.teachingMode = selectedTeachingModes;
 
       const page = await searchTutors(params);
-      setResults(page);
+      navigate("/dashboard/learner/find-tutors/results", {
+        state: { searchParams: params, initialResults: page },
+      });
     } catch (err) {
       const msg = err?.message || "Search failed. Please try again.";
       const isNetwork = msg === "Failed to fetch" || msg.includes("NetworkError");
@@ -123,6 +130,16 @@ export default function FindTutors() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [openDropdown]);
+
+  // When program selection changes, keep only course selections that are still in availableCourses
+  useEffect(() => {
+    if (selectedCourses.length === 0) return;
+    const allowed = new Set(availableCourses);
+    const valid = selectedCourses.filter((c) => allowed.has(c));
+    if (valid.length !== selectedCourses.length) {
+      setSelectedCourses(valid);
+    }
+  }, [selectedPrograms]);
 
   const toggleMulti = (setter, value) => {
     setter((prev) => (prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]));
@@ -196,17 +213,19 @@ export default function FindTutors() {
         <div style={styles.contentCard}>
           <h1 style={styles.pageTitle}>Search Tutor or Courses</h1>
 
-          {/* Search Bar */}
+          {/* Search Bar - pill-shaped with left search icon */}
           <div style={styles.searchRow}>
+            <span style={styles.searchIconLeft} aria-hidden="true">
+              <SearchMagnifyIcon />
+            </span>
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search Tutor or Courses"
               style={styles.searchInput}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
-            <span style={styles.searchIcon}>🔍</span>
           </div>
 
           {/* Filters */}
@@ -310,7 +329,7 @@ export default function FindTutors() {
               </div>
               {openDropdown === "course" && (
                 <div style={styles.courseDropdownPanel}>
-                  {COURSES.map((c) => (
+                  {availableCourses.map((c) => (
                     <div
                       key={c}
                       role="option"
@@ -436,15 +455,15 @@ export default function FindTutors() {
             <div style={styles.filterGroupAvailability}>
               <label style={styles.filterLabel}>Availability</label>
               <div style={styles.dateInputWrap}>
+                <span style={styles.dateIconLeft} aria-hidden="true">
+                  <CalendarIcon />
+                </span>
                 <input
                   type="date"
                   style={styles.dateInput}
                   value={availabilityDate}
                   onChange={(e) => setAvailabilityDate(e.target.value)}
                 />
-                <div style={styles.dateCalendarBtn}>
-                  <span style={styles.calendarIcon}>📅</span>
-                </div>
               </div>
             </div>
           </div>
@@ -460,46 +479,6 @@ export default function FindTutors() {
           <div style={styles.errorBox}>
             <p style={styles.errorText}>{error}</p>
           </div>
-        )}
-
-        {/* Results */}
-        {results && !loading && (
-          <section style={styles.resultsSection}>
-            <h2 style={styles.resultsTitle}>
-              Results
-              {results.totalElements != null && (
-                <span style={styles.resultCount}> ({results.totalElements})</span>
-              )}
-            </h2>
-            {(!results.content || results.content.length === 0) ? (
-              <p style={styles.noResults}>No tutors found. Try adjusting your filters.</p>
-            ) : (
-              <div style={styles.resultsGrid}>
-                {results.content.map((tutor) => (
-                  <div key={tutor.id || tutor.userId} style={styles.tutorCard}>
-                    <div style={styles.tutorAvatar}>
-                      {tutor.firstName?.[0] || "👤"}
-                    </div>
-                    <h3 style={styles.tutorName}>
-                      {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
-                    </h3>
-                    <p style={styles.tutorCourses}>
-                      {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
-                        ? tutor.coursesOffered.join(", ")
-                        : tutor.program || "—"}
-                    </p>
-                    {(tutor.rating != null || tutor.reviewCount != null) && (
-                      <div style={styles.tutorRating}>
-                        ⭐ {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
-                        {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
-                      </div>
-                    )}
-                    <button style={styles.bookButton}>Book session</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         )}
       </main>
     </div>
@@ -592,25 +571,34 @@ const styles = {
     position: "relative",
     width: "100%",
     marginBottom: "28px",
+    display: "flex",
+    alignItems: "center",
   },
   searchInput: {
     width: "100%",
-    height: "48px",
-    padding: "0 48px 0 18px",
-    borderRadius: "12px",
-    border: "1px solid #e0e0e0",
+    height: "52px",
+    padding: "0 24px 0 48px",
+    borderRadius: "9999px",
+    border: "none",
     fontSize: "16px",
+    color: "#333",
     backgroundColor: "#ffffff",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
     outline: "none",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
-  searchIcon: {
+  searchIconLeft: {
     position: "absolute",
-    right: "18px",
+    left: "20px",
     top: "50%",
     transform: "translateY(-50%)",
-    fontSize: "18px",
+    width: "20px",
+    height: "20px",
+    color: "#555",
     pointerEvents: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   filtersHeading: {
     fontSize: "18px",
@@ -761,11 +749,26 @@ const styles = {
     backgroundColor: "#ffffff",
     boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)",
     overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+  },
+  dateIconLeft: {
+    position: "absolute",
+    left: "16px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "20px",
+    height: "20px",
+    color: "#555",
+    pointerEvents: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   dateInput: {
     width: "100%",
     height: "48px",
-    padding: "0 52px 0 18px",
+    padding: "0 18px 0 48px",
     border: "none",
     borderRadius: "24px",
     fontSize: "15px",
@@ -773,25 +776,6 @@ const styles = {
     outline: "none",
     cursor: "pointer",
     fontFamily: "Arial, Helvetica, sans-serif",
-  },
-  dateCalendarBtn: {
-    position: "absolute",
-    right: "6px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    backgroundColor: "#ffffff",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: "none",
-  },
-  calendarIcon: {
-    fontSize: "16px",
-    lineHeight: 1,
   },
   searchButtonRow: { display: "flex", justifyContent: "center", marginBottom: "0" },
   searchButton: {
@@ -860,6 +844,13 @@ const styles = {
 
 function IconBase({ children }) {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">{children}</svg>;
+}
+function SearchMagnifyIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 function HomeIcon() {
   return <IconBase><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
