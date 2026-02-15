@@ -7,6 +7,7 @@ import Onboarding from "../auth/pages/Onboarding";
 import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
 import TutorDashboard from "../pages/dashboard/TutorDashboard";
 import FindTutors from "../pages/dashboard/FindTutors";
+import FindTutorsResults from "../pages/dashboard/FindTutorsResults";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import ProtectedRoute from "./ProtectedRoute";
@@ -112,6 +113,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute requiredRole='LEARNER' requireOnboarded>
               <FindTutors />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/dashboard/learner/find-tutors/results'
+          element={
+            <ProtectedRoute requiredRole='LEARNER' requireOnboarded>
+              <FindTutorsResults />
             </ProtectedRoute>
           }
         />

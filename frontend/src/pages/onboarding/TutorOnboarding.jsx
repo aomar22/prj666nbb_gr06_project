@@ -21,7 +21,7 @@ export default function TutorOnboarding() {
   const hasMountedRef = useRef(false);
   const coursesDropdownRef = useRef(null);
   const modesDropdownRef = useRef(null);
-  const sessionDropdownRef = useRef(null);
+  //const sessionDropdownRef = useRef(null);
 
   // Redirect to login if no user data (not logged in)
   if (!user?.email) {
@@ -78,8 +78,8 @@ export default function TutorOnboarding() {
   const [program, setProgram] = useState(draft?.program || "");
   const [about, setAbout] = useState(draft?.about || "");
   const [teachingMode, setTeachingMode] = useState(draft?.teachingMode || []);
-  const [sessionType, setSessionType] = useState(draft?.sessionType || []);
-  const [sessionOpen, setSessionOpen] = useState(false);
+  const [sessionType, setSessionType] = useState(draft?.sessionType || "");
+  //const [sessionOpen, setSessionOpen] = useState(false);
   const [availability, setAvailability] = useState(
     location.state?.availability || draft?.availability || null,
   );
@@ -103,12 +103,6 @@ export default function TutorOnboarding() {
         !modesDropdownRef.current.contains(event.target)
       ) {
         setModesOpen(false);
-      }
-      if (
-        sessionDropdownRef.current &&
-        !sessionDropdownRef.current.contains(event.target)
-      ) {
-        setSessionOpen(false);
       }
     };
 
@@ -168,16 +162,6 @@ export default function TutorOnboarding() {
   const removeTeachingMode = (mode) => {
     setTeachingMode((prev) => prev.filter((m) => m !== mode));
   };
-  const toggleSessionType = (type) => {
-    setSessionType((prev) => {
-      if (prev.includes(type)) return prev.filter((t) => t !== type);
-      return [...prev, type];
-    });
-  };
-
-  const removeSessionType = (type) => {
-    setSessionType((prev) => prev.filter((t) => t !== type));
-  };
 
   const canSubmit = useMemo(() => {
     return (
@@ -189,8 +173,7 @@ export default function TutorOnboarding() {
       coursesOffered.length > 0 &&
       Array.isArray(teachingMode) &&
       teachingMode.length > 0 &&
-      Array.isArray(sessionType) &&
-      sessionType.length > 0 &&
+      Boolean(sessionType) &&
       hasAvailability
     );
   }, [
@@ -586,37 +569,28 @@ export default function TutorOnboarding() {
                   Session Type <span className='text-red-600'>*</span>
                 </label>
 
-                <div
-                  className='relative w-full'
-                  ref={sessionDropdownRef}
-                >
-                  <button
-                    type='button'
-                    onClick={() => setSessionOpen((v) => !v)}
+                <div className='relative w-full'>
+                  <select
+                    value={sessionType}
+                    onChange={(e) => setSessionType(e.target.value)}
                     className='w-full h-[53px] rounded-[10px]
-                            border border-[#E5E5E5] px-4 pr-14
-                            font-mono text-[18px] outline-none
-                            bg-white text-left shadow-[0px_0px_10px_0px_#00000059]'
+                            border border-[#E5E5E5] px-4 pr-14 font-mono
+                            text-[18px] outline-none appearance-none bg-white
+                            shadow-[0px_0px_10px_0px_#00000059]'
                   >
-                    <span className='font-mono text-[18px] text-black'>
-                      {sessionType.length === 0
-                        ? ""
-                        : // ? "Select session type"
-                          sessionType.length <= 2
-                          ? sessionType.join(", ")
-                          : `${sessionType.slice(0, 2).join(", ")} +${
-                              sessionType.length - 2
-                            }`}
-                    </span>
-                  </button>
+                    <option value='' disabled>
+                      {/* Select session type */}
+                    </option>
+
+                    {SESSION_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
 
                   <div className='pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 h-[34px] w-[44px] rounded-full border border-[#E5E5E5] bg-white shadow flex items-center justify-center shadow-[0px_3px_5px_0px_#000000]'>
-                    <svg
-                      width='18'
-                      height='18'
-                      viewBox='0 0 20 20'
-                      fill='none'
-                    >
+                    <svg width='18' height='18' viewBox='0 0 20 20' fill='none'>
                       <path
                         d='M5 7.5L10 12.5L15 7.5'
                         stroke='#111'
@@ -626,85 +600,6 @@ export default function TutorOnboarding() {
                       />
                     </svg>
                   </div>
-
-                  {sessionOpen && (
-                    <div className='absolute z-30 mt-2 w-full rounded-[10px] border border-[#E5E5E5] bg-white shadow-[0px_10px_25px_rgba(0,0,0,0.18)]'>
-                      <div className='max-h-[180px] overflow-auto py-2'>
-                        {SESSION_TYPES.map((t) => {
-                          const checked = sessionType.includes(t);
-                          return (
-                            <button
-                              key={t}
-                              type='button'
-                              onClick={() => toggleSessionType(t)}
-                              className='w-full px-4 py-2 flex items-center gap-3 hover:bg-black/5 text-left'
-                            >
-                              <span
-                                className={[
-                                  "h-5 w-5 rounded-[6px] border border-black/20 flex items-center justify-center",
-                                  checked
-                                    ? "bg-[#0066CC] border-[#0066CC]"
-                                    : "bg-white",
-                                ].join(" ")}
-                              >
-                                {checked && (
-                                  <svg
-                                    width='14'
-                                    height='14'
-                                    viewBox='0 0 20 20'
-                                    fill='none'
-                                  >
-                                    <path
-                                      d='M16.5 5.5L8.5 13.5L4 9'
-                                      stroke='white'
-                                      strokeWidth='2.2'
-                                      strokeLinecap='round'
-                                      strokeLinejoin='round'
-                                    />
-                                  </svg>
-                                )}
-                              </span>
-                              <span className='font-mono text-[16px] text-black'>
-                                {t}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className='px-4 py-3 border-t border-black/10 flex items-center justify-between'>
-                        <p className='font-mono text-[14px] text-black/60'>
-                          Selected: {sessionType.length}
-                        </p>
-                        <button
-                          type='button'
-                          onClick={() => setSessionOpen(false)}
-                          className='font-mono text-[14px] text-[#0066CC] font-bold'
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className='w-full flex flex-wrap gap-2 pt-2'>
-                  {sessionType.map((m) => (
-                    <span
-                      key={m}
-                      className='inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-3 py-1 font-mono text-[14px]'
-                    >
-                      {m}
-                      <button
-                        type='button'
-                        onClick={() => removeSessionType(m)}
-                        className='h-5 w-5 rounded-full bg-white border border-black/10 flex items-center justify-center leading-none text-red-600'
-                        aria-label={`Remove ${m}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
                 </div>
               </div>
 
