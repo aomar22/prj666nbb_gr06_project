@@ -9,7 +9,8 @@ import {
   loadTutorDraft,
   saveTutorDraft,
 } from "../../utils/tutorOnboardingDraft";
-
+import TopBar from "../../components/layout/TopBar";
+import TrashIcon from "../../components/icons/TrashIcon";
 const DAYS = [
   { key: "MONDAY", label: "Monday" },
   { key: "TUESDAY", label: "Tuesday" },
@@ -577,37 +578,7 @@ export default function AvailabilityV2() {
           {/* Main */}
           <main className='flex-1 overflow-y-auto px-10 py-6'>
             {/* Top bar */}
-            <div className='flex items-center gap-6'>
-              <div className='relative flex-1'>
-                <div className='absolute left-5 top-1/2 -translate-y-1/2 opacity-70'>
-                  <SearchIcon />
-                </div>
-                <input
-                  className='w-full h-[54px] rounded-full bg-white px-14 text-[18px] font-mono
-                             shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none'
-                  placeholder='Search Student or Courses'
-                />
-              </div>
-
-              <div className='flex items-center gap-6'>
-                <button
-                  className='relative'
-                  type='button'
-                >
-                  <span className='absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500' />
-                  <BellIcon />
-                </button>
-
-                <div className='h-10 w-10 rounded-full bg-black/20 overflow-hidden'>
-                  <img
-                    alt='profile'
-                    src='/avatar.png'
-                    className='h-full w-full object-cover'
-                  />
-                </div>
-              </div>
-            </div>
-
+            <TopBar />
             {/* Title */}
             <div className='mt-10 font-mono'>
               <h1 className='text-[44px] font-extrabold tracking-tight'>
@@ -924,98 +895,4 @@ export default function AvailabilityV2() {
   );
 }
 
-// function SideLink({ to, active, icon, children }) {
-//   return (
-//     <Link
-//       to={to}
-//       className={[
-//         "flex items-center gap-3 rounded-[10px] px-3 py-2 transition",
-//         active ? "bg-white/15" : "hover:bg-white/10",
-//       ].join(" ")}
-//     >
-//       <span className='opacity-95'>{icon}</span>
-//       <span>{children}</span>
-//     </Link>
-//   );
-// }
 
-function TrashIcon() {
-  return (
-    <svg
-      width='22'
-      height='22'
-      viewBox='0 0 24 24'
-      fill='none'
-      aria-hidden='true'
-    >
-      <path
-        d='M3 6h18'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-      />
-      <path
-        d='M8 6V4h8v2'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-      />
-      <path
-        d='M6 6l1 16h10l1-16'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinejoin='round'
-      />
-      <path
-        d='M10 11v7M14 11v7'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-      />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      width='22'
-      height='22'
-      viewBox='0 0 24 24'
-      fill='none'
-      aria-hidden='true'
-    >
-      <path
-        d='M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-      />
-    </svg>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg
-      width='24'
-      height='24'
-      viewBox='0 0 24 24'
-      fill='none'
-      aria-hidden='true'
-    >
-      <path
-        d='M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7z'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-      />
-      <path
-        d='M13.7 21a2 2 0 01-3.4 0'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-      />
-    </svg>
-  );
-}
