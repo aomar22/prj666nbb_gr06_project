@@ -1,10 +1,10 @@
 // AvailabilityV2.jsx
 // UI-only reimplementation of the new Availability screen (v2)
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
-import { getUser, replaceTutorSchedule } from "../../api";
+import { getUser, replaceTutorSchedule, getTutorAllSlots } from "../../api";
 import {
   loadTutorDraft,
   saveTutorDraft,
@@ -34,22 +34,33 @@ function format12h(hour24, minute) {
   return `${hh}:${mm} ${ap}`;
 }
 
-// Parse "h:mm AM/PM" -> minutes since midnight
-function toMinutes(t) {
-  const m = String(t)
-    .trim()
-    .match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!m) return NaN;
+function parseToMinutes(t) {
+  const str = String(t ?? "").trim();
+  if (!str) return NaN;
 
-  let hh = parseInt(m[1], 10);
-  const mm = parseInt(m[2], 10);
-  const ap = m[3].toUpperCase();
+  // UI format: "h:mm AM/PM"
+  const m12 = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let hh = parseInt(m12[1], 10);
+    const mm = parseInt(m12[2], 10);
+    const ap = m12[3].toUpperCase();
 
-  if (hh === 12) hh = 0;
-  let minutes = hh * 60 + mm;
-  if (ap === "PM") minutes += 12 * 60;
+    if (hh === 12) hh = 0;
+    let mins = hh * 60 + mm;
+    if (ap === "PM") mins += 12 * 60;
+    return mins;
+  }
 
-  return minutes;
+  // Backend format: "HH:mm" / "HH:mm:ss" / "HH:mm:ss.SSS"
+  const m24 = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/);
+  if (m24) {
+    const hh = Number(m24[1]);
+    const mm = Number(m24[2]);
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return NaN;
+    return hh * 60 + mm;
+  }
+
+  return NaN;
 }
 
 function minutesTo12h(mins) {
@@ -59,21 +70,21 @@ function minutesTo12h(mins) {
 }
 
 function isValidRange(start, end) {
-  const s = toMinutes(start);
-  const e = toMinutes(end);
+  const s = parseToMinutes(start);
+  const e = parseToMinutes(end);
   if (!Number.isFinite(s) || !Number.isFinite(e)) return false;
   return e > s;
 }
 
 function overlapsAny(blocks, candidate, ignoreIndex = -1) {
-  const s = toMinutes(candidate.start);
-  const e = toMinutes(candidate.end);
+  const s = parseToMinutes(candidate.start);
+  const e = parseToMinutes(candidate.end);
   if (!Number.isFinite(s) || !Number.isFinite(e)) return true;
 
   return blocks.some((b, i) => {
     if (i === ignoreIndex) return false;
-    const bs = toMinutes(b.start);
-    const be = toMinutes(b.end);
+    const bs = parseToMinutes(b.start);
+    const be = parseToMinutes(b.end);
     return s < be && e > bs;
   });
 }
@@ -104,8 +115,8 @@ function buildPreviewSlots(weekly, slotDuration) {
     const slots = [];
 
     blocks.forEach((b, bi) => {
-      const startM = toMinutes(b.start);
-      const endM = toMinutes(b.end);
+      const startM = parseToMinutes(b.start);
+      const endM = parseToMinutes(b.end);
 
       if (!Number.isFinite(startM) || !Number.isFinite(endM) || endM <= startM)
         return;
@@ -128,6 +139,41 @@ function buildPreviewSlots(weekly, slotDuration) {
   }
 
   return result;
+}
+
+function dateToDayKey(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const idx = d.getDay(); // 0=Sun ... 6=Sat
+  return ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][idx];
+}
+
+function inferSlotDurationFromSlots(slots) {
+  const durations = slots
+    .map((s) => parseToMinutes(s.endTime) - parseToMinutes(s.startTime))
+    .filter((d) => Number.isFinite(d) && d > 0);
+
+  if (!durations.length) return null;
+
+  const counts = new Map();
+  for (const d of durations) counts.set(d, (counts.get(d) || 0) + 1);
+
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function mergeTimesIntoBlocks(timePairs) {
+  const sorted = timePairs
+    .filter((p) => Number.isFinite(p.s) && Number.isFinite(p.e) && p.e > p.s)
+    .sort((a, b) => a.s - b.s || a.e - b.e);
+
+  const merged = [];
+  for (const p of sorted) {
+    const last = merged[merged.length - 1];
+    if (!last) merged.push({ ...p });
+    else if (p.s <= last.e) last.e = Math.max(last.e, p.e);
+    else merged.push({ ...p });
+  }
+
+  return merged.map(({ s, e }) => ({ start: minutesTo12h(s), end: minutesTo12h(e) }));
 }
 
 export default function AvailabilityV2() {
@@ -224,6 +270,71 @@ export default function AvailabilityV2() {
     [weekly, slotDuration],
   );
 
+  useEffect(() => {
+    if (fromOnboarding) return;
+
+    const tutorId = user?.id;
+    if (!tutorId) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setUiError("");
+
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(start);
+        end.setDate(end.getDate() + 42); // 6 weeks
+
+        const startDate = start.toISOString().slice(0, 10);
+        const endDate = end.toISOString().slice(0, 10);
+
+        const res = await getTutorAllSlots(tutorId, startDate, endDate);
+        if (cancelled) return;
+
+        const slots = Array.isArray(res) ? res : (res?.data ?? []);
+        if (!slots.length) {
+          setWeekly(makeEmptyWeekly());
+          return;
+        }
+
+        const byDayKey = new Map();
+        for (const s of slots) {
+          if (!s?.date || !s?.startTime || !s?.endTime) continue;
+
+          const dayKey = dateToDayKey(s.date);
+          const st = parseToMinutes(s.startTime);
+          const en = parseToMinutes(s.endTime);
+          if (!Number.isFinite(st) || !Number.isFinite(en) || en <= st) continue;
+
+          if (!byDayKey.has(dayKey)) byDayKey.set(dayKey, []);
+          byDayKey.get(dayKey).push({ s: st, e: en });
+        }
+
+        const nextWeekly = makeEmptyWeekly();
+        for (const [dayKey, pairs] of byDayKey.entries()) {
+          nextWeekly[dayKey] = mergeTimesIntoBlocks(pairs);
+        }
+
+        setWeekly(nextWeekly);
+
+        const inferred = inferSlotDurationFromSlots(slots);
+        if (inferred && SESSION_LENGTHS.includes(inferred)) {
+          setSlotDuration(inferred);
+        }
+      } catch (e) {
+        if (!cancelled) setUiError(e?.message ?? "Failed to load availability.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fromOnboarding, user?.id]);
+
+
   const handleAddBlock = (dayKey) => {
     handleSelectDay(dayKey);
     setUiError("");
@@ -235,7 +346,7 @@ export default function AvailabilityV2() {
       let end = "11:00 AM";
 
       if (last?.end) {
-        const lastEndM = toMinutes(last.end);
+        const lastEndM = parseToMinutes(last.end);
         if (Number.isFinite(lastEndM)) {
           start = minutesTo12h(lastEndM);
           end = minutesTo12h(lastEndM + slotDuration);
@@ -380,7 +491,7 @@ export default function AvailabilityV2() {
   };
 
   function toBlockMinutes(block) {
-    return { s: toMinutes(block.start), e: toMinutes(block.end) };
+    return { s: parseToMinutes(block.start), e: parseToMinutes(block.end) };
   }
 
   function minutesToBlock(s, e) {
@@ -433,8 +544,8 @@ export default function AvailabilityV2() {
       .map(([day, blocks]) => {
         const apiBlocks = (blocks || [])
           .map((b) => {
-            const startM = toMinutes(b.start);
-            const endM = toMinutes(b.end);
+            const startM = parseToMinutes(b.start);
+            const endM = parseToMinutes(b.end);
             if (
               !Number.isFinite(startM) ||
               !Number.isFinite(endM) ||

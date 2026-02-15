@@ -62,6 +62,14 @@ export async function replaceTutorSchedule(tutorId, schedule, startDate, endDate
   });
 }
 
+// Fetch ALL slots
+export async function getTutorAllSlots(tutorId, startDate, endDate) {
+  return authRequest(
+    `/api/availability/tutor/${tutorId}/all?startDate=${startDate}&endDate=${endDate}`,
+    { method: "GET" }
+  );
+}
+
 // Base request without auth (for public routes)
 async function publicRequest(path, opts = {}) {
   const headers = {
