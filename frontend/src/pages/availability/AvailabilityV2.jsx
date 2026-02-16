@@ -1,6 +1,4 @@
 // AvailabilityV2.jsx
-// UI-only reimplementation of the new Availability screen (v2)
-
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/layout/Sidebar";
@@ -9,8 +7,11 @@ import {
   loadTutorDraft,
   saveTutorDraft,
 } from "../../utils/tutorOnboardingDraft";
-import TopBar from "../../components/layout/TopBar";
 import TrashIcon from "../../components/icons/TrashIcon";
+import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
+
+import Topbar from "../../components/layout/Topbar";
+
 const DAYS = [
   { key: "MONDAY", label: "Monday" },
   { key: "TUESDAY", label: "Tuesday" },
@@ -210,7 +211,6 @@ export default function AvailabilityV2() {
     return merged;
   });
   const [weekOffset, setWeekOffset] = useState(0);
-
   const baseWeekStart = useMemo(() => {
     const d = new Date();
     const day = d.getDay();
@@ -255,13 +255,13 @@ export default function AvailabilityV2() {
   const goPrevWeek = () => setWeekOffset((w) => w - 1);
   const goNextWeek = () => setWeekOffset((w) => w + 1);
 
-  const weekRangeLabel = useMemo(() => {
-    if (!WeekColumns.length) return "";
-    const a = WeekColumns[0].date;
-    const b = WeekColumns[6].date;
-    const opts = { month: "short", day: "numeric" };
-    return `${a.toLocaleDateString("en-US", opts)} – ${b.toLocaleDateString("en-US", opts)}`;
-  }, [WeekColumns]);
+  // const weekRangeLabel = useMemo(() => {
+  //   if (!WeekColumns.length) return "";
+  //   const a = WeekColumns[0].date;
+  //   const b = WeekColumns[6].date;
+  //   const opts = { month: "short", day: "numeric" };
+  //   return `${a.toLocaleDateString("en-US", opts)} – ${b.toLocaleDateString("en-US", opts)}`;
+  // }, [WeekColumns]);
 
   const [uiError, setUiError] = useState("");
   const [selectedPreviewId, setSelectedPreviewId] = useState(null);
@@ -578,7 +578,7 @@ export default function AvailabilityV2() {
           {/* Main */}
           <main className='flex-1 overflow-y-auto px-10 py-6'>
             {/* Top bar */}
-            <TopBar />
+            <Topbar />
             {/* Title */}
             <div className='mt-10 font-mono'>
               <h1 className='text-[44px] font-extrabold tracking-tight'>
@@ -780,7 +780,7 @@ export default function AvailabilityV2() {
                 </div>
               </div>
 
-              {/*Week Navigation*/}
+              {/* Week Navigation
               <div className='flex items-center justify-between mb-3 mt-4'>
                 <button
                   type='button'
@@ -864,7 +864,20 @@ export default function AvailabilityV2() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
+              <WeeklySlotCalendar
+                  slotsByDayKey={previewSlots}
+                  selectedDayKey={selectedDay}
+                  onSelectDayKey={handleSelectDay}
+                  selectedSlotId={selectedPreviewId}
+                  onSelectSlotId={setSelectedPreviewId}
+                  minBodyHeight={220}
+                  onSlotClick={(slot, col) => {
+                    handleSelectDay(col.key);
+                    setSelectedPreviewId((prev) => (prev === slot.id ? null : slot.id));
+                  }}
+                />
+
             </section>
 
             {/* Bottom actions */}

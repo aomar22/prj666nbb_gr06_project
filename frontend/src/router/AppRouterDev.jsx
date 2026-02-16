@@ -9,6 +9,7 @@ import TutorDashboard from "../pages/dashboard/TutorDashboard";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import AvailabilityV2 from "../pages/availability/AvailabilityV2";
+import BookingSession from "../pages/booking/BookingSession";
 import { getUser } from "../api";
 
 
@@ -78,6 +79,10 @@ export default function AppRouterDev() {
           path='/dashboard/learner'
           element={<LearnerDashboard />}
         />
+         <Route
+            path='/dashboard/learner/booking'
+            element={<BookingSession />}
+          />
         <Route
           path='/dashboard/tutor'
           element={<TutorDashboard />}
