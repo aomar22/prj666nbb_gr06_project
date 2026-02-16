@@ -295,7 +295,18 @@ export default function FindTutorsResults() {
                     <div style={styles.tutorActions}>
                       <button type="button" style={styles.actionBtn}>View Profile</button>
                       <button type="button" style={styles.actionBtn}>Message</button>
-                      <button type="button" style={styles.actionBtn}>Book session</button>
+                      <button type="button" style={styles.actionBtn}
+                          onClick={() =>
+                            navigate("/dashboard/learner/booking", {
+                              state: {
+                                tutorId: tutor.id ?? tutor.userId,
+                                tutor,
+                              },
+                            })
+                          }
+                        >
+                          Book session
+                        </button>
                     </div>
                   </div>
                 ))
