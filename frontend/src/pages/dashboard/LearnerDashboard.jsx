@@ -63,7 +63,7 @@ export default function Dashboard() {
   return (
     <div style={styles.container}>
       {/* Sidebar - same design as AvailabilityV2 */}
-      <aside className="w-[210px] min-h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
+      <aside className="fixed left-0 top-0 z-10 w-[210px] h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
         <div className="flex flex-col items-center">
           <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
             <img src="/hat.png" alt="logo" className="h-7 w-7" />
@@ -123,39 +123,29 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main style={styles.mainContent}>
-        {/* Header */}
-        <header style={styles.header}>
-          <div style={styles.searchBar}>
-            <input
-              type="text"
-              placeholder="Search Tutor or Courses"
-              style={styles.searchInput}
-              value={tutorSearchQuery}
-              onChange={(e) => setTutorSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleTutorSearch()}
-              disabled={tutorSearchLoading}
-            />
-            <span
-              style={styles.searchIcon}
-              onClick={handleTutorSearch}
-              onKeyDown={(e) => e.key === "Enter" && handleTutorSearch()}
-              role="button"
-              tabIndex={0}
-              aria-label="Search tutors"
-            >
-              🔍
-            </span>
-          </div>
-          <div style={styles.headerRight}>
-            <div style={styles.notification}>
-              <span>🔔</span>
-              <span style={styles.notificationDot}></span>
+        {/* Header - pill-style search same as AvailabilityV2; click goes to Find Tutors */}
+        <header className="flex items-center gap-6 mb-8">
+          <Link
+            to="/dashboard/learner/find-tutors"
+            className="relative flex-1 flex items-center no-underline text-inherit"
+          >
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70 text-black/70 pointer-events-none">
+              <SearchIcon />
             </div>
-            <div style={styles.profilePic}>
-              <img 
-                src="https://ui-avatars.com/api/?name=User&background=ddd&color=666&size=100" 
-                alt="Profile" 
-                style={styles.profileImage}
+            <span className="w-full h-[54px] rounded-full bg-white pl-14 pr-5 flex items-center text-[18px] font-mono shadow-[0px_6px_14px_rgba(0,0,0,0.18)] border-0 text-black/70">
+              Search Tutor or Courses
+            </span>
+          </Link>
+          <div className="flex items-center gap-6">
+            <button type="button" className="relative p-0 border-0 bg-transparent cursor-pointer text-black/70 hover:text-black">
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500" />
+              <BellIcon />
+            </button>
+            <div className="h-10 w-10 rounded-full bg-black/20 overflow-hidden shrink-0">
+              <img
+                alt="Profile"
+                src="https://ui-avatars.com/api/?name=User&background=ddd&color=666&size=100"
+                className="h-full w-full object-cover"
               />
             </div>
           </div>
@@ -492,6 +482,7 @@ const styles = {
   },
   mainContent: {
     flex: 1,
+    marginLeft: '210px',
     backgroundColor: '#F8E9DC',
     padding: '30px',
   },
@@ -916,4 +907,19 @@ function SettingsIcon() {
 }
 function LogoutIcon() {
   return <IconBase><path d="M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18 9l3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
+}
+function SearchIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function BellIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
 }
