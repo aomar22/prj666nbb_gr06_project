@@ -9,7 +9,7 @@ import {
 } from "../../utils/tutorOnboardingDraft";
 import TrashIcon from "../../components/icons/TrashIcon";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
-import TopBar from "../../components/layout/Topbar";
+import Topbar from "../../components/layout/Topbar";
 
 const DAYS = [
   { key: "MONDAY", label: "Monday" },
@@ -577,7 +577,7 @@ export default function AvailabilityV2() {
           {/* Main */}
           <main className='flex-1 overflow-y-auto px-10 py-6'>
             {/* Top bar */}
-            <TopBar />
+            <Topbar />
             {/* Title */}
             <div className='mt-10 font-mono'>
               <h1 className='text-[44px] font-extrabold tracking-tight'>
