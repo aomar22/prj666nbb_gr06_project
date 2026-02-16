@@ -7,9 +7,9 @@ import {
   loadTutorDraft,
   saveTutorDraft,
 } from "../../utils/tutorOnboardingDraft";
-import TopBar from "../../components/layout/Topbar";
 import TrashIcon from "../../components/icons/TrashIcon";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
+import TopBar from "../../components/layout/Topbar";
 
 const DAYS = [
   { key: "MONDAY", label: "Monday" },
