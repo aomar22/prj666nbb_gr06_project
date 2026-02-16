@@ -9,6 +9,7 @@ import {
 } from "../../utils/tutorOnboardingDraft";
 import TrashIcon from "../../components/icons/TrashIcon";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
+
 import Topbar from "../../components/layout/Topbar";
 
 const DAYS = [
