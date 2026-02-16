@@ -13,7 +13,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import { getUser } from "../api";
 import AvailabilityV2 from "../pages/availability/AvailabilityV2";
-
+import booking from "../pages/booking/BookingSession";
 // Component to redirect to role-specific dashboard
 function DashboardRedirect() {
   const user = getUser();
@@ -130,6 +130,14 @@ export default function AppRouter() {
             <AvailabilityV2 />
           </ProtectedRoute>
           }
+          />
+          <Route
+            path='/dashboard/booking'
+            element={
+              <ProtectedRoute requiredRole='TUTOR' requireOnboarded>
+                <BookingSession />
+              </ProtectedRoute>
+            }
           />
           {/* Catch-all */}
           <Route
