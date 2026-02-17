@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
 import { getTutorAllSlots, searchTutors } from "../../api";
+import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 
 function makeEmptyWeek() {
   return {
@@ -70,6 +71,24 @@ export default function BookingSession() {
 
   const [slotsByDayKey, setSlotsByDayKey] = useState(() => makeEmptyWeek());
   const [loadingSlots, setLoadingSlots] = useState(false);
+  
+  // TEMP: demo slot to test confirm + modal (remove after backend is ready)
+  const demoSlotsByDayKey = useMemo(() => {
+    const next = makeEmptyWeek();
+    next.WEDNESDAY = [
+      {
+        id: "demo-2025-10-11-1430",
+        label: "2:30 PM",
+        raw: {
+          slotId: "DEMO_SLOT_1",
+          date: "2025-10-11",
+          startTime: "14:30:00",
+          endTime: "15:10:00",
+        },
+      },
+    ];
+    return next;
+  }, []);
 
   const [selectedDayKey, setSelectedDayKey] = useState("MONDAY");
   const [selectedSlotId, setSelectedSlotId] = useState(null);
@@ -198,6 +217,7 @@ export default function BookingSession() {
     setConfirmError("");
   };
 
+  const [isBooking, setIsBooking] = useState(false);
   const handleConfirm = async () => {
     setConfirmError("");
 
@@ -205,11 +225,19 @@ export default function BookingSession() {
       setConfirmError("Please select an available time slot first.");
       return;
     }
+    if (isBooking) return;
 
     try {
-      console.log("Confirm booking slot:", selectedSlot.raw.slotId);
+      setIsBooking(true);
+      //temporary simulation of booking request (replace with actual API call) 
+      await new Promise((res) => setTimeout(res, 700));
+  
+      setConfirmOpen(true);
+    
     } catch (e) {
       setConfirmError(e?.message ?? "Booking failed. Please try again.");
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -228,6 +256,14 @@ export default function BookingSession() {
   }, [tutorProfile]);
 
   const reviewCount = tutorProfile?.reviewCount ?? 0;
+  
+  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleContinue = () => {
+    setConfirmOpen(false);
+    navigate("/dashboard/learner");
+  };
 
   return (
     <DashboardLayout>
@@ -303,7 +339,9 @@ export default function BookingSession() {
 
         <div className="mt-6">
           <WeeklySlotCalendar
-            slotsByDayKey={slotsByDayKey}
+            // slotsByDayKey={slotsByDayKey}
+            slotsByDayKey={Object.values(slotsByDayKey).some((a) => a.length) ? slotsByDayKey : demoSlotsByDayKey} //for demo purpose
+
             selectedDayKey={selectedDayKey}
             onSelectDayKey={(k) => {
               setSelectedDayKey(k);
@@ -315,6 +353,8 @@ export default function BookingSession() {
             onSelectSlotId={setSelectedSlotId}
             minBodyHeight={260}
             onSlotClick={(slot, col) => {
+              setSelectedSlotId(slot.id);
+
               setSelectedSlot({
                 id: slot.id,
                 label: slot.label,
@@ -381,7 +421,7 @@ export default function BookingSession() {
                 }
               `}
             >
-              Confirm Booking
+              {isBooking ? "Confirming..." : "Confirm Booking"}
             </button>
 
             <button
@@ -409,8 +449,12 @@ export default function BookingSession() {
           </div>
         </div>
       </PageCard>
-
-      <div className="pb-10" />
+      <BookingConfirmationModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onContinue={handleContinue}
+      />
+      {/* <div className="pb-10" /> */}
     </DashboardLayout>
   );
 }
