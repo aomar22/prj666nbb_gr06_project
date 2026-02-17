@@ -1,7 +1,28 @@
 import { Link, useLocation } from "react-router-dom";
+import { getUser } from "../../api";
 
 export default function Sidebar() {
   const location = useLocation();
+  const pathname = location.pathname;
+
+  const userRole = (getUser()?.role ?? "").toUpperCase();
+
+  // URL-first role detection: if URL contains /dashboard/learner,
+  //  treat as learner; if it contains /dashboard/tutor or related tutor paths, treat as tutor.
+  //  Otherwise, fall back to user role.
+  const isLearnerRoute = pathname.startsWith("/dashboard/learner");
+  const isTutorRoute =
+    pathname.startsWith("/dashboard/tutor") ||
+    pathname.startsWith("/dashboard/availability") ||
+    pathname.startsWith("/dashboard/find-students");
+
+  const isTutor = isLearnerRoute
+    ? false
+    : isTutorRoute
+      ? true
+      : userRole === "TUTOR";
+
+  const navItems = isTutor ? TUTOR_NAV : LEARNER_NAV;
 
   return (
     <aside className="w-[217px] h-full bg-[#7A0000] text-white px-5 pt-6 pb-6 flex flex-col">
@@ -23,53 +44,16 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="mt-11 space-y-2 text-[16px] font-semibold">
-        <SideLink
-          to="/dashboard/tutor"
-          active={location.pathname === "/dashboard/tutor"}
-          icon={<HomeIcon />}
-        >
-          Dashboard
-        </SideLink>
-
-        <SideLink
-          to="/dashboard/sessions"
-          active={location.pathname.includes("/sessions")}
-          icon={<CalendarIcon />}
-        >
-          My Sessions
-        </SideLink>
-
-        <SideLink
-          to="/dashboard/availability-v2"
-          active={location.pathname.includes("/availability")}
-          icon={<ClockIcon />}
-        >
-          Availability
-        </SideLink>
-
-        <SideLink
-          to="/dashboard/find-students"
-          active={location.pathname.includes("/find")}
-          icon={<UsersIcon />}
-        >
-          Find Students
-        </SideLink>
-
-        <SideLink
-          to="/dashboard/messages"
-          active={location.pathname.includes("/messages")}
-          icon={<ChatIcon />}
-        >
-          Messages
-        </SideLink>
-
-        <SideLink
-          to="/dashboard/reviews"
-          active={location.pathname.includes("/reviews")}
-          icon={<StarIcon />}
-        >
-          My Reviews
-        </SideLink>
+        {navItems.map((item) => (
+          <SideLink
+            key={item.to}
+            to={item.to}
+            active={item.isActive(location.pathname)}
+            icon={item.icon}
+          >
+            {item.label}
+          </SideLink>
+        ))}
       </nav>
 
       {/* Bottom actions */}
@@ -90,6 +74,78 @@ export default function Sidebar() {
   );
 }
 
+const TUTOR_NAV = [
+  {
+    label: "Dashboard",
+    to: "/dashboard/tutor",
+    isActive: (p) => p === "/dashboard/tutor",
+    icon: <HomeIcon />,
+  },
+  {
+    label: "My Sessions",
+    to: "/dashboard/sessions",
+    isActive: (p) => p.includes("/sessions"),
+    icon: <CalendarIcon />,
+  },
+  {
+    label: "Availability",
+    to: "/dashboard/availability-v2",
+    isActive: (p) => p.includes("/availability"),
+    icon: <ClockIcon />,
+  },
+  {
+    label: "Find Students",
+    to: "/dashboard/find-students",
+    isActive: (p) => p.includes("/find-students"),
+    icon: <UsersIcon />,
+  },
+  {
+    label: "Messages",
+    to: "/dashboard/messages",
+    isActive: (p) => p.includes("/messages"),
+    icon: <ChatIcon />,
+  },
+  {
+    label: "My Reviews",
+    to: "/dashboard/reviews",
+    isActive: (p) => p.includes("/reviews"),
+    icon: <StarIcon />,
+  },
+];
+
+const LEARNER_NAV = [
+  {
+    label: "Dashboard",
+    to: "/dashboard/learner",
+    isActive: (p) => p === "/dashboard/learner",
+    icon: <HomeIcon />,
+  },
+  {
+    label: "My Sessions",
+    to: "/dashboard/sessions",
+    isActive: (p) => p.includes("/sessions"),
+    icon: <CalendarIcon />,
+  },
+  {
+    label: "Find Tutors",
+    to: "/dashboard/learner/find-tutors",
+    isActive: (p) => p.includes("/dashboard/learner/find-tutors"),
+    icon: <UsersIcon />,
+  },
+  {
+    label: "Messages",
+    to: "/dashboard/messages",
+    isActive: (p) => p.includes("/messages"),
+    icon: <ChatIcon />,
+  },
+  {
+    label: "My Reviews",
+    to: "/dashboard/reviews",
+    isActive: (p) => p.includes("/reviews"),
+    icon: <StarIcon />,
+  },
+];
+
 function SideLink({ to, active, icon, children }) {
   return (
     <Link
@@ -105,7 +161,7 @@ function SideLink({ to, active, icon, children }) {
   );
 }
 
-/* ========== Icons (unchanged) ========== */
+/* ========== Icons ========== */
 
 function IconBase({ children }) {
   return (
@@ -259,4 +315,3 @@ function LogoutIcon() {
     </IconBase>
   );
 }
-// 
