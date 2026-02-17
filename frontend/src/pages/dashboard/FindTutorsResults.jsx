@@ -293,7 +293,13 @@ export default function FindTutorsResults() {
                     </div>
                     <p style={styles.tutorQuote}>"{tutorQuote(tutor)}"</p>
                     <div style={styles.tutorActions}>
-                      <button type="button" style={styles.actionBtn}>View Profile</button>
+                      <button
+                        type="button"
+                        style={styles.actionBtn}
+                        onClick={() => navigate("/dashboard/learner/find-tutors/profile", { state: { tutor } })}
+                      >
+                        View Profile
+                      </button>
                       <button type="button" style={styles.actionBtn}>Message</button>
                       <button type="button" style={styles.actionBtn}
                           onClick={() =>
