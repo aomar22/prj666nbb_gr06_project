@@ -24,7 +24,7 @@ export default function FindTutors() {
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [selectedCampuses, setSelectedCampuses] = useState([]);
   const [selectedRatings, setSelectedRatings] = useState([]);
-  const [selectedSessionTypes, setSelectedSessionTypes] = useState([]);
+  const [selectedSessionTypes, setSelectedSessionTypes] = useState("");
   const [selectedTeachingModes, setSelectedTeachingModes] = useState([]);
   const [availabilityDate, setAvailabilityDate] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -58,13 +58,13 @@ export default function FindTutors() {
       onRemove: () => setSelectedRatings((prev) => prev.filter((x) => x !== r)),
     });
   });
-  selectedSessionTypes.forEach((s) =>
+  if (selectedSessionTypes) {
     appliedFilters.push({
-      key: `sessionType-${s}`,
-      label: `Session: ${SESSION_TYPE_LABELS[s] || s}`,
-      onRemove: () => setSelectedSessionTypes((prev) => prev.filter((x) => x !== s)),
-    })
-  );
+      key: `sessionType-${selectedSessionTypes}`,
+      label: `Session: ${SESSION_TYPE_LABELS[selectedSessionTypes] || selectedSessionTypes}`,
+      onRemove: () => setSelectedSessionTypes(""),
+    });
+  }
   selectedTeachingModes.forEach((m) =>
     appliedFilters.push({
       key: `teachingMode-${m}`,
@@ -88,7 +88,7 @@ export default function FindTutors() {
       if (selectedPrograms.length) params.program = selectedPrograms;
       if (selectedCourses.length) params.courses = selectedCourses;
       if (selectedRatings.length) params.minRating = Math.min(...selectedRatings);
-      if (selectedSessionTypes.length) params.sessionType = selectedSessionTypes;
+      if (selectedSessionTypes) params.sessionType = selectedSessionTypes;
       if (selectedTeachingModes.length) params.teachingMode = selectedTeachingModes;
 
       const page = await searchTutors(params);
@@ -382,14 +382,14 @@ export default function FindTutors() {
                 </div>
               )}
             </div>
-            {/* Session Type - multi-select */}
+            {/* Session Type - single-select */}
             <div style={styles.filterGroupCourse}>
               <label style={styles.filterLabel}>Session Type</label>
               <div style={styles.selectWrapper} onClick={() => setOpenDropdown((o) => (o === "sessionType" ? null : "sessionType"))}>
                 <div style={styles.courseSelectDisplay}>
-                  {selectedSessionTypes.length === 0
-                    ? "Select session type(s)"
-                    : selectedSessionTypes.map((s) => SESSION_TYPE_LABELS[s] || s).join(", ")}
+                  {!selectedSessionTypes
+                    ? "Select session type"
+                    : SESSION_TYPE_LABELS[selectedSessionTypes] || selectedSessionTypes}
                 </div>
                 <div style={styles.selectChevronBtn}>
                   <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style={styles.chevronSvg}>
@@ -403,15 +403,15 @@ export default function FindTutors() {
                     <div
                       key={s}
                       role="option"
-                      aria-selected={selectedSessionTypes.includes(s)}
+                      aria-selected={selectedSessionTypes === s}
                       style={{
                         ...styles.courseDropdownOption,
-                        ...(selectedSessionTypes.includes(s) ? styles.courseDropdownOptionSelected : {}),
+                        ...(selectedSessionTypes === s ? styles.courseDropdownOptionSelected : {}),
                       }}
-                      onClick={() => toggleMulti(setSelectedSessionTypes, s)}
+                      onClick={() => { setSelectedSessionTypes(s); setOpenDropdown(null); }}
                     >
                       {SESSION_TYPE_LABELS[s] || s}
-                      {selectedSessionTypes.includes(s) && <span style={styles.courseDropdownCheck}>✓</span>}
+                      {selectedSessionTypes === s && <span style={styles.courseDropdownCheck}>✓</span>}
                     </div>
                   ))}
                 </div>

@@ -207,7 +207,7 @@ export function searchLearnersByCourse(course) {
  * @param {string} [params.program] - Program filter
  * @param {number} [params.minRating] - Minimum rating
  * @param {string[]} [params.teachingMode] - ONLINE, IN_PERSON
- * @param {string[]} [params.sessionType] - INDIVIDUAL, GROUP
+ * @param {string} [params.sessionType] - INDIVIDUAL OR GROUP
  * @param {number} [params.page=0]
  * @param {number} [params.size=10]
  * @param {string} [params.sortBy=rating]
@@ -227,7 +227,8 @@ export function searchTutors(params = {}) {
   if (params.size != null) searchParams.set("size", String(params.size));
   if (params.sortBy != null) searchParams.set("sortBy", params.sortBy);
   if (params.sortDirection != null) searchParams.set("sortDirection", params.sortDirection);
-  ["courses", "teachingMode", "sessionType"].forEach((key) => {
+  if (params.sessionType != null && String(params.sessionType).trim()) searchParams.set("sessionType", params.sessionType.trim());
+  ["courses", "teachingMode"].forEach((key) => {
     const list = params[key];
     if (Array.isArray(list) && list.length) {
       list.forEach((v) => searchParams.append(key, String(v)));
