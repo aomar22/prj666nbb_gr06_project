@@ -65,7 +65,7 @@ function isSlotAvailable(slot) {
 
 export default function BookingSession() {
   const location = useLocation();
-  const tutorId = location.state?.tutorId ?? "T102";
+  const tutorId = location.state?.tutorId ?? "T102"; //replace with actual Id format in  backend
 
   const [tutorProfile, setTutorProfile] = useState(null);
 
@@ -242,7 +242,7 @@ export default function BookingSession() {
   };
 
   const tutorName = useMemo(() => {
-    if (!tutorProfile) return "Loading...";
+    if (!tutorProfile) return "Indira Varma"; //placeholder name when profile is not loaded
     const fn = tutorProfile.firstName ?? "";
     const ln = tutorProfile.lastName ?? "";
     const full = `${fn} ${ln}`.trim();
