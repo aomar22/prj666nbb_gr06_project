@@ -1,5 +1,6 @@
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { clearAuth, getUser } from "../../api";
+import { useNavigate, useLocation } from "react-router-dom";
+import { getUser } from "../../api";
+import Sidebar from "../../components/layout/Sidebar";
 import { TEACHING_MODE_LABELS, SESSION_TYPE_LABELS } from "../../constants/options";
 
 const TUTOR_PLACEHOLDER_PHOTOS = [
@@ -28,11 +29,6 @@ export default function ViewTutorProfile() {
   const user = getUser();
   const tutor = location.state?.tutor;
 
-  const handleLogout = () => {
-    clearAuth();
-    navigate("/login", { replace: true });
-  };
-
   const handleClose = () => {
     navigate(-1);
   };
@@ -40,6 +36,7 @@ export default function ViewTutorProfile() {
   if (!tutor) {
     return (
       <div style={styles.container}>
+        <Sidebar />
         <main style={styles.mainContent}>
           <p style={styles.noTutor}>No tutor selected. <button type="button" style={styles.backLink} onClick={() => navigate("/dashboard/learner/find-tutors/results")}>Go back to results</button></p>
         </main>
@@ -66,57 +63,7 @@ export default function ViewTutorProfile() {
 
   return (
     <div style={styles.container}>
-      <aside className="fixed left-0 top-0 z-10 w-[210px] h-screen bg-[#7A0000] text-white px-5 pt-6 pb-[70px] flex flex-col shrink-0">
-        <div className="flex flex-col items-center">
-          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
-            <img src="/hat.png" alt="logo" className="h-7 w-7" />
-          </div>
-          <div className="mt-3 text-center">
-            <div className="text-[22px] font-extrabold leading-none">Scholarly</div>
-            <div className="mt-1 text-[11px] font-semibold opacity-90">Connect. Learn. Grow.</div>
-          </div>
-        </div>
-        <nav className="mt-11 space-y-2 text-[15px] font-semibold">
-          <Link to="/dashboard/learner" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline hover:bg-white/10">
-            <span className="opacity-95"><HomeIcon /></span>
-            <span>Dashboard</span>
-          </Link>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
-            <span className="opacity-95"><CalendarIcon /></span>
-            <span>My Sessions</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
-            <span className="opacity-95"><ClockIcon /></span>
-            <span>Availability</span>
-          </a>
-          <Link
-            to="/dashboard/learner/find-tutors"
-            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("find-tutors") ? "bg-white/15" : "hover:bg-white/10"}`}
-          >
-            <span className="opacity-95"><UsersIcon /></span>
-            <span>Find Tutors</span>
-          </Link>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
-            <span className="opacity-95"><ChatIcon /></span>
-            <span>Messages</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
-            <span className="opacity-95"><StarIcon /></span>
-            <span>My Reviews</span>
-          </a>
-        </nav>
-        <div className="mt-auto pt-6 border-t border-white/20 space-y-2 text-[15px] font-semibold">
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
-            <span className="opacity-95"><SettingsIcon /></span>
-            <span>Settings</span>
-          </a>
-          <button type="button" onClick={handleLogout} className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white border-0 bg-transparent cursor-pointer text-[15px] font-semibold w-full text-left">
-            <span className="opacity-95"><LogoutIcon /></span>
-            <span>Log Out</span>
-          </button>
-        </div>
-      </aside>
-
+      <Sidebar />
       <main style={styles.mainContent}>
         <div style={styles.topBar}>
           <form style={styles.searchForm} onSubmit={(e) => { e.preventDefault(); navigate("/dashboard/learner/find-tutors"); }}>
@@ -214,13 +161,16 @@ export default function ViewTutorProfile() {
 }
 
 const styles = {
-  container: { display: "flex", minHeight: "100vh" },
+  container: {
+    display: "flex",
+    minHeight: "100vh",
+    height: "100vh",
+  },
   mainContent: {
     flex: 1,
-    marginLeft: "210px",
+    overflowY: "auto",
     backgroundColor: "#F8E9DC",
     padding: "24px 32px 48px",
-    minHeight: "100vh",
     letterSpacing: 0,
     fontFamily: "Ligconsolata",
   },
@@ -491,36 +441,12 @@ const styles = {
   seeMoreLink: { background: "none", border: "none", color: "#000", textDecoration: "underline", cursor: "pointer", fontSize: "15px", fontFamily: "Ligconsolata" },
 };
 
-function IconBase({ children }) {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">{children}</svg>;
-}
 function SearchMagnifyIcon() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 function BellIcon() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
-function HomeIcon() {
-  return <IconBase><path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
-}
-function CalendarIcon() {
-  return <IconBase><path d="M7 3v3M17 3v3M4 8h16M6 6h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></IconBase>;
-}
-function ClockIcon() {
-  return <IconBase><path d="M12 22a10 10 0 110-20 10 10 0 010 20z" stroke="currentColor" strokeWidth="2" /><path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
-}
-function UsersIcon() {
-  return <IconBase><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M9 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" /><path d="M22 21v-2a4 4 0 00-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></IconBase>;
-}
-function ChatIcon() {
-  return <IconBase><path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
-}
 function StarIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><path d="M12 2l3 7 7 .5-5.3 4.6L18.5 21 12 17.2 5.5 21l1.8-6.9L2 9.5 9 9l3-7z" strokeLinejoin="round" /></svg>;
-}
-function SettingsIcon() {
-  return <IconBase><path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" stroke="currentColor" strokeWidth="2" /><path d="M19.4 15a7.8 7.8 0 000-6l2-1.1-2-3.5-2.3.7a8 8 0 00-5.2-3L11.5 0h-3L8 2a8 8 0 00-5.2 3l-2.3-.7-2 3.5L.5 9a7.8 7.8 0 000 6l-2 1.1 2 3.5 2.3-.7a8 8 0 005.2 3l.5 2h3l.4-2a8 8 0 005.2-3l2.3.7 2-3.5-2-1.1z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></IconBase>;
-}
-function LogoutIcon() {
-  return <IconBase><path d="M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18 9l3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
 }
