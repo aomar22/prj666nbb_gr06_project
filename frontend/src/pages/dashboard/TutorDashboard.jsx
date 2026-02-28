@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { clearAuth, getUser, searchLearnersByCourse } from "../../api";
+import Topbar from "../../components/layout/Topbar";
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
@@ -117,36 +118,16 @@ export default function TutorDashboard() {
 
       {/* Main Content */}
       <main style={styles.mainContent}>
-        {/* Header - pill-style search same as AvailabilityV2 */}
-        <header className="flex items-center gap-6 mb-8">
-          <div className="relative flex-1">
-            <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70 text-black/70">
-              <SearchIcon />
-            </div>
-            <input
-              type="text"
-              placeholder="Search by course (e.g. DBS311, OOP345)"
-              className="w-full h-[54px] rounded-full bg-white pl-14 pr-5 text-[18px] font-mono shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none border-0"
-              value={learnerSearchQuery}
-              onChange={(e) => setLearnerSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLearnerSearch()}
-              disabled={learnerSearchLoading}
-            />
-          </div>
-          <div className="flex items-center gap-6">
-            <button type="button" className="relative p-0 border-0 bg-transparent cursor-pointer text-black/70 hover:text-black">
-              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500" />
-              <BellIcon />
-            </button>
-            <div className="h-10 w-10 rounded-full bg-black/20 overflow-hidden shrink-0">
-              <img
-                alt="Profile"
-                src="https://ui-avatars.com/api/?name=User&background=ddd&color=666&size=100"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        </header>
+        <div className="mb-8">
+          <Topbar
+            placeholder="Search by course (e.g. DBS311, OOP345)"
+            value={learnerSearchQuery}
+            onSearchChange={(e) => setLearnerSearchQuery(e.target.value)}
+            onSearchSubmit={() => handleLearnerSearch()}
+            disabled={learnerSearchLoading}
+            avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ddd&color=666&size=100`}
+          />
+        </div>
 
         {/* Welcome Section */}
         <section style={styles.welcomeSection}>
@@ -873,19 +854,4 @@ function SettingsIcon() {
 }
 function LogoutIcon() {
   return <IconBase><path d="M10 17l1 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6l-1 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M15 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M18 9l3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></IconBase>;
-}
-function SearchIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-function BellIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
 }

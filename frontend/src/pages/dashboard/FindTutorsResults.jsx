@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, searchTutors } from "../../api";
 import Sidebar from "../../components/layout/Sidebar";
+import Topbar from "../../components/layout/Topbar";
 import { TEACHING_MODE_LABELS } from "../../constants/options";
 
 export default function FindTutorsResults() {
@@ -131,36 +132,17 @@ export default function FindTutorsResults() {
     <div style={styles.container}>
       <Sidebar />
       <main style={styles.mainContent}>
-        {/* Top bar: search + filter icon + bell + profile */}
-        <div style={styles.topBar}>
-          <form style={styles.searchForm} onSubmit={handleSearchSubmit}>
-            <input
-              type="text"
-              placeholder="Search Tutor or Courses"
-              style={styles.searchInput}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit" style={styles.searchIconBtn} aria-label="Search">
-              <SearchMagnifyIcon />
-            </button>
-          </form>
-          <div style={styles.topBarIcons}>
-            <button type="button" style={styles.iconBtn} aria-label="Filter or sort">
-              <FilterSortIcon />
-            </button>
-            <button type="button" style={styles.iconBtn} aria-label="Notifications">
-              <span style={styles.bellWrap}>
-                <BellIcon />
-                <span style={styles.badge}>3</span>
-              </span>
-            </button>
-            <button type="button" style={styles.avatarBtn} aria-label="Profile">
-              <div style={styles.avatar}>
-                {user?.firstName?.[0] || "U"}
-              </div>
-            </button>
-          </div>
+        <div style={{ marginBottom: "28px" }}>
+          <Topbar
+            placeholder="Search Tutor or Courses"
+            value={searchQuery}
+            onSearchChange={(e) => setSearchQuery(e.target.value)}
+            onSearchSubmit={(e) => {
+              e?.preventDefault?.();
+              handleSearchSubmit(e);
+            }}
+            avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent([user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User")}&background=ddd&color=666&size=100`}
+          />
         </div>
 
         {error && (
@@ -578,28 +560,6 @@ const styles = {
   },
 };
 
-function SearchMagnifyIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function FilterSortIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
-      <path d="M8 4v4M8 16v4M16 8v8" strokeLinecap="round" />
-    </svg>
-  );
-}
-function BellIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 function StarIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">

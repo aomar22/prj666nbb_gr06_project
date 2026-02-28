@@ -7,19 +7,37 @@ export default function TopBar({
   placeholder = "Search Student or Courses",
   value,
   onSearchChange,
+  onSearchSubmit,
+  onSearchBarClick,
+  disabled = false,
 }) {
+  const isClickable = typeof onSearchBarClick === "function";
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onSearchSubmit?.(e);
+    }
+  };
+
   return (
     <div className="flex items-center gap-6">
-      <div className="relative flex-1">
-        <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70">
+      <div
+        className={`relative flex-1 ${isClickable ? "cursor-pointer" : ""}`}
+        onClick={isClickable ? onSearchBarClick : undefined}
+        role={isClickable ? "button" : undefined}
+      >
+        <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70 pointer-events-none">
           <SearchIcon />
         </div>
 
         <input
           value={value}
           onChange={onSearchChange}
+          onKeyDown={handleKeyDown}
+          readOnly={isClickable}
+          disabled={disabled}
           className="w-full h-[54px] rounded-full bg-white px-14 text-[18px] font-mono
-                     shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none"
+                     shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none disabled:opacity-60 disabled:cursor-not-allowed"
           placeholder={placeholder}
         />
       </div>

@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser } from "../../api";
 import Sidebar from "../../components/layout/Sidebar";
+import Topbar from "../../components/layout/Topbar";
 import { TEACHING_MODE_LABELS, SESSION_TYPE_LABELS } from "../../constants/options";
 
 const TUTOR_PLACEHOLDER_PHOTOS = [
@@ -65,24 +66,12 @@ export default function ViewTutorProfile() {
     <div style={styles.container}>
       <Sidebar />
       <main style={styles.mainContent}>
-        <div style={styles.topBar}>
-          <form style={styles.searchForm} onSubmit={(e) => { e.preventDefault(); navigate("/dashboard/learner/find-tutors"); }}>
-            <input type="text" placeholder="Search Tutor or Courses" style={styles.searchInput} readOnly />
-            <button type="button" style={styles.searchIconBtn} aria-label="Search" onClick={() => navigate("/dashboard/learner/find-tutors")}>
-              <SearchMagnifyIcon />
-            </button>
-          </form>
-          <div style={styles.topBarIcons}>
-            <button type="button" style={styles.iconBtn} aria-label="Notifications">
-              <span style={styles.bellWrap}>
-                <BellIcon />
-                <span style={styles.badge}>3</span>
-              </span>
-            </button>
-            <button type="button" style={styles.avatarBtn} aria-label="Profile">
-              <div style={styles.avatar}>{user?.firstName?.[0] || "U"}</div>
-            </button>
-          </div>
+        <div style={{ marginBottom: "28px" }}>
+          <Topbar
+            placeholder="Search Tutor or Courses"
+            onSearchBarClick={() => navigate("/dashboard/learner/find-tutors")}
+            avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent([user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User")}&background=ddd&color=666&size=100`}
+          />
         </div>
 
         <div style={styles.profileCard}>
@@ -172,9 +161,9 @@ const styles = {
     backgroundColor: "#F8E9DC",
     padding: "24px 32px 48px",
     letterSpacing: 0,
-    fontFamily: "Ligconsolata",
+    fontFamily: '"SF Mono", Monaco, Menlo, Consolas, "Liberation Mono", "Courier New", monospace',
   },
-  noTutor: { fontFamily: "Ligconsolata", color: "#333" },
+  noTutor: { fontFamily: 'inherit', color: "#333" },
   backLink: { background: "none", border: "none", color: "#7A0000", textDecoration: "underline", cursor: "pointer", fontSize: "inherit" },
   topBar: {
     display: "flex",
@@ -195,7 +184,7 @@ const styles = {
     backgroundColor: "#ffffff",
     boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
     outline: "none",
-    fontFamily: "Ligconsolata",
+    fontFamily: "inherit",
   },
   searchIconBtn: {
     position: "absolute",
@@ -256,7 +245,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "Ligconsolata",
+    fontFamily: 'inherit',
   },
   profileCard: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
@@ -283,7 +272,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "Ligconsolata",
+    fontFamily: 'inherit',
   },
   profileHeader: {
     display: "flex",
@@ -318,7 +307,7 @@ const styles = {
     fontWeight: "bold",
     color: "#7A0000",
     zIndex: 0,
-    fontFamily: "Ligconsolata",
+    fontFamily: 'inherit',
   },
   profileHeaderRight: { flex: 1, minWidth: 0, paddingRight: "52px" },
   profileNameRow: {
@@ -334,7 +323,7 @@ const styles = {
     fontSize: "24px",
     lineHeight: "28px",
     fontWeight: 700,
-    fontFamily: "Ligconsolata",
+    fontFamily: "inherit",
     color: "#000",
   },
   profileActions: { display: "flex", gap: "12px", flexShrink: 0 },
@@ -343,11 +332,14 @@ const styles = {
     alignItems: "center",
     gap: "6px",
     marginBottom: "16px",
-    fontFamily: "Ligconsolata",
     fontSize: "15px",
+    lineHeight: "17px",
+    fontWeight: 700,
+    fontFamily: "Arial, Helvetica, sans-serif",
+    color: "#000",
   },
   ratingNum: { fontWeight: 700, color: "#000" },
-  reviewsLink: { color: "#000", textDecoration: "underline", fontWeight: 400 },
+  reviewsLink: { fontSize: "14px", fontWeight: 400, fontFamily: "Arial, Helvetica, sans-serif", color: "#555", textDecoration: "underline" },
   msgBtn: {
     padding: "12px 24px",
     backgroundColor: "#FF4245",
@@ -357,7 +349,7 @@ const styles = {
     fontSize: "15px",
     fontWeight: 700,
     cursor: "pointer",
-    fontFamily: "Ligconsolata",
+    fontFamily: "inherit",
   },
   bookBtn: {
     padding: "12px 20px",
@@ -368,14 +360,14 @@ const styles = {
     fontSize: "15px",
     fontWeight: 700,
     cursor: "pointer",
-    fontFamily: "Ligconsolata",
+    fontFamily: "inherit",
   },
   section: { marginBottom: "24px" },
   sectionTitle: {
     margin: "0 0 12px 0",
     fontSize: "18px",
     fontWeight: 700,
-    fontFamily: "Ligconsolata",
+    fontFamily: "inherit",
     color: "#000",
   },
   aboutText: {
@@ -383,16 +375,15 @@ const styles = {
     fontSize: "15px",
     lineHeight: "24px",
     fontWeight: 700,
-    fontFamily: "Ligconsolata",
-    color: "#000000"
-
+    fontFamily: "inherit",
+    color: "#333",
   },
   detailRow: {
     margin: "0 0 8px 0",
     fontSize: "15px",
-    lineHeight: "17px",
-    fontWeight: 400,
-    fontFamily: "Ligconsolata",
+    lineHeight: "20px",
+    fontWeight: 700,
+    fontFamily: "inherit",
     color: "#333",
   },
   reviewCard: {
@@ -430,23 +421,17 @@ const styles = {
     fontWeight: "bold",
     color: "#7A0000",
     zIndex: 0,
-    fontFamily: "Ligconsolata",
+    fontFamily: "inherit",
   },
   reviewBody: { flex: 1, minWidth: 0 },
   reviewHeader: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" },
-  reviewerName: { fontWeight: 700, fontSize: "15px", fontFamily: "Ligconsolata", color: "#000" },
+  reviewerName: { fontWeight: 700, fontSize: "15px", fontFamily: "inherit", color: "#000" },
   reviewStars: { fontSize: "14px", color: "#000" },
-  reviewText: { margin: 0, fontSize: "15px", lineHeight: "22px", fontWeight: 400, fontFamily: "Ligconsolata", color: "#333" },
+  reviewText: { margin: 0, fontSize: "15px", lineHeight: "22px", fontWeight: 400, fontFamily: "inherit", color: "#333" },
   seeMore: { margin: "16px 0 0 0", textAlign: "center" },
-  seeMoreLink: { background: "none", border: "none", color: "#000", textDecoration: "underline", cursor: "pointer", fontSize: "15px", fontFamily: "Ligconsolata" },
+  seeMoreLink: { background: "none", border: "none", color: "#000", textDecoration: "underline", cursor: "pointer", fontSize: "15px", fontFamily: "inherit" },
 };
 
-function SearchMagnifyIcon() {
-  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
-function BellIcon() {
-  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
 function StarIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><path d="M12 2l3 7 7 .5-5.3 4.6L18.5 21 12 17.2 5.5 21l1.8-6.9L2 9.5 9 9l3-7z" strokeLinejoin="round" /></svg>;
 }
