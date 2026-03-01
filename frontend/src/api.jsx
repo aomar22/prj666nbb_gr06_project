@@ -70,6 +70,14 @@ export async function getTutorAllSlots(tutorId, startDate, endDate) {
   );
 }
 
+// Book a slot for a learner
+export async function bookSlot(slotId, learnerId) {
+  return authRequest(
+    `/api/availability/book/${slotId}?learnerId=${learnerId}`,
+    { method: "PATCH" }
+  );
+}
+
 // Base request without auth (for public routes)
 async function publicRequest(path, opts = {}) {
   const headers = {

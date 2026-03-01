@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
-import { getTutorAllSlots, searchTutors } from "../../api";
+import { bookSlot, getUser, getTutorAllSlots, searchTutors } from "../../api";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 
 function makeEmptyWeek() {
@@ -80,7 +80,7 @@ export default function BookingSession() {
         id: "demo-2025-10-11-1430",
         label: "2:30 PM",
         raw: {
-          slotId: "DEMO_SLOT_1",
+          id: "DEMO_SLOT_1",
           date: "2025-10-11",
           startTime: "14:30:00",
           endTime: "15:10:00",
@@ -97,7 +97,7 @@ export default function BookingSession() {
   const [confirmError, setConfirmError] = useState("");
   const profilePic = "/profile_pic2.png";
 
-  const canConfirm = Boolean(selectedSlot?.raw?.slotId);
+  const canConfirm = Boolean(selectedSlot?.raw?.id);
 
   useEffect(() => {
     if (!tutorId) return;
@@ -153,7 +153,7 @@ export default function BookingSession() {
           if (!Number.isFinite(startM)) continue;
 
           next[dayKey].push({
-            id: s.slotId ?? `${s.date}-${s.startTime}`,
+            id: s.id ?? `${s.date}-${s.startTime}`,
             label: minutesTo12h(startM),
             raw: s,
           });
@@ -221,7 +221,7 @@ export default function BookingSession() {
   const handleConfirm = async () => {
     setConfirmError("");
 
-    if (!selectedSlot?.raw?.slotId) {
+    if (!selectedSlot?.raw?.id) {
       setConfirmError("Please select an available time slot first.");
       return;
     }
@@ -229,11 +229,9 @@ export default function BookingSession() {
 
     try {
       setIsBooking(true);
-      //temporary simulation of booking request (replace with actual API call) 
-      await new Promise((res) => setTimeout(res, 700));
-  
+      const learnerId = getUser()?.id;
+      await bookSlot(selectedSlot.raw.id, learnerId);
       setConfirmOpen(true);
-    
     } catch (e) {
       setConfirmError(e?.message ?? "Booking failed. Please try again.");
     } finally {
