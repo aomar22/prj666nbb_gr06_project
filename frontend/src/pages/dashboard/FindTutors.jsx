@@ -26,7 +26,8 @@ export default function FindTutors() {
   const [selectedRatings, setSelectedRatings] = useState([]);
   const [selectedSessionTypes, setSelectedSessionTypes] = useState("");
   const [selectedTeachingModes, setSelectedTeachingModes] = useState([]);
-  const [availabilityDate, setAvailabilityDate] = useState("");
+  const [availableFrom, setAvailableFrom] = useState("");
+  const [availableTo, setAvailableTo] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
@@ -72,6 +73,20 @@ export default function FindTutors() {
       onRemove: () => setSelectedTeachingModes((prev) => prev.filter((x) => x !== m)),
     })
   );
+  if (availableFrom) {
+    appliedFilters.push({
+      key: "availableFrom",
+      label: `From: ${availableFrom}`,
+      onRemove: () => setAvailableFrom(""),
+    });
+  }
+  if (availableTo) {
+    appliedFilters.push({
+      key: "availableTo",
+      label: `To: ${availableTo}`,
+      onRemove: () => setAvailableTo(""),
+    });
+  }
 
   const handleSearch = async () => {
     setError(null);
@@ -90,6 +105,8 @@ export default function FindTutors() {
       if (selectedRatings.length) params.minRating = Math.min(...selectedRatings);
       if (selectedSessionTypes) params.sessionType = selectedSessionTypes;
       if (selectedTeachingModes.length) params.teachingMode = selectedTeachingModes;
+      if (availableFrom) params.availableFrom = availableFrom;
+      if (availableTo) params.availableTo = availableTo;
 
       const page = await searchTutors(params);
       navigate("/dashboard/learner/find-tutors/results", {
@@ -390,16 +407,31 @@ export default function FindTutors() {
             </div>
             <div style={styles.filterGroupAvailability}>
               <label style={styles.filterLabel}>Availability</label>
-              <div style={styles.dateInputWrap}>
-                <span style={styles.dateIconLeft} aria-hidden="true">
-                  <CalendarIcon />
-                </span>
-                <input
-                  type="date"
-                  style={styles.dateInput}
-                  value={availabilityDate}
-                  onChange={(e) => setAvailabilityDate(e.target.value)}
-                />
+              <div style={styles.dateRangeRow}>
+                <div style={styles.dateInputWrap}>
+                  <span style={styles.dateIconLeft} aria-hidden="true">
+                    <CalendarIcon />
+                  </span>
+                  <input
+                    type="date"
+                    style={styles.dateInput}
+                    value={availableFrom}
+                    onChange={(e) => setAvailableFrom(e.target.value)}
+                    placeholder="From"
+                  />
+                </div>
+                <div style={styles.dateInputWrap}>
+                  <span style={styles.dateIconLeft} aria-hidden="true">
+                    <CalendarIcon />
+                  </span>
+                  <input
+                    type="date"
+                    style={styles.dateInput}
+                    value={availableTo}
+                    onChange={(e) => setAvailableTo(e.target.value)}
+                    placeholder="To"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -625,9 +657,14 @@ const styles = {
     pointerEvents: "none",
   },
   chevronSvg: { display: "block" },
+  dateRangeRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "24px",
+  },
   dateInputWrap: {
     position: "relative",
-    width: "100%",
+    flex: 1,
     minHeight: "48px",
     borderRadius: "24px",
     backgroundColor: "#ffffff",

@@ -236,6 +236,8 @@ export function searchTutors(params = {}) {
   if (params.sortBy != null) searchParams.set("sortBy", params.sortBy);
   if (params.sortDirection != null) searchParams.set("sortDirection", params.sortDirection);
   if (params.sessionType != null && String(params.sessionType).trim()) searchParams.set("sessionType", params.sessionType.trim());
+  if (params.availableFrom != null && String(params.availableFrom).trim()) searchParams.set("availableFrom", params.availableFrom.trim());
+  if (params.availableTo != null && String(params.availableTo).trim()) searchParams.set("availableTo", params.availableTo.trim());
   ["courses", "teachingMode"].forEach((key) => {
     const list = params[key];
     if (Array.isArray(list) && list.length) {
