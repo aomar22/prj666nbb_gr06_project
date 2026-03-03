@@ -75,8 +75,6 @@ export default function ViewTutorProfile() {
         </div>
 
         <div style={styles.profileCard}>
-          <button type="button" style={styles.closeBtn} onClick={handleClose} aria-label="Close">×</button>
-
           <div style={styles.profileHeader}>
             <div style={styles.profileAvatarWrap}>
               <img src={tutorAvatarUrl} alt="" style={styles.profileAvatarImg} onError={(e) => { e.target.style.display = "none"; }} />
@@ -87,7 +85,14 @@ export default function ViewTutorProfile() {
                 <h1 style={styles.profileName}>{tutorName}</h1>
                 <div style={styles.profileActions}>
                   <button type="button" style={styles.msgBtn}>Message</button>
-                  <button type="button" style={styles.bookBtn}>Book session</button>
+                  <button 
+                    type="button" 
+                    style={styles.bookBtn}
+                    onClick={() => navigate("/dashboard/learner/booking", { state: { tutorId: tutor.id ?? tutor.userId, tutor } })}
+                  >
+                    Book session
+                  </button>
+                  <button type="button" style={styles.closeBtn} onClick={handleClose} aria-label="Close">×</button>
                 </div>
               </div>
               <div style={styles.ratingRow}>
@@ -341,26 +346,38 @@ const styles = {
   ratingNum: { fontWeight: 700, color: "#000" },
   reviewsLink: { fontSize: "14px", fontWeight: 400, fontFamily: "Arial, Helvetica, sans-serif", color: "#555", textDecoration: "underline" },
   msgBtn: {
-    padding: "12px 24px",
+    width: "156px",
+    height: "61px",
     backgroundColor: "#FF4245",
     color: "#fff",
     border: "none",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 700,
+    borderRadius: "17px",
+    fontSize: "20px",
+    fontWeight: 500, // Matches Tailwind's font-medium
     cursor: "pointer",
     fontFamily: "inherit",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0px 6px 14px rgba(0,0,0,0.18)",
+    padding: 0,
   },
   bookBtn: {
-    padding: "12px 20px",
+    width: "156px",
+    height: "61px",
     backgroundColor: "#FF4245",
     color: "#fff",
     border: "none",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 700,
+    borderRadius: "17px",
+    fontSize: "20px",
+    fontWeight: 500,
     cursor: "pointer",
     fontFamily: "inherit",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0px 6px 14px rgba(0,0,0,0.18)",
+    padding: 0,
   },
   section: { marginBottom: "24px" },
   sectionTitle: {

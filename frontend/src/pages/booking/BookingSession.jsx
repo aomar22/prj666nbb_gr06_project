@@ -306,6 +306,7 @@ export default function BookingSession() {
 
             <button
               type="button"
+              onClick={() => navigate("/dashboard/learner/find-tutors/profile", { state: { tutor: location.state?.tutor || tutorProfile } })}
               className="
                 w-[156px] h-[61px] rounded-[17px]
                 bg-[#FF4245] text-white
