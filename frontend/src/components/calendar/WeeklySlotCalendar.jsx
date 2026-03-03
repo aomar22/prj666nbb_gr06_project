@@ -141,29 +141,38 @@ export default function WeeklySlotCalendar({
                 className="px-3 pb-4 space-y-3"
                 style={{ minHeight: `${minBodyHeight}px` }}
               >
-                {(slotsByDayKey[c.key] || []).map((s) => {
-                  const active = s.id === selectedSlotId;
+                {(slotsByDayKey[c.key] || [])
+                  .filter((s) => {
 
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => {
-                        handleSelectDay(c.key);
-                        onSelectSlotId?.(active ? null : s.id);
-                        onSlotClick?.(s, c);
-                      }}
-                      className={[
-                        "w-full rounded-full px-3 py-2 text-center text-[12px] font-extrabold shadow-sm",
-                        active
-                          ? "bg-black/20 text-black"
-                          : "bg-black/10 text-black/70 hover:bg-black/15",
-                      ].join(" ")}
-                    >
-                      {s.label}
-                    </button>
-                  );
-                })}
+                    if (s.raw && s.raw.date) {
+                      const colDateStr = `${c.year}-${String(c.month + 1).padStart(2, '0')}-${String(c.dayNum).padStart(2, '0')}`;
+                      return s.raw.date === colDateStr;
+                    }
+                    return true; 
+                  })
+                  .map((s) => {
+                    const active = s.id === selectedSlotId;
+
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          handleSelectDay(c.key);
+                          onSelectSlotId?.(active ? null : s.id);
+                          onSlotClick?.(s, c);
+                        }}
+                        className={[
+                          "w-full rounded-full px-3 py-2 text-center text-[12px] font-extrabold shadow-sm",
+                          active
+                            ? "bg-black/20 text-black"
+                            : "bg-black/10 text-black/70 hover:bg-black/15",
+                        ].join(" ")}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           ))}

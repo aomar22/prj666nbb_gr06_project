@@ -75,13 +75,19 @@ export default function BookingSession() {
   // TEMP: demo slot to test confirm + modal (remove after backend is ready)
   const demoSlotsByDayKey = useMemo(() => {
     const next = makeEmptyWeek();
+    const today = new Date();
+    const daysUntilWed = (3 - today.getDay() + 7) % 7 || 7; 
+    const nextWed = new Date(today);
+    nextWed.setDate(today.getDate() + daysUntilWed);
+    const wedDateStr = nextWed.toISOString().slice(0, 10);
+
     next.WEDNESDAY = [
       {
-        id: "demo-2025-10-11-1430",
+        id: `demo-${wedDateStr}-1430`,
         label: "2:30 PM",
         raw: {
           id: "DEMO_SLOT_1",
-          date: "2025-10-11",
+          date: wedDateStr,
           startTime: "14:30:00",
           endTime: "15:10:00",
         },
