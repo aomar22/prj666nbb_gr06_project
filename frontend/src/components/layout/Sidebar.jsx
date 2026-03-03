@@ -25,7 +25,10 @@ export default function Sidebar() {
   const navItems = isTutor ? TUTOR_NAV : LEARNER_NAV;
 
   return (
-    <aside className="w-[217px] h-full bg-[#7A0000] text-white px-5 pt-6 pb-6 flex flex-col">
+    <aside
+      className="w-[217px] h-full bg-[#7A0000] font-semibold text-white px-5 pt-6 pb-6 flex flex-col"
+      style={{ fontFamily: "Ligconsolata, Arial, sans-serif" }}
+    >
       {/* Brand */}
       <div className="flex flex-col items-center shrink-0">
         <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
@@ -129,7 +132,9 @@ const LEARNER_NAV = [
   {
     label: "Find Tutors",
     to: "/dashboard/learner/find-tutors",
-    isActive: (p) => p.includes("/dashboard/learner/find-tutors"),
+    isActive: (p) =>
+      p.includes("/dashboard/learner/find-tutors") ||
+      p.includes("/dashboard/learner/booking"),
     icon: <UsersIcon />,
   },
   {

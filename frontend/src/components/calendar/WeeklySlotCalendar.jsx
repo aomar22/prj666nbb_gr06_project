@@ -88,20 +88,20 @@ export default function WeeklySlotCalendar({
     <div>
       {/* Week Navigation (same as AvailabilityV2) */}
       <div className="flex items-center justify-between mb-3 mt-4">
-        <button type="button" onClick={goPrevWeek} className="text-[14px] font-bold">
+        <button type="button" onClick={goPrevWeek} className="text-[16px] font-bold">
           &lt; Previous Week
         </button>
 
         <div className="flex flex-col items-center">
-          <div className="text-[18px] font-bold text-center font-mono text-black/70">
+          <div className="text-[20px] font-bold text-center font-mono text-black/70">
             {monthLabel}
           </div>
-          <div className="text-[14px] text-black/50 font-semibold font-mono text-center">
+          <div className="text-[16px] text-black/50 font-semibold font-mono text-center">
             {weekRangeLabel}
           </div>
         </div>
 
-        <button type="button" onClick={goNextWeek} className="text-[14px] font-bold">
+        <button type="button" onClick={goNextWeek} className="text-[16px] font-bold">
           Next Week &gt;
         </button>
       </div>
@@ -127,7 +127,7 @@ export default function WeeklySlotCalendar({
 
                 <div
                   className={[
-                    "mx-auto mt-2 h-9 w-9 rounded-full flex items-center justify-center text-[22px] font-bold",
+                    "mx-auto mt-2 h-9 w-9 rounded-full flex items-center justify-center text-[24px] font-bold",
                     selectedDayKey === c.key
                       ? "bg-[#0B2F86] text-white"
                       : "text-black/70",

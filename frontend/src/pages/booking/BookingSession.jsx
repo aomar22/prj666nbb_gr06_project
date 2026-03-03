@@ -331,7 +331,7 @@ export default function BookingSession() {
             </div>
           </div>
 
-          <p className="mt-2 text-[14px] font-bold text-black/70">
+          <p className="mt-2 text-[20px] font-bold text-black/70">
             Select preferred time and session details to confirm your tutoring appointment.
           </p>
         </div>
@@ -374,25 +374,25 @@ export default function BookingSession() {
 
         <div className="mt-8 flex items-center gap-6">
           <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-10 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
-            <div className="text-center text-[16px] font-extrabold">
+            <div className="text-center text-[20px] font-extrabold">
               Selected Time
             </div>
 
-            <div className="mt-1 text-center text-[16px] font-extrabold">
+            <div className="mt-1 text-center text-[20px] font-extrabold">
               {selectedDateLabel}
             </div>
 
-            <div className="mt-6 flex items-center justify-between gap-8">
+            <div className="mt-6 px-20 flex items-center justify-between gap-8">
               <div className="flex items-center gap-3">
-                <div className="text-[16px] font-bold">Start Time:</div>
-                <div className="h-[36px] min-w-[130px] rounded-full bg-white px-5 grid place-items-center text-[14px] font-extrabold shadow">
+                <div className="text-[18px] font-bold">Start Time:</div>
+                <div className="h-[36px] min-w-[130px] rounded-full bg-white px-5 grid place-items-center text-[16px] font-extrabold shadow">
                   {startTime}
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="text-[16px] font-bold">End Time:</div>
-                <div className="h-[36px] min-w-[130px] rounded-full bg-white px-5 grid place-items-center text-[14px] font-extrabold shadow">
+                <div className="text-[18px] font-bold">End Time:</div>
+                <div className="h-[36px] min-w-[130px] rounded-full bg-white px-5 grid place-items-center text-[16px] font-extrabold shadow">
                   {endTime}
                 </div>
               </div>
