@@ -13,7 +13,7 @@ import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import { getUser } from "../api";
 import AvailabilityV2 from "../pages/availability/AvailabilityV2";
 import BookingSession from "../pages/booking/BookingSession";
-
+import LearnerSessionManagement from "../pages/booking/LearnerSessionManagement";
 // Component to redirect to role-specific dashboard
 function DashboardRedirect() {
   const user = getUser();
@@ -48,6 +48,7 @@ export default function AppRouter() {
         <Route path='/dashboard/learner/find-tutors/results' element={<FindTutorsResults />} />
         <Route path='/dashboard/learner/find-tutors/profile' element={<ViewTutorProfile />} />
         <Route path='/dashboard/learner/booking' element={<BookingSession />} />
+        <Route path='/dashboard/learner/sessions' element={<LearnerSessionManagement />} />
         <Route path='/dashboard/tutor' element={<TutorDashboard />} />
         <Route path='/dashboard/availability-v2' element={<AvailabilityV2 />} />
 

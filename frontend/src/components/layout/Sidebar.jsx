@@ -125,8 +125,8 @@ const LEARNER_NAV = [
   },
   {
     label: "My Sessions",
-    to: "/dashboard/sessions",
-    isActive: (p) => p.includes("/sessions"),
+    to: "/dashboard/learner/sessions",
+    isActive: (p) => p.includes("/dashboard/learner/sessions"),
     icon: <CalendarIcon />,
   },
   {
