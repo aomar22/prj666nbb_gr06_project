@@ -5,6 +5,7 @@ import EmailVerification from "../auth/pages/EmailVerification";
 import Home from "../auth/pages/Home";
 import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
 import TutorDashboard from "../pages/dashboard/TutorDashboard";
+import TutorMySession from "../pages/sessions/TutorMySession";
 import FindTutors from "../pages/dashboard/FindTutors";
 import FindTutorsResults from "../pages/dashboard/FindTutorsResults";
 import ViewTutorProfile from "../pages/dashboard/ViewTutorProfile";
@@ -50,6 +51,7 @@ export default function AppRouter() {
         <Route path='/dashboard/learner/booking' element={<BookingSession />} />
         <Route path='/dashboard/learner/sessions' element={<LearnerSessionManagement />} />
         <Route path='/dashboard/tutor' element={<TutorDashboard />} />
+        <Route path='/dashboard/sessions' element={<TutorMySession />} />
         <Route path='/dashboard/availability-v2' element={<AvailabilityV2 />} />
 
         {/* Catch-all */}

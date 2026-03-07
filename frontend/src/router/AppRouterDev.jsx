@@ -6,6 +6,7 @@ import Home from "../auth/pages/Home";
 import Onboarding from "../auth/pages/Onboarding";
 import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
 import TutorDashboard from "../pages/dashboard/TutorDashboard";
+import TutorMySession from "../pages/sessions/TutorMySession";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import AvailabilityV2 from "../pages/availability/AvailabilityV2";
@@ -86,6 +87,10 @@ export default function AppRouterDev() {
         <Route
           path='/dashboard/tutor'
           element={<TutorDashboard />}
+        />
+        <Route
+          path='/dashboard/sessions'
+          element={<TutorMySession />}
         />
         <Route
           path='/dashboard/availability-v2'

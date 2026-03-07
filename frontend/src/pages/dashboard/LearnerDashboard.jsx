@@ -121,7 +121,16 @@ export default function Dashboard() {
                         {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
                       </div>
                     )}
-                    <button style={styles.bookButton}>Book session</button>
+                    <button
+                      style={styles.bookButton}
+                      onClick={() =>
+                        navigate("/dashboard/learner/booking", {
+                          state: { tutorId: tutor.id ?? tutor.userId },
+                        })
+                      }
+                    >
+                      Book session
+                    </button>
                   </div>
                 ))}
               </div>
@@ -220,7 +229,12 @@ export default function Dashboard() {
                   <div style={styles.rating}>
                     <span>⭐</span> 4.9
                   </div>
-                  <button style={styles.bookButton}>Book session</button>
+                  <button
+                    style={styles.bookButton}
+                    onClick={() => navigate("/dashboard/learner/booking")}
+                  >
+                    Book session
+                  </button>
                 </div>
 
                 <div style={styles.recommendedCard}>
@@ -236,7 +250,12 @@ export default function Dashboard() {
                   <div style={styles.rating}>
                     <span>⭐</span> 5.0
                   </div>
-                  <button style={styles.bookButton}>Book session</button>
+                  <button
+                    style={styles.bookButton}
+                    onClick={() => navigate("/dashboard/learner/booking")}
+                  >
+                    Book session
+                  </button>
                 </div>
 
                 <div style={styles.recommendedCard}>
@@ -252,7 +271,12 @@ export default function Dashboard() {
                   <div style={styles.rating}>
                     <span>⭐</span> 4.0
                   </div>
-                  <button style={styles.bookButton}>Book session</button>
+                  <button
+                    style={styles.bookButton}
+                    onClick={() => navigate("/dashboard/learner/booking")}
+                  >
+                    Book session
+                  </button>
                 </div>
 
                 <div style={styles.recommendedCard}>
@@ -268,7 +292,12 @@ export default function Dashboard() {
                   <div style={styles.rating}>
                     <span>⭐</span> 4.8
                   </div>
-                  <button style={styles.bookButton}>Book session</button>
+                  <button
+                    style={styles.bookButton}
+                    onClick={() => navigate("/dashboard/learner/booking")}
+                  >
+                    Book session
+                  </button>
                 </div>
 
                 <div style={styles.recommendedCard}>
@@ -284,7 +313,12 @@ export default function Dashboard() {
                   <div style={styles.rating}>
                     <span>⭐</span> 4.7
                   </div>
-                  <button style={styles.bookButton}>Book session</button>
+                  <button
+                    style={styles.bookButton}
+                    onClick={() => navigate("/dashboard/learner/booking")}
+                  >
+                    Book session
+                  </button>
                 </div>
 
                 <div style={styles.recommendedCard}>
@@ -300,7 +334,12 @@ export default function Dashboard() {
                   <div style={styles.rating}>
                     <span>⭐</span> 4.6
                   </div>
-                  <button style={styles.bookButton}>Book session</button>
+                  <button
+                    style={styles.bookButton}
+                    onClick={() => navigate("/dashboard/learner/booking")}
+                  >
+                    Book session
+                  </button>
                 </div>
 
                 <button style={styles.arrowButton}>→</button>

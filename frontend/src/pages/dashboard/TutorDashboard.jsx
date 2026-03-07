@@ -76,10 +76,13 @@ export default function TutorDashboard() {
             <span className="opacity-95"><HomeIcon /></span>
             <span>Dashboard</span>
           </Link>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+          <Link
+            to="/dashboard/sessions"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/sessions") ? "bg-white/15" : "hover:bg-white/10"}`}
+          >
             <span className="opacity-95"><CalendarIcon /></span>
             <span>My Sessions</span>
-          </a>
+          </Link>
           <Link
             to="/dashboard/availability-v2"
             className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/availability") ? "bg-white/15" : "hover:bg-white/10"}`}
