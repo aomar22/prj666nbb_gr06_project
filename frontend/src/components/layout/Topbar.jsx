@@ -1,11 +1,12 @@
 import SearchIcon from "../icons/SearchIcon";
 import BellIcon from "../icons/BellIcon";
 import { getUser} from "../../api";
+import { useLocation } from "react-router-dom";
 
 export default function TopBar({
   avatarSrc,
   showNotificationDot = true,
-  placeholder = "Search Student or Courses",
+  placeholder,
   value,
   onSearchChange,
   onSearchSubmit,
@@ -26,8 +27,20 @@ export default function TopBar({
           : user?.email || "User";
   const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
   userName)}&background=ddd&color=666&size=100`;
+  // const rolePlaceholder =
+  //     user?.role === "TUTOR"
+  //         ? "Search Students or Courses"
+  //         : "Search Tutors or Courses";
   
-
+  const location = useLocation();
+  const pathname = location.pathname;
+  const isTutorRoute =
+    pathname.startsWith("/dashboard/tutor") ||
+    pathname.startsWith("/dashboard/availability") ||
+    pathname.startsWith("/dashboard/find-students");
+  const rolePlaceholder = isTutorRoute
+    ? "Search Students or Courses"
+    : "Search Tutors or Courses";
   return (
     <div className="flex items-center gap-6">
       <div
@@ -47,7 +60,7 @@ export default function TopBar({
           disabled={disabled}
           className="w-full h-[54px] rounded-full bg-white px-14 text-[18px] font-mono
                      shadow-[0px_6px_14px_rgba(0,0,0,0.18)] outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-          placeholder={placeholder}
+          placeholder={placeholder || rolePlaceholder}
         />
       </div>
 
