@@ -1,8 +1,9 @@
 import SearchIcon from "../icons/SearchIcon";
 import BellIcon from "../icons/BellIcon";
+import { getUser} from "../../api";
 
 export default function TopBar({
-  avatarSrc = "/avatar.png",
+  avatarSrc,
   showNotificationDot = true,
   placeholder = "Search Student or Courses",
   value,
@@ -18,6 +19,14 @@ export default function TopBar({
       onSearchSubmit?.(e);
     }
   };
+  const user = getUser();
+    const userName =
+      user?.firstName && user?.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user?.email || "User";
+  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+  userName)}&background=ddd&color=666&size=100`;
+  
 
   return (
     <div className="flex items-center gap-6">
@@ -53,7 +62,7 @@ export default function TopBar({
         <div className="h-10 w-10 rounded-full bg-black/20 overflow-hidden">
           <img
             alt="profile"
-            src={avatarSrc}
+            src={avatarSrc || generatedAvatar}
             className="h-full w-full object-cover"
           />
         </div>
