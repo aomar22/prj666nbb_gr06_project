@@ -130,6 +130,13 @@ const LEARNER_NAV = [
     icon: <CalendarIcon />,
   },
   {
+    label: "Availability",
+    to: "/dashboard/learner/availability",
+    isActive: (p) => p.includes("/dashboard/learner/availability"),
+    icon: <ClockIcon />,
+    
+  },
+  {
     label: "Find Tutors",
     to: "/dashboard/learner/find-tutors",
     isActive: (p) =>
@@ -151,10 +158,10 @@ const LEARNER_NAV = [
   },
 ];
 
-function SideLink({ to, active, icon, children }) {
+function SideLink({ to, active, icon, children}) {
   return (
     <Link
-      to={to}
+      to={to} 
       className={[
         "flex items-center gap-3 rounded-[10px] px-3 py-2 transition",
         active ? "bg-white/15" : "hover:bg-white/10",

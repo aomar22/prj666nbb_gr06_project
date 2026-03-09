@@ -1,11 +1,13 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
+
 export default function DashboardLayout({
   children,
   bgClass = "bg-[#F4E4D7]",
   mainClass = "px-10 py-6",
 }) {
+  
   return (
     <div className={`h-screen ${bgClass} overflow-hidden`}>
       <div className="flex h-screen">
