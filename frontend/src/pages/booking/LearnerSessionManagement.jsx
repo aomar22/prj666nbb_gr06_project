@@ -60,7 +60,38 @@ export default function LearnerSessionManagement() {
     mode: "Online",
     learnerId: "L001",
   },
-  
+//   { id: 6,
+//     status: "COMPLETED",
+//     tutorName: "Brad Pitt",
+//     rating: "4.7",
+//     reviews: "78 reviews",
+//     date: "Mar 20, 2026",
+//     time: "10:00 AM - 11:00 AM",
+//     mode: "Online",
+//     learnerId: "L001",
+//   },
+//   {
+//     id: 7,
+//     status: "BOOKED",
+//     tutorName: "Brad Pitt",
+//     rating: "4.7",
+//     reviews: "78 reviews",
+//     date: "Mar 20, 2026",
+//     time: "10:00 AM - 11:00 AM",
+//     mode: "Online",
+//     learnerId: "L001",
+// },
+// {
+//     id: 8,
+//     status: "COMPLETED",
+//     tutorName: "Brad Pitt",
+//     rating: "4.7",
+//     reviews: "78 reviews",
+//     date: "Mar 20, 2026",
+//     time: "10:00 AM - 11:00 AM",
+//     mode: "Online",
+//     learnerId: "L001"
+// }
 ];
     const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
@@ -68,12 +99,20 @@ export default function LearnerSessionManagement() {
     const [page, setPage] = useState(0);
     const [selectedUpcomingSessionId, setSelectedUpcomingSessionId] = useState(null);  
 
+    const [pastPage, setPastPage] = useState(0);
+    
     const sessionsPrepPage = 3;
     const totalPages = Math.ceil(upcomingSessions.length / sessionsPrepPage); //pagination
+    const pastTotalPages = Math.ceil(pastSessions.length / sessionsPrepPage);
 
-    const visibleSessions = upcomingSessions.slice(
+    const visibleUpcomingSessions = upcomingSessions.slice(
         page * sessionsPrepPage,
         page * sessionsPrepPage + sessionsPrepPage
+    );
+
+    const visiblePastSessions = pastSessions.slice(
+        pastPage * sessionsPrepPage,
+        pastPage * sessionsPrepPage + sessionsPrepPage
     );
 
 
@@ -132,8 +171,8 @@ return (
                         </div>
                     ) : (
                         <>
-                    <div className="grid flex-1 gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
-                            {visibleSessions.map((session) => (
+                    <div className="grid flex-1 gap-6 grid-cols-3">
+                            {visibleUpcomingSessions.map((session) => (
                                 <div
                                     key={session.id}
                                     onClick={() => setSelectedUpcomingSessionId(
@@ -205,7 +244,7 @@ return (
                                 prev + 1 < totalPages ? prev + 1 : 0
                             )
                             }
-                            className="ml-2 shrink-0 text-[32px] font-semibold leading-none text-black/60 hover:text-black"
+                            className="ml-1 shrink-0 text-[32px] font-semibold leading-none text-black/60 hover:text-black"
                             aria-label="Next sessions"
                             >
                             →
@@ -227,65 +266,87 @@ return (
                 </h2>
                 </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-6">
-                {pastSessions.map((session) => (
-                    <div
-                    key={session.id}
-                    className="w-full rounded-[22px] bg-[#D9D9D9] px-5 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.18)]"
-                    >
-                    {/* Tutor Info */}
-                    <div className="flex items-start gap-3">
-                        <img
-                        src="/avatar.png"
-                        alt="Tutor"
-                        className="h-[58px] w-[58px] rounded-full object-cover"
-                        />
-
-                        <div className="font-mono">
-                        <div className="text-[20px] font-extrabold leading-none text-black">
-                            {session.tutorName}
-                        </div>
-
-                        <div className="mt-2 flex items-center gap-2 text-[15px] font-bold text-black">
-                            <span>★ {session.rating}</span>
-                            <span className="text-black/70 underline">
-                            ({session.reviews})
-                            </span>
-                        </div>
-                        </div>
+            <div className="mt-6 flex items-center gap-3">
+                {pastSessions.length === 0 ? (
+                    <div className="flex rounded-[22px] bg-[#EFEFEF] px-6 py-10 text-center text-[18px] font-mono font-semibold text-black/60">
+                        No past sessions yet.
                     </div>
+                ) : (
+                    <>
+                        <div className="grid flex-1 gap-6 grid-cols-3">
+                            {visiblePastSessions.map((session) => (
+                                <div
+                                    key={session.id}
+                                    className="w-full rounded-[22px] bg-[#D9D9D9] px-5 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.18)]"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <img
+                                            src="/avatar.png"
+                                            alt="Tutor"
+                                            className="h-[58px] w-[58px] rounded-full object-cover"
+                                        />
 
-                    {/* Date + Time */}
-                    <div className="mt-5 space-y-3 font-mono text-[15px] font-bold text-black">
-                        <div className="flex items-center gap-2">
-                        <Calendar size={16} />
-                        <span>{session.date}</span>
+                                        <div className="font-mono">
+                                            <div className="text-[20px] font-extrabold leading-none text-black">
+                                                {session.tutorName}
+                                            </div>
+
+                                            <div className="mt-2 flex items-center gap-2 text-[15px] font-bold text-black">
+                                                <span>★ {session.rating}</span>
+                                                <span className="text-black/70 underline">
+                                                    ({session.reviews})
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5 space-y-3 font-mono text-[15px] font-bold text-black">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size={16} />
+                                            <span>{session.date}</span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Clock size={16} />
+                                            <span>{session.time}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 flex items-center gap-3">
+                                        <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
+                                            <img
+                                                src="/location_on.png"
+                                                alt="location"
+                                                className="h-[14px] w-[14px]"
+                                            />
+                                            {session.mode}
+                                        </div>
+
+                                        <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
+                                            {session.status === "COMPLETED" ? "Completed" : session.status}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                        <Clock size={16} />
-                        <span>{session.time}</span>
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="mt-6 flex items-center gap-3">
-                        <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
-                                <img
-                                src="/location_on.png"
-                                alt="location"
-                                className="h-[14px] w-[14px]"
-                                />
-                                {session.mode}
-                            </div>
-
-                        <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
-                        {session.status === "COMPLETED" ? "Completed" : session.status  }
-                        </div>
-                    </div>
-                    </div>
-                ))}
-                </div>
+                        {pastTotalPages > 1 && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setPastPage((prev) =>
+                                        prev + 1 < pastTotalPages ? prev + 1 : 0
+                                    )
+                                }
+                                className="shrink-0 text-[32px] font-semibold leading-none text-black/60 hover:text-black"
+                                aria-label="Next past sessions"
+                            >
+                                →
+                            </button>
+                        )}
+                    </>
+                )}
+            </div>
             </section>
             </PageCard>
       
