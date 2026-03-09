@@ -2,9 +2,12 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import { Calendar, Clock } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 export default function LearnerSessionManagement() {
-    const slots = [
+    const navigate = useNavigate();
+    const [slots, setSlots] = useState([
   {
     id: 1,
     status: "BOOKED",
@@ -92,7 +95,8 @@ export default function LearnerSessionManagement() {
 //     mode: "Online",
 //     learnerId: "L001"
 // }
-];
+
+]);
     const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
     
@@ -118,6 +122,39 @@ export default function LearnerSessionManagement() {
 
     const hasSelectedUpcomingSession = selectedUpcomingSessionId !== null;
 
+    const selectedUpcomingSession = upcomingSessions.find(
+    (session) => session.id === selectedUpcomingSessionId
+    );
+    function handleCancel() {
+  if (!selectedUpcomingSession) return;
+
+  setSlots((prevSlots) =>
+    prevSlots.map((slot) =>
+      slot.id === selectedUpcomingSession.id
+        ? {
+            ...slot,
+            status: "AVAILABLE",
+            learnerId: null,
+          }
+        : slot
+    )
+  );
+
+  setSelectedUpcomingSessionId(null);
+  setPage(0);
+}
+
+function handleReschedule() {
+      console.log("selectedUpcomingSession:", selectedUpcomingSession);
+
+  if (!selectedUpcomingSession) return;
+
+  navigate("/dashboard/learner/sessions/reschedule", {
+    state: {
+      session: selectedUpcomingSession,
+    },
+  });
+}
 return (
     <DashboardLayout>
       
@@ -140,6 +177,7 @@ return (
                     <button
                         type="button"
                         disabled={!hasSelectedUpcomingSession}
+                        onClick={handleCancel}
                         className={`px-4 py-2 rounded-lg text-white font-semibold shadow transition ${
                         hasSelectedUpcomingSession
                         ? "bg-red-700 hover:bg-red-800"
@@ -152,12 +190,13 @@ return (
                     <button
                         type="button"
                         disabled={!hasSelectedUpcomingSession}
+                        onClick={handleReschedule}
                         className={[
                             "px-4 py-2 rounded-lg text-white font-semibold shadow transition",
-                        hasSelectedUpcomingSession
-                            ? "bg-blue-800 hover:bg-blue-900"
-                            : "bg-blue-400 cursor-not-allowed shadow-none",
-                        ].join(" ")} 
+                            hasSelectedUpcomingSession
+                                ? "bg-blue-800 hover:bg-blue-900"
+                                : "bg-blue-400 cursor-not-allowed shadow-none",
+                        ].join(" ")}
                     >
                         Reschedule
                     </button>
