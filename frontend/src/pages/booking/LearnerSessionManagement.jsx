@@ -4,69 +4,80 @@ import { Calendar, Clock } from "lucide-react";
 import { useState } from "react";
 
 export default function LearnerSessionManagement() {
-    
-    
-    const upcomingSessions = [
+    const slots = [
   {
     id: 1,
+    status: "BOOKED",
     tutorName: "Brad Pitt",
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 20, 2026",
     time: "10:00 AM - 11:00 AM",
     mode: "Online",
+    learnerId: "L001",
   },
   {
     id: 2,
+    status: "BOOKED",
     tutorName: "Brad Pitt",
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 24, 2026",
     time: "10:00 AM - 11:00 AM",
     mode: "Online",
+    learnerId: "L001",
   },
   {
     id: 3,
+    status: "BOOKED",
     tutorName: "Brad Pitt",
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 30, 2026",
     time: "10:00 AM - 11:00 AM",
     mode: "Online",
+    learnerId: "L001",
   },
-];
-const [page, setPage] = useState(0);
-    const sessionsPrepPage = 3;
-    const visibleSessions = upcomingSessions.slice(
-        page * sessionsPrepPage,
-        page * sessionsPrepPage + sessionsPrepPage
-    );
-    const pastSessions = [
   {
-    id: 1,
+    id: 4,
+    status: "COMPLETED",
     tutorName: "Brad Pitt",
     rating: "4.7",
     reviews: "78 reviews",
     date: "Feb 13, 2026",
     time: "10:00 AM - 11:00 AM",
     mode: "Online",
-    status: "Completed",
+    learnerId: "L001",
   },
   {
-    id: 2,
+    id: 5,
+    status: "COMPLETED",
     tutorName: "Brad Pitt",
     rating: "4.7",
     reviews: "78 reviews",
     date: "Feb 20, 2026",
     time: "10:00 AM - 11:00 AM",
     mode: "Online",
-    status: "Completed",
+    learnerId: "L001",
   },
+  
 ];
-const totalPages = Math.ceil(upcomingSessions.length / sessionsPrepPage);
+    const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
+    const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
+    
+    const [page, setPage] = useState(0);
+    const [selectedUpcomingSessionId, setSelectedUpcomingSessionId] = useState(null);  
 
-const [selectedUpcomingSessionId, setSelectedUpcomingSessionId] = useState(null);  
-const hasSelectedUpcomingSession = selectedUpcomingSessionId !== null;
+    const sessionsPrepPage = 3;
+    const totalPages = Math.ceil(upcomingSessions.length / sessionsPrepPage); //pagination
+
+    const visibleSessions = upcomingSessions.slice(
+        page * sessionsPrepPage,
+        page * sessionsPrepPage + sessionsPrepPage
+    );
+
+
+    const hasSelectedUpcomingSession = selectedUpcomingSessionId !== null;
 
 return (
     <DashboardLayout>
@@ -77,7 +88,7 @@ return (
                 Session Management
             </h1>
             <p className="m-0 text-[18px] font-bold leading-[1.4] text-black/70">
-                View and manage your upcoming, past, and cancelled tutoring sessions.
+                View and manage your upcoming and past tutoring sessions.
             </p>
             </div>
             <PageCard className="mt-4 p-4">
@@ -115,11 +126,17 @@ return (
                     </div>
                 </div>
                 <div className="mt-6 flex items-center gap-3">
+                    {upcomingSessions.length === 0 ? (
+                        <div className="flex rounded-[22px] bg-[#EFEFEF] px-6 py-10 text-center text-[18px] font-mono font-semibold text-black/60">
+                            No upcoming sessions yet.
+                        </div>
+                    ) : (
+                        <>
                     <div className="grid flex-1 gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
-                    {visibleSessions.map((session) => (
-                    <div
-                    key={session.id}
-                    onClick={() => setSelectedUpcomingSessionId(
+                            {visibleSessions.map((session) => (
+                                <div
+                                    key={session.id}
+                                    onClick={() => setSelectedUpcomingSessionId(
                        selectedUpcomingSessionId === session.id ? null : session.id
                     )}
                     className={[
@@ -177,25 +194,28 @@ return (
                         </button>
                     </div>
                     </div>
-                    ))}
-                    </div>
-                    {totalPages > 1 && (
-                        <button
-                        type="button"
-                        onClick={() =>
-                        setPage((prev) =>
-                            prev + 1 < totalPages ? prev + 1 : 0
-                        )
-                        }
-                        className="ml-2 shrink-0 text-[32px] font-semibold leading-none text-black/60 hover:text-black"
-                        aria-label="Next sessions"
-                        >
-                        →
-                        </button>
+                        ))}
+                        
+                        </div>
+                        {totalPages > 1 && (
+                            <button
+                            type="button"
+                            onClick={() =>
+                            setPage((prev) =>
+                                prev + 1 < totalPages ? prev + 1 : 0
+                            )
+                            }
+                            className="ml-2 shrink-0 text-[32px] font-semibold leading-none text-black/60 hover:text-black"
+                            aria-label="Next sessions"
+                            >
+                            →
+                            </button>
+                            )}
+                        </>
                         )}
                     </div>
                 </section>
-                
+            
                 
             </PageCard>
             <br/>
@@ -260,7 +280,7 @@ return (
                             </div>
 
                         <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
-                        {session.status}
+                        {session.status === "COMPLETED" ? "Completed" : session.status  }
                         </div>
                     </div>
                     </div>
