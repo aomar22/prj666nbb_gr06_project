@@ -466,6 +466,7 @@ export default function LearnerSessionReschedule() {
           <div className="flex items-center gap-[10px]">
             <button
               type="button"
+              style={StyleSheet.msgBtn}
               onClick={() =>
                 navigate("/dashboard/messages", {
                   state: {tutor: tutorProfile}

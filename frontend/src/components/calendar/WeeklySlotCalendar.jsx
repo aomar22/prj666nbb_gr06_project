@@ -20,11 +20,14 @@ export default function WeeklySlotCalendar({
   onSelectSlotId,
   minBodyHeight = 220,
   onSlotClick,
+  visibleDate,
+  onChangeVisibleDate,
 }) {
   const [weekOffset, setWeekOffset] = useState(0);
 
   const baseWeekStart = useMemo(() => {
-    const d = new Date();
+   // const d = new Date();
+   const d = visibleDate ? new Date(visibleDate) : new Date();
     const day = d.getDay(); // 0=Sun ... 6=Sat
     d.setDate(d.getDate() - day);
     d.setHours(0, 0, 0, 0);
