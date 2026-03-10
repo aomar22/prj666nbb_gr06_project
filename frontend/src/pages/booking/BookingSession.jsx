@@ -73,7 +73,8 @@ function isSlotAvailable(slot) {
 
 export default function BookingSession() {
   const location = useLocation();
-  const tutorId = location.state?.tutorId ?? "T102"; //replace with actual Id format in  backend
+  const stateTutor = location.state?.tutor;
+  const tutorId = location.state?.tutorId ?? stateTutor?.id ?? "T102"; // use passed tutor id so correct tutor is shown
 
   const [tutorProfile, setTutorProfile] = useState(null);
 
@@ -254,20 +255,30 @@ export default function BookingSession() {
   };
 
   const tutorName = useMemo(() => {
-    if (!tutorProfile) return "Indira Varma"; //placeholder name when profile is not loaded
-    const fn = tutorProfile.firstName ?? "";
-    const ln = tutorProfile.lastName ?? "";
-    const full = `${fn} ${ln}`.trim();
-    return full || "Tutor";
-  }, [tutorProfile]);
+    if (tutorProfile) {
+      const fn = tutorProfile.firstName ?? "";
+      const ln = tutorProfile.lastName ?? "";
+      const full = `${fn} ${ln}`.trim();
+      return full || "Tutor";
+    }
+    if (stateTutor) {
+      const fn = stateTutor.firstName ?? "";
+      const ln = stateTutor.lastName ?? "";
+      const full = `${fn} ${ln}`.trim();
+      return full || "Tutor";
+    }
+    return "Tutor";
+  }, [tutorProfile, stateTutor]);
 
   const ratingLabel = useMemo(() => {
-    const r = tutorProfile?.rating;
+    const r = tutorProfile?.rating ?? stateTutor?.rating;
     if (typeof r === "number") return r.toFixed(1);
     return "—";
-  }, [tutorProfile]);
+  }, [tutorProfile, stateTutor]);
 
-  const reviewCount = tutorProfile?.reviewCount ?? 0;
+  const reviewCount = tutorProfile?.reviewCount ?? stateTutor?.reviewCount ?? 0;
+
+  const tutorAvatarUrl = tutorProfile?.profilePictureUrl ?? stateTutor?.avatar ?? stateTutor?.profilePictureUrl ?? profilePic;
   
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -286,8 +297,8 @@ export default function BookingSession() {
                              top-[12px]overflow-hidden
                              rounded-full shadow bg-black/10">
               <img
-                src={tutorProfile?.profilePictureUrl || profilePic}
-                alt="Tutor"
+                src={tutorAvatarUrl}
+                alt={tutorName}
                 className="h-full w-full object-cover"
               />
             </div>

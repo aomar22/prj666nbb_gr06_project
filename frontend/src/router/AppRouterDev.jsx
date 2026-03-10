@@ -6,11 +6,11 @@ import Home from "../auth/pages/Home";
 import Onboarding from "../auth/pages/Onboarding";
 import LearnerDashboard from "../pages/dashboard/LearnerDashboard";
 import TutorDashboard from "../pages/dashboard/TutorDashboard";
-import TutorMySession from "../pages/sessions/TutorMySession";
 import LearnerOnboarding from "../pages/onboarding/LearnerOnboarding";
 import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import AvailabilityV2 from "../pages/availability/AvailabilityV2";
 import BookingSession from "../pages/booking/BookingSession";
+import TutorSessionManagement from "../pages/booking/TutorSessionManagement";
 import { getUser } from "../api";
 
 
@@ -89,8 +89,8 @@ export default function AppRouterDev() {
           element={<TutorDashboard />}
         />
         <Route
-          path='/dashboard/sessions'
-          element={<TutorMySession />}
+          path='/dashboard/tutor/sessions'
+          element={<TutorSessionManagement />}
         />
         <Route
           path='/dashboard/availability-v2'

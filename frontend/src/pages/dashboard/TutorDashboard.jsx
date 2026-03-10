@@ -77,7 +77,7 @@ export default function TutorDashboard() {
             <span>Dashboard</span>
           </Link>
           <Link
-            to="/dashboard/sessions"
+            to="/dashboard/tutor/sessions"
             className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/sessions") ? "bg-white/15" : "hover:bg-white/10"}`}
           >
             <span className="opacity-95"><CalendarIcon /></span>

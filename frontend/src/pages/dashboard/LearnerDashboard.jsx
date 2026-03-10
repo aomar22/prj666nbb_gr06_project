@@ -57,6 +57,16 @@ export default function Dashboard() {
   
   const userName = getUserName();
 
+  // Recommended tutors: each has id so "Book session" goes to the correct tutor
+  const RECOMMENDED_TUTORS = [
+    { id: "tom-holland", firstName: "Tom", lastName: "Holland", expertise: "APD545", rating: 4.9, reviewCount: 120, avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
+    { id: "chris-evans", firstName: "Chris", lastName: "Evans", expertise: "IPC144", rating: 5.0, reviewCount: 95, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" },
+    { id: "margot-robbie", firstName: "Margot", lastName: "Robbie", expertise: "PRJ666", rating: 4.0, reviewCount: 64, avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
+    { id: "james-wilson", firstName: "James", lastName: "Wilson", expertise: "OOP345", rating: 4.8, reviewCount: 88, avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face" },
+    { id: "sarah-chen", firstName: "Sarah", lastName: "Chen", expertise: "DBS311", rating: 4.7, reviewCount: 72, avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" },
+    { id: "emma-davis", firstName: "Emma", lastName: "Davis", expertise: "WEB222", rating: 4.6, reviewCount: 51, avatar: "https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face" },
+  ];
+
   return (
     <div style={styles.container}>
       <Sidebar />
@@ -125,7 +135,18 @@ export default function Dashboard() {
                       style={styles.bookButton}
                       onClick={() =>
                         navigate("/dashboard/learner/booking", {
-                          state: { tutorId: tutor.id ?? tutor.userId },
+                          state: {
+                            tutorId: tutor.id ?? tutor.userId,
+                            tutor: {
+                              id: tutor.id ?? tutor.userId,
+                              firstName: tutor.firstName,
+                              lastName: tutor.lastName,
+                              rating: tutor.rating,
+                              reviewCount: tutor.reviewCount,
+                              profilePictureUrl: tutor.profilePictureUrl,
+                              avatar: tutor.profilePictureUrl,
+                            },
+                          },
                         })
                       }
                     >
@@ -216,132 +237,32 @@ export default function Dashboard() {
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
             <div style={styles.recommendedGrid}>
-                <div style={styles.recommendedCard}>
+                {RECOMMENDED_TUTORS.map((tutor) => (
+                <div key={tutor.id} style={styles.recommendedCard}>
                   <div style={styles.recommendedAvatar}>
                     <img
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
-                      alt="Tom Holland"
+                      src={tutor.avatar}
+                      alt={`${tutor.firstName} ${tutor.lastName}`}
                       style={styles.avatarImage}
                     />
                   </div>
-                  <h3 style={styles.recommendedName}>Tom Holland</h3>
-                  <p style={styles.recommendedExpertise}>Expert in APD545</p>
+                  <h3 style={styles.recommendedName}>{tutor.firstName} {tutor.lastName}</h3>
+                  <p style={styles.recommendedExpertise}>Expert in {tutor.expertise}</p>
                   <div style={styles.rating}>
-                    <span>⭐</span> 4.9
+                    <span>⭐</span> {tutor.rating}
                   </div>
                   <button
                     style={styles.bookButton}
-                    onClick={() => navigate("/dashboard/learner/booking")}
+                    onClick={() =>
+                      navigate("/dashboard/learner/booking", {
+                        state: { tutorId: tutor.id, tutor: tutor },
+                      })
+                    }
                   >
                     Book session
                   </button>
                 </div>
-
-                <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
-                      alt="Chris Evans"
-                      style={styles.avatarImage}
-                    />
-                  </div>
-                  <h3 style={styles.recommendedName}>Chris Evans</h3>
-                  <p style={styles.recommendedExpertise}>Expert in IPC144</p>
-                  <div style={styles.rating}>
-                    <span>⭐</span> 5.0
-                  </div>
-                  <button
-                    style={styles.bookButton}
-                    onClick={() => navigate("/dashboard/learner/booking")}
-                  >
-                    Book session
-                  </button>
-                </div>
-
-                <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>
-                    <img
-                      src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"
-                      alt="Margot Robbie"
-                      style={styles.avatarImage}
-                    />
-                  </div>
-                  <h3 style={styles.recommendedName}>Margot Robbie</h3>
-                  <p style={styles.recommendedExpertise}>Expert in PRJ666</p>
-                  <div style={styles.rating}>
-                    <span>⭐</span> 4.0
-                  </div>
-                  <button
-                    style={styles.bookButton}
-                    onClick={() => navigate("/dashboard/learner/booking")}
-                  >
-                    Book session
-                  </button>
-                </div>
-
-                <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>
-                    <img
-                      src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face"
-                      alt="James Wilson"
-                      style={styles.avatarImage}
-                    />
-                  </div>
-                  <h3 style={styles.recommendedName}>James Wilson</h3>
-                  <p style={styles.recommendedExpertise}>Expert in OOP345</p>
-                  <div style={styles.rating}>
-                    <span>⭐</span> 4.8
-                  </div>
-                  <button
-                    style={styles.bookButton}
-                    onClick={() => navigate("/dashboard/learner/booking")}
-                  >
-                    Book session
-                  </button>
-                </div>
-
-                <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>
-                    <img
-                      src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face"
-                      alt="Sarah Chen"
-                      style={styles.avatarImage}
-                    />
-                  </div>
-                  <h3 style={styles.recommendedName}>Sarah Chen</h3>
-                  <p style={styles.recommendedExpertise}>Expert in DBS311</p>
-                  <div style={styles.rating}>
-                    <span>⭐</span> 4.7
-                  </div>
-                  <button
-                    style={styles.bookButton}
-                    onClick={() => navigate("/dashboard/learner/booking")}
-                  >
-                    Book session
-                  </button>
-                </div>
-
-                <div style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>
-                    <img
-                      src="https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face"
-                      alt="Emma Davis"
-                      style={styles.avatarImage}
-                    />
-                  </div>
-                  <h3 style={styles.recommendedName}>Emma Davis</h3>
-                  <p style={styles.recommendedExpertise}>Expert in WEB222</p>
-                  <div style={styles.rating}>
-                    <span>⭐</span> 4.6
-                  </div>
-                  <button
-                    style={styles.bookButton}
-                    onClick={() => navigate("/dashboard/learner/booking")}
-                  >
-                    Book session
-                  </button>
-                </div>
-
+                ))}
                 <button style={styles.arrowButton}>→</button>
             </div>
           </section>

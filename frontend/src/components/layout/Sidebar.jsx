@@ -86,7 +86,7 @@ const TUTOR_NAV = [
   },
   {
     label: "My Sessions",
-    to: "/dashboard/sessions",
+    to: "/dashboard/tutor/sessions",
     isActive: (p) => p.includes("/sessions"),
     icon: <CalendarIcon />,
   },
