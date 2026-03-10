@@ -32,7 +32,7 @@ export default function LearnerSessionManagement() {
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 20, 2026",
-    time: "10:00 AM - 11:00 AM",
+    time: "09:00 AM - 10:00 AM",
     mode: "Online",
     learnerId: "L001",
   },
@@ -43,7 +43,7 @@ export default function LearnerSessionManagement() {
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 24, 2026",
-    time: "10:00 AM - 11:00 AM",
+    time: "11:00 AM - 12:00 AM",
     mode: "Online",
     learnerId: "L001",
   },
@@ -212,6 +212,7 @@ function handleReschedule() {
   navigate("/dashboard/learner/sessions/reschedule", {
     state: {
       session: selectedUpcomingSession,
+            upcomingSessions,
     },
   });
 }

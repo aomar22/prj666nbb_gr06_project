@@ -56,8 +56,14 @@ export default function ViewTutorProfile() {
   const sessionType = tutor.sessionType ? (SESSION_TYPE_LABELS[tutor.sessionType] || tutor.sessionType) : "One-on-One";
   const aboutText = tutor.bio || `Dedicated to making learning accessible and effective. ${tutorName} brings a structured yet supportive approach to tutoring, helping students build strong foundations and confidence in their coursework.`;
 
-  const tutorAvatarUrl = getAvatarUrl(tutor.profileImageUrl, tutor.id, tutor.userId, tutor.firstName, tutor.lastName);
-
+  const tutorAvatarUrl = getAvatarUrl(
+    tutor.profileImageUrl || tutor.profilePicture,
+    tutor.id,
+    tutor.userId,
+    tutor.firstName,
+    tutor.lastName
+  );
+ 
   const placeholderReviews = [
     { reviewerName: "Tom Hanks", rating: 5, text: "Excellent tutor! Very patient and explained concepts clearly. Highly recommend for anyone struggling with the material." },
   ];
