@@ -123,7 +123,7 @@ export default function TutorDashboard() {
       <main style={styles.mainContent}>
         <div className="mb-8">
           <Topbar
-            placeholder="Search by course (e.g. DBS311, OOP345)"
+            placeholder="Search Students or Courses"
             value={learnerSearchQuery}
             onSearchChange={(e) => setLearnerSearchQuery(e.target.value)}
             onSearchSubmit={() => handleLearnerSearch()}
