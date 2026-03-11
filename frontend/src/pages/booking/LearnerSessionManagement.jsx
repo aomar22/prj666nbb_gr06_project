@@ -85,7 +85,7 @@ export default function LearnerSessionManagement() {
     tutorName: "Brad Pitt",
     rating: "4.7",
     reviews: "78 reviews",
-    date: "Mar 20, 2026",
+    date: "Mar 01, 2026",
     time: "10:00 AM - 11:00 AM",
     mode: "Online",
     learnerId: "L001",
@@ -413,7 +413,7 @@ return (
                                     </div>
 
                 
-                                    <div className="mt-6 flex items-center gap-3 justify-between">
+                                    <div className="mt-6 flex items-center gap-2">
                                         <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
                                             <img
                                                 src="/location_on.png"
@@ -423,7 +423,7 @@ return (
                                             {session.mode}
                                         </div>
 
-                                        <div className=" min-w-[105px] items-center justify-between rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
+                                        <div className="min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
                                             {session.status === "COMPLETED" ? "Completed" : session.status}
                                         </div>
                                     </div>

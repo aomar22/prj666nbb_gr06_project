@@ -101,6 +101,15 @@ function startLabelFromTimeRange(range) {
   return minutesTo12h(mins);
 }
 
+function endLabelFromTimeRange(range) {
+  const str = String(range ?? "");
+  const [, end] = str.split("-").map((v) => v.trim());
+  if (!end) return null;
+  const mins = parse12hToMinutes(end);
+  if (!Number.isFinite(mins)) return null;
+  return minutesTo12h(mins);
+}
+
 function minutesTo12h(mins) {
   const hour24 = Math.floor(mins / 60);
   const minute = mins % 60;
@@ -215,10 +224,12 @@ export default function LearnerSessionReschedule() {
 
       const dayKey = dateToDayKey(isoDate);
       const startLabel = startLabelFromTimeRange(b?.time) ?? "Booked";
+      const endLabel = endLabelFromTimeRange(b?.time) ?? "—";
 
       next[dayKey].push({
         id: `booked-${b?.id ?? `${isoDate}-${startLabel}`}`,
         label: `Booked: ${startLabel}`,
+        endLabel,
         isDisabled: true,
         raw: {
           id: b?.id,
@@ -303,11 +314,14 @@ export default function LearnerSessionReschedule() {
 
           const dayKey = dateToDayKey(s.date);
           const startM = parseToMinutes(s.startTime);
-          if (!Number.isFinite(startM)) continue;
-
+          const endM = parseToMinutes(s.endTime);
+          
+          if (!Number.isFinite(startM) || !Number.isFinite(endM)) continue;
+          
           next[dayKey].push({
             id: s.id ?? `${s.date}-${s.startTime}`,
             label: minutesTo12h(startM),
+            endLabel: minutesTo12h(endM),
             raw: s,
           });
         }
@@ -365,18 +379,16 @@ export default function LearnerSessionReschedule() {
   }, [selectedSlot]);
 
   const startTime = selectedSlot?.label ?? "—";
+  const endTime = selectedSlot?.endLabel ?? "—";
+  // const endTime = useMemo(() => {
+  //   const raw = selectedSlot?.raw;
+  //   if (!raw?.endTime) return "—";
+  //   const endM = parseToMinutes(raw.endTime);
+  //   if (!Number.isFinite(endM)) return "—";
+  //   return minutesTo12h(endM);
+  // }, [selectedSlot]);
 
-  const endTime = useMemo(() => {
-    const raw = selectedSlot?.raw;
-    if (!raw?.endTime) return "—";
-    const endM = parseToMinutes(raw.endTime);
-    if (!Number.isFinite(endM)) return "—";
-    return minutesTo12h(endM);
-  }, [selectedSlot]);
-
-  const canConfirm = Boolean(
-    selectedSlot?.raw?.id && selectedSlot?.raw?.status !== "BOOKED"
-  );
+  const canConfirm = Boolean(selectedSlot?.raw?.id);
 
   function handleReset() {
     setSelectedSlotId(null);
@@ -536,11 +548,12 @@ export default function LearnerSessionReschedule() {
                 setSelectedSlot({
                   id: slot.id,
                   label: slot.label,
+                  endLabel: slot.endLabel,
                   dayKey: col.key,
                   date: col.date,
                   raw: slot.raw,
                 });
-               
+                setConfirmError("");
               }
             }
           />
