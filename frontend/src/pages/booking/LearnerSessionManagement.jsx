@@ -1,12 +1,29 @@
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import { Calendar, Clock } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+//Mapping function to convert backend session data to frontend format
+// function mapSlotToSessionCard(slot) {
+//   return {
+//     id: slot.id,
+//     tutorId: slot.tutorId,
+//     learnerId: slot.learnerId,
+//     status: slot.status,
+//     date: slot.date,
+//     time: `${slot.startTime} - ${slot.endTime}`,
+//     tutorName: "Tutor",        // temporary until tutor info endpoint is added
+//     rating: "—",
+//     reviews: "0 reviews",
+//     mode: "Online",
+//   };
+// }
 
 export default function LearnerSessionManagement() {
     const navigate = useNavigate();
+  // const [slots, setSlots] = useState([]); //for backend data
+    //for mock data during development or demo
     const [slots, setSlots] = useState([
   {
     id: 1,
@@ -15,7 +32,7 @@ export default function LearnerSessionManagement() {
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 20, 2026",
-    time: "10:00 AM - 11:00 AM",
+    time: "09:00 AM - 10:00 AM",
     mode: "Online",
     learnerId: "L001",
   },
@@ -26,7 +43,7 @@ export default function LearnerSessionManagement() {
     rating: "4.7",
     reviews: "78 reviews",
     date: "Mar 24, 2026",
-    time: "10:00 AM - 11:00 AM",
+    time: "11:00 AM - 12:00 AM",
     mode: "Online",
     learnerId: "L001",
   },
@@ -63,40 +80,83 @@ export default function LearnerSessionManagement() {
     mode: "Online",
     learnerId: "L001",
   },
-//   { id: 6,
-//     status: "COMPLETED",
-//     tutorName: "Brad Pitt",
-//     rating: "4.7",
-//     reviews: "78 reviews",
-//     date: "Mar 20, 2026",
-//     time: "10:00 AM - 11:00 AM",
-//     mode: "Online",
-//     learnerId: "L001",
-//   },
-//   {
-//     id: 7,
-//     status: "BOOKED",
-//     tutorName: "Brad Pitt",
-//     rating: "4.7",
-//     reviews: "78 reviews",
-//     date: "Mar 20, 2026",
-//     time: "10:00 AM - 11:00 AM",
-//     mode: "Online",
-//     learnerId: "L001",
-// },
-// {
-//     id: 8,
-//     status: "COMPLETED",
-//     tutorName: "Brad Pitt",
-//     rating: "4.7",
-//     reviews: "78 reviews",
-//     date: "Mar 20, 2026",
-//     time: "10:00 AM - 11:00 AM",
-//     mode: "Online",
-//     learnerId: "L001"
-// }
+  { id: 6,
+    status: "COMPLETED",
+    tutorName: "Brad Pitt",
+    rating: "4.7",
+    reviews: "78 reviews",
+    date: "Mar 01, 2026",
+    time: "10:00 AM - 11:00 AM",
+    mode: "Online",
+    learnerId: "L001",
+  },
+  {
+    id: 7,
+    status: "BOOKED",
+    tutorName: "Brad Pitt",
+    rating: "4.7",
+    reviews: "78 reviews",
+    date: "Mar 20, 2026",
+    time: "10:00 AM - 11:00 AM",
+    mode: "Online",
+    learnerId: "L001",
+},
+{
+    id: 8,
+    status: "COMPLETED",
+    tutorName: "Brad Pitt",
+    rating: "4.7",
+    reviews: "78 reviews",
+    date: "Mar 20, 2026",
+    time: "10:00 AM - 11:00 AM",
+    mode: "Online",
+    learnerId: "L001"
+}
 
-]);
+]); 
+//state for loading (actual functionality to be implemented when backend is ready)
+    // const [loading, setLoading] = useState(true);
+    // const [loadError, setLoadError] = useState("");
+
+    // useEffect(() => {
+    //     async function loadSessions() {
+    //         try {
+    //         setLoading(true);
+    //         setLoadError("");
+
+    //         const learnerId = getUser()?.id;
+    //         if (!learnerId) {
+    //             setSlots([]);
+    //             return;
+    //         }
+
+    //         const data = await getLearnerSessions(learnerId);
+
+    //         const mapped = (Array.isArray(data) ? data : []).map((slot) => ({
+    //             id: slot.id,
+    //             tutorId: slot.tutorId,
+    //             learnerId: slot.learnerId,
+    //             status: slot.status,
+    //             date: slot.date,
+    //             time: `${slot.startTime} - ${slot.endTime}`,
+    //             tutorName: "Tutor",
+    //             rating: "—",
+    //             reviews: "0 reviews",
+    //             mode: "Online",
+    //         }));
+
+    //         setSlots(mapped);
+    //         } catch (e) {
+    //         console.error("Failed to load learner sessions", e);
+    //         setLoadError("Failed to load sessions.");
+    //         setSlots([]);
+    //         } finally {
+    //         setLoading(false);
+    //         }
+    //     }
+
+    //     loadSessions();
+    //     }, []);
     const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
     
@@ -152,6 +212,7 @@ function handleReschedule() {
   navigate("/dashboard/learner/sessions/reschedule", {
     state: {
       session: selectedUpcomingSession,
+            upcomingSessions,
     },
   });
 }
@@ -210,7 +271,7 @@ return (
                         </div>
                     ) : (
                         <>
-                    <div className="grid flex-1 gap-6 grid-cols-3">
+                    <div className="grid flex-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                             {visibleUpcomingSessions.map((session) => (
                                 <div
                                     key={session.id}
@@ -312,7 +373,7 @@ return (
                     </div>
                 ) : (
                     <>
-                        <div className="grid flex-1 gap-6 grid-cols-3">
+                        <div className="grid flex-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                             {visiblePastSessions.map((session) => (
                                 <div
                                     key={session.id}
@@ -351,7 +412,8 @@ return (
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 flex items-center gap-3">
+                
+                                    <div className="mt-6 flex items-center gap-2">
                                         <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
                                             <img
                                                 src="/location_on.png"
@@ -361,7 +423,7 @@ return (
                                             {session.mode}
                                         </div>
 
-                                        <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
+                                        <div className="min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
                                             {session.status === "COMPLETED" ? "Completed" : session.status}
                                         </div>
                                     </div>

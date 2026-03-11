@@ -4,6 +4,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
 import { getTutorAllSlots, searchTutors } from "../../api";
+import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 
 function makeEmptyWeek() {
   return {
@@ -35,6 +36,25 @@ function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
+function parseSessionDateToLocal(dateInput) {
+  const str = String(dateInput ?? "").trim();
+  if (!str) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [year, month, day] = str.split("-").map(Number);
+    const d = new Date(year, month - 1, day);
+    if (!Number.isNaN(d.getTime())) {
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+  }
+
+  const parsed = new Date(str);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
 function parseToMinutes(t) {
   const str = String(t ?? "").trim();
   const m24 = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/);
@@ -43,6 +63,52 @@ function parseToMinutes(t) {
   const mm = Number(m24[2]);
   if (!Number.isFinite(hh) || !Number.isFinite(mm)) return NaN;
   return hh * 60 + mm;
+}
+
+function parse12hToMinutes(t) {
+  const str = String(t ?? "").trim();
+  const m12 = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!m12) return NaN;
+
+  let hh = Number(m12[1]);
+  const mm = Number(m12[2]);
+  const ap = String(m12[3]).toUpperCase();
+
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 1 || hh > 12) {
+    return NaN;
+  }
+
+  if (ap === "AM") {
+    if (hh === 12) hh = 0;
+  } else if (hh !== 12) {
+    hh += 12;
+  }
+
+  return hh * 60 + mm;
+}
+
+function toIsoDate(dateInput) {
+  const d = parseSessionDateToLocal(dateInput);
+  if (!d) return null;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function startLabelFromTimeRange(range) {
+  const str = String(range ?? "");
+  const [start] = str.split("-").map((v) => v.trim());
+  if (!start) return null;
+  const mins = parse12hToMinutes(start);
+  if (!Number.isFinite(mins)) return null;
+  return minutesTo12h(mins);
+}
+
+function endLabelFromTimeRange(range) {
+  const str = String(range ?? "");
+  const [, end] = str.split("-").map((v) => v.trim());
+  if (!end) return null;
+  const mins = parse12hToMinutes(end);
+  if (!Number.isFinite(mins)) return null;
+  return minutesTo12h(mins);
 }
 
 function minutesTo12h(mins) {
@@ -66,23 +132,49 @@ function isSlotAvailable(slot) {
 export default function LearnerSessionReschedule() {
   const location = useLocation();
   const navigate = useNavigate();
-
   const session = location.state?.session;
-  const tutorId = session?.tutorId ?? "T102";
+  const upcomingSessions = location.state?.upcomingSessions;
+
+  const tutorId = session?.tutorId ?? null;
+  //safeguard: if no session data, redirect back to sessions page
+  useEffect(() => {
+    if (!session) {
+      navigate("/dashboard/learner/sessions");
+    }
+  }, [session, navigate]);
+  
+  const initialVisibleDate = useMemo(() => {
+    const d = parseSessionDateToLocal(session?.date);
+    if (d) return d;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }, [session]);
+  const [visibleDate, setVisibleDate] = useState(initialVisibleDate);
+
+  const weekdayKeys = [
+    "SUNDAY",
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+  ];
+  const initialSelectedDayKey = weekdayKeys[initialVisibleDate.getDay()];
 
   const [tutorProfile, setTutorProfile] = useState(null);
   const [slotsByDayKey, setSlotsByDayKey] = useState(() => makeEmptyWeek());
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const [selectedDayKey, setSelectedDayKey] = useState("MONDAY");
+  const [selectedDayKey, setSelectedDayKey] = useState(initialSelectedDayKey);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const [confirmError, setConfirmError] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
 
-  const profilePic = "/profile_pic2.png";
-
+//demoSlotsByDayKey is used to show some demo available slots on the calendar in case the tutor has no available slots or there's an error fetching them. It generates 2 available slots for the upcoming Wednesday from the current date.
   const demoSlotsByDayKey = useMemo(() => {
     const next = makeEmptyWeek();
     const today = new Date();
@@ -118,6 +210,59 @@ export default function LearnerSessionReschedule() {
 
     return next;
   }, []);
+
+  const bookedSlotsByDayKey = useMemo(() => {
+    const next = makeEmptyWeek();
+    const booked = Array.isArray(upcomingSessions)
+      ? upcomingSessions.filter((s) => s?.status === "BOOKED")
+      : session
+      ? [session]
+      : [];
+
+    for (const b of booked) {
+      const isoDate = toIsoDate(b?.date);
+      if (!isoDate) continue;
+
+      const dayKey = dateToDayKey(isoDate);
+      const startLabel = startLabelFromTimeRange(b?.time) ?? "Booked";
+      const endLabel = endLabelFromTimeRange(b?.time) ?? "—";
+
+      next[dayKey].push({
+        id: `booked-${b?.id ?? `${isoDate}-${startLabel}`}`,
+        label: `Booked: ${startLabel}`,
+        endLabel,
+        isDisabled: true,
+        raw: {
+          id: b?.id,
+          date: isoDate,
+          status: "BOOKED",
+        },
+      });
+    }
+
+    for (const key of Object.keys(next)) {
+      next[key].sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    return next;
+  }, [upcomingSessions, session]);
+
+  const calendarSlotsByDayKey = useMemo(() => {
+    const source = Object.values(slotsByDayKey).some((a) => a.length)
+      ? slotsByDayKey
+      : demoSlotsByDayKey;
+
+    const merged = makeEmptyWeek();
+
+    for (const key of Object.keys(merged)) {
+      merged[key] = [
+        ...(source[key] ?? []),
+        ...(bookedSlotsByDayKey[key] ?? []),
+      ];
+    }
+
+    return merged;
+  }, [slotsByDayKey, demoSlotsByDayKey, bookedSlotsByDayKey]);
 
   useEffect(() => {
     if (!tutorId) return;
@@ -163,18 +308,21 @@ export default function LearnerSessionReschedule() {
         if (cancelled) return;
 
         const next = makeEmptyWeek();
-
+        //filter only available slots with valid date and time
         for (const s of all) {
           if (!s?.date || !s?.startTime || !s?.endTime) continue;
           if (!isSlotAvailable(s)) continue;
 
           const dayKey = dateToDayKey(s.date);
           const startM = parseToMinutes(s.startTime);
-          if (!Number.isFinite(startM)) continue;
-
+          const endM = parseToMinutes(s.endTime);
+          
+          if (!Number.isFinite(startM) || !Number.isFinite(endM)) continue;
+          
           next[dayKey].push({
             id: s.id ?? `${s.date}-${s.startTime}`,
             label: minutesTo12h(startM),
+            endLabel: minutesTo12h(endM),
             raw: s,
           });
         }
@@ -232,16 +380,40 @@ export default function LearnerSessionReschedule() {
   }, [selectedSlot]);
 
   const startTime = selectedSlot?.label ?? "—";
-
-  const endTime = useMemo(() => {
-    const raw = selectedSlot?.raw;
-    if (!raw?.endTime) return "—";
-    const endM = parseToMinutes(raw.endTime);
-    if (!Number.isFinite(endM)) return "—";
-    return minutesTo12h(endM);
-  }, [selectedSlot]);
+  const endTime = selectedSlot?.endLabel ?? "—";
+  // const endTime = useMemo(() => {
+  //   const raw = selectedSlot?.raw;
+  //   if (!raw?.endTime) return "—";
+  //   const endM = parseToMinutes(raw.endTime);
+  //   if (!Number.isFinite(endM)) return "—";
+  //   return minutesTo12h(endM);
+  // }, [selectedSlot]);
 
   const canConfirm = Boolean(selectedSlot?.raw?.id);
+//current booked session and the newly selected session
+  const currentSession = session ?? null;
+  const replacementSession = selectedSlot?.raw ?? null;
+  //prepare data needed for future backend API call
+  const rescheduleRequest = useMemo(() => {
+    if (!currentSession || !replacementSession) return null;
+    return {
+      oldSessionId: currentSession.id,
+      tutorId: currentSession.tutorId,
+      learnerId: currentSession.learnerId,
+
+      oldDate: currentSession.date,
+      oldStartTime: startLabelFromTimeRange(currentSession.time),
+      oldEndTime: endLabelFromTimeRange(currentSession.time),
+
+      newSlotId: replacementSession.id,
+      newDate: replacementSession.date,
+      newStartTime: replacementSession.startTime,
+      newEndTime: replacementSession.endTime,
+    };
+  }, [currentSession, replacementSession]);
+  
+  //booking confirmation message
+  const [showRescheduleConfirmation, setShowRescheduleConfirmation] = useState(false);
 
   function handleReset() {
     setSelectedSlotId(null);
@@ -256,7 +428,7 @@ export default function LearnerSessionReschedule() {
   async function handleConfirmReschedule() {
     setConfirmError("");
 
-    if (!selectedSlot?.raw?.id) {
+    if (!selectedSlot?.raw?.id || !rescheduleRequest) {
       setConfirmError("Please select an available time slot first.");
       return;
     }
@@ -266,19 +438,42 @@ export default function LearnerSessionReschedule() {
     try {
       setIsRescheduling(true);
 
-      console.log("Reschedule placeholder:", {
-        oldSession: session,
-        newSlot: selectedSlot.raw,
-      });
+      console.log("Reschedule placeholder:", rescheduleRequest);
 
-      navigate("/dashboard/learner/sessions");
+     // navigate("/dashboard/learner/sessions");
+     setShowRescheduleConfirmation(true);
     } catch (e) {
       setConfirmError(e?.message ?? "Reschedule failed. Please try again.");
     } finally {
       setIsRescheduling(false);
     }
   }
-
+  const tutorForProfile =
+  tutorProfile ? {
+    ...tutorProfile,
+    profileImageUrl: tutorProfile.profilePictureUrl ||
+    tutorProfile.profileImageUrl ||
+     "/profile_pic2.png",
+  } : {
+    id: session?.tutorId,
+    userId: session?.tutorId,
+    firstName: session?.tutorName?.split(" ")[0] || "Tutor",
+    lastName: session?.tutorName?.split(" ").slice(1).join(" ") || "",
+    rating:
+      session?.rating && session.rating !== "—"
+        ? Number(session.rating)
+        : undefined,
+    reviewCount: Number.parseInt(session?.reviews) || 0,
+    profileImageUrl: "/avatar.png",
+    bio: "Tutor profile preview from reschedule page.",
+    teachingMode: ["ONLINE"],
+    campus: ["Newnham"],
+    availability: "Mon-Wed",
+    coursesOffered: [],
+    program: "CPA",
+    sessionType: "ONE_ON_ONE",
+  };
+  
   return (
     <DashboardLayout>
       <PageCard className="mt-6 p-8">
@@ -286,7 +481,7 @@ export default function LearnerSessionReschedule() {
           <div className="flex items-center gap-5">
             <div className="h-[83px] w-[85px] overflow-hidden rounded-full bg-black/10 shadow">
               <img
-                src={tutorProfile?.profilePictureUrl || "/profile_pic2.png"}
+                src={tutorProfile?.profilePictureUrl || "/avatar.png"}
                 alt="Tutor"
                 className="h-full w-full object-cover"
               />
@@ -306,6 +501,11 @@ export default function LearnerSessionReschedule() {
           <div className="flex items-center gap-[10px]">
             <button
               type="button"
+              onClick={() =>
+                navigate("/dashboard/messages", {
+                  state: {tutor: tutorProfile}
+                })
+              }
               className="flex h-[61px] w-[156px] items-center justify-center rounded-[17px] bg-[#FF4245] text-[20px] font-medium leading-[20px] text-white shadow-[0px_6px_14px_rgba(0,0,0,0.18)] transition hover:brightness-95"
             >
               Message
@@ -315,9 +515,13 @@ export default function LearnerSessionReschedule() {
               type="button"
               onClick={() =>
                 navigate("/dashboard/learner/find-tutors/profile", {
-                  state: { tutor: location.state?.tutor || tutorProfile },
+                  state: { 
+                   tutor: tutorForProfile ,
+                   session: session,
+                  },
                 })
               }
+
               className="flex h-[61px] w-[156px] items-center justify-center rounded-[17px] bg-[#FF4245] text-[20px] font-medium leading-[20px] text-white shadow-[0px_6px_14px_rgba(0,0,0,0.18)] transition hover:brightness-95"
             >
               View Profile
@@ -346,10 +550,13 @@ export default function LearnerSessionReschedule() {
 
         <div className="mt-6">
           <WeeklySlotCalendar
+            visibleDate={visibleDate}
+            onChangeVisibleDate={setVisibleDate}
+            //selectedDay={selectedDay}
+            //onChangeSelectedDay={setSelectedDay}
+            //slots={availableSlots}
             slotsByDayKey={
-              Object.values(slotsByDayKey).some((a) => a.length)
-                ? slotsByDayKey
-                : demoSlotsByDayKey
+              calendarSlotsByDayKey
             }
             selectedDayKey={selectedDayKey}
             onSelectDayKey={(key) => {
@@ -362,16 +569,18 @@ export default function LearnerSessionReschedule() {
             onSelectSlotId={setSelectedSlotId}
             minBodyHeight={260}
             onSlotClick={(slot, col) => {
-              setSelectedSlotId(slot.id);
-              setSelectedSlot({
-                id: slot.id,
-                label: slot.label,
-                dayKey: col.key,
-                date: col.date,
-                raw: slot.raw,
-              });
-              setConfirmError("");
-            }}
+                setSelectedSlotId(slot.id);
+                setSelectedSlot({
+                  id: slot.id,
+                  label: slot.label,
+                  endLabel: slot.endLabel,
+                  dayKey: col.key,
+                  date: col.date,
+                  raw: slot.raw,
+                });
+                setConfirmError("");
+              }
+            }
           />
 
           {loadingSlots && (
@@ -382,7 +591,8 @@ export default function LearnerSessionReschedule() {
         </div>
 
         <div className="mt-8 flex items-center gap-6">
-          <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-10 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
+          
+          <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-4 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
             <div className="text-center text-[20px] font-extrabold">
               Selected Time
             </div>
@@ -423,18 +633,36 @@ export default function LearnerSessionReschedule() {
             <button
               type="button"
               onClick={handleReset}
-              className="flex h-[45px] w-[179px] items-center justify-center gap-[10px] rounded-[17px] bg-[#FF4245] text-[20px] font-medium leading-[20px] text-white shadow-[0px_4px_10px_rgba(0,0,0,0.18)] transition hover:brightness-95"
+              className="flex h-[45px] w-[179px]
+                         items-center justify-center
+                        gap-[10px] rounded-[17px]
+                        bg-[#FF4245] text-[20px]
+                        font-medium leading-[20px]
+                        text-white shadow-[0px_4px_10px_rgba(0,0,0,0.18)]
+                        transition hover:brightness-95"
             >
               Reset
             </button>
 
             {confirmError && (
-              <div className="mt-1 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
+              <div className="mt-1 rounded-[12px]
+                             border border-red-200
+                             bg-red-50 px-3 py-2
+                             text-[12px] font-bold
+                             text-red-700">
                 {confirmError}
               </div>
             )}
           </div>
         </div>
+      <BookingConfirmationModal
+        open={showRescheduleConfirmation}
+        onClose={() => setShowRescheduleConfirmation(false)}
+        onContinue={() => {
+          setShowRescheduleConfirmation(false);
+          navigate("/dashboard/learner/sessions");
+        }}
+      />
       </PageCard>
     </DashboardLayout>
   );
