@@ -379,7 +379,7 @@ export default function BookingSession() {
         </div>
 
         <div className="mt-8 flex items-center gap-6">
-          <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-10 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
+          <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-4 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
             <div className="text-center text-[20px] font-extrabold">
               Selected Time
             </div>

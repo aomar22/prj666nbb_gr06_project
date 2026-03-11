@@ -4,6 +4,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
 import { getTutorAllSlots, searchTutors } from "../../api";
+import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 
 function makeEmptyWeek() {
   return {
@@ -149,7 +150,7 @@ export default function LearnerSessionReschedule() {
     today.setHours(0, 0, 0, 0);
     return today;
   }, [session]);
-    const [visibleDate, setVisibleDate] = useState(initialVisibleDate);
+  const [visibleDate, setVisibleDate] = useState(initialVisibleDate);
 
   const weekdayKeys = [
     "SUNDAY",
@@ -389,6 +390,30 @@ export default function LearnerSessionReschedule() {
   // }, [selectedSlot]);
 
   const canConfirm = Boolean(selectedSlot?.raw?.id);
+//current booked session and the newly selected session
+  const currentSession = session ?? null;
+  const replacementSession = selectedSlot?.raw ?? null;
+  //prepare data needed for future backend API call
+  const rescheduleRequest = useMemo(() => {
+    if (!currentSession || !replacementSession) return null;
+    return {
+      oldSessionId: currentSession.id,
+      tutorId: currentSession.tutorId,
+      learnerId: currentSession.learnerId,
+
+      oldDate: currentSession.date,
+      oldStartTime: startLabelFromTimeRange(currentSession.time),
+      oldEndTime: endLabelFromTimeRange(currentSession.time),
+
+      newSlotId: replacementSession.id,
+      newDate: replacementSession.date,
+      newStartTime: replacementSession.startTime,
+      newEndTime: replacementSession.endTime,
+    };
+  }, [currentSession, replacementSession]);
+  
+  //booking confirmation message
+  const [showRescheduleConfirmation, setShowRescheduleConfirmation] = useState(false);
 
   function handleReset() {
     setSelectedSlotId(null);
@@ -403,7 +428,7 @@ export default function LearnerSessionReschedule() {
   async function handleConfirmReschedule() {
     setConfirmError("");
 
-    if (!selectedSlot?.raw?.id) {
+    if (!selectedSlot?.raw?.id || !rescheduleRequest) {
       setConfirmError("Please select an available time slot first.");
       return;
     }
@@ -413,12 +438,10 @@ export default function LearnerSessionReschedule() {
     try {
       setIsRescheduling(true);
 
-      console.log("Reschedule placeholder:", {
-        oldSession: session,
-        newSlot: selectedSlot.raw,
-      });
+      console.log("Reschedule placeholder:", rescheduleRequest);
 
-      navigate("/dashboard/learner/sessions");
+     // navigate("/dashboard/learner/sessions");
+     setShowRescheduleConfirmation(true);
     } catch (e) {
       setConfirmError(e?.message ?? "Reschedule failed. Please try again.");
     } finally {
@@ -478,7 +501,6 @@ export default function LearnerSessionReschedule() {
           <div className="flex items-center gap-[10px]">
             <button
               type="button"
-              style={StyleSheet.msgBtn}
               onClick={() =>
                 navigate("/dashboard/messages", {
                   state: {tutor: tutorProfile}
@@ -493,10 +515,13 @@ export default function LearnerSessionReschedule() {
               type="button"
               onClick={() =>
                 navigate("/dashboard/learner/find-tutors/profile", {
-                  state: { tutor: tutorForProfile },
-                  session: session,
+                  state: { 
+                   tutor: tutorForProfile ,
+                   session: session,
+                  },
                 })
               }
+
               className="flex h-[61px] w-[156px] items-center justify-center rounded-[17px] bg-[#FF4245] text-[20px] font-medium leading-[20px] text-white shadow-[0px_6px_14px_rgba(0,0,0,0.18)] transition hover:brightness-95"
             >
               View Profile
@@ -566,7 +591,8 @@ export default function LearnerSessionReschedule() {
         </div>
 
         <div className="mt-8 flex items-center gap-6">
-          <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-10 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
+          
+          <div className="flex-1 rounded-[24px] bg-[#BBD9FF] px-4 py-7 shadow-[0px_10px_20px_rgba(0,0,0,0.10)]">
             <div className="text-center text-[20px] font-extrabold">
               Selected Time
             </div>
@@ -607,18 +633,36 @@ export default function LearnerSessionReschedule() {
             <button
               type="button"
               onClick={handleReset}
-              className="flex h-[45px] w-[179px] items-center justify-center gap-[10px] rounded-[17px] bg-[#FF4245] text-[20px] font-medium leading-[20px] text-white shadow-[0px_4px_10px_rgba(0,0,0,0.18)] transition hover:brightness-95"
+              className="flex h-[45px] w-[179px]
+                         items-center justify-center
+                        gap-[10px] rounded-[17px]
+                        bg-[#FF4245] text-[20px]
+                        font-medium leading-[20px]
+                        text-white shadow-[0px_4px_10px_rgba(0,0,0,0.18)]
+                        transition hover:brightness-95"
             >
               Reset
             </button>
 
             {confirmError && (
-              <div className="mt-1 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-bold text-red-700">
+              <div className="mt-1 rounded-[12px]
+                             border border-red-200
+                             bg-red-50 px-3 py-2
+                             text-[12px] font-bold
+                             text-red-700">
                 {confirmError}
               </div>
             )}
           </div>
         </div>
+      <BookingConfirmationModal
+        open={showRescheduleConfirmation}
+        onClose={() => setShowRescheduleConfirmation(false)}
+        onContinue={() => {
+          setShowRescheduleConfirmation(false);
+          navigate("/dashboard/learner/sessions");
+        }}
+      />
       </PageCard>
     </DashboardLayout>
   );

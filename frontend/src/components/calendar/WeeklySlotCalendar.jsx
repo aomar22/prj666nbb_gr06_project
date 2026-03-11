@@ -130,7 +130,7 @@ export default function WeeklySlotCalendar({
 
                 <div
                   className={[
-                    "mx-auto mt-2 h-9 w-9 rounded-full flex items-center justify-center text-[24px] font-bold",
+                    "mx-auto mt-2 h-9 w-9 rounded-full flex items-center justify-center text-[22px] font-bold",
                     selectedDayKey === c.key
                       ? "bg-[#0B2F86] text-white"
                       : "text-black/70",
