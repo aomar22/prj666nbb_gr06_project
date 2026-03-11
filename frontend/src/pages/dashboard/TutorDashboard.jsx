@@ -141,8 +141,6 @@ export default function TutorDashboard() {
             Here's what's happening with your tutoring today.
           </p>
         </section>
-
-        {/* Learner (Student) Search Results */}
         {learnerSearchError && (
           <section style={styles.searchErrorSection}>
             <p style={styles.searchErrorText}>{learnerSearchError}</p>
