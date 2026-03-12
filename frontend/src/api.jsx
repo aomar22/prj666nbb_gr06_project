@@ -78,6 +78,41 @@ export async function bookSlot(slotId, learnerId) {
   );
 }
 
+// Fetch sessions for the logged-in Learner
+export async function getLearnerSessions(learnerId) {
+  // Uses the dedicated bookings endpoint
+  return authRequest(`/api/availability/learner/${learnerId}/bookings`, { method: "GET" });
+}
+
+// Fetch sessions for the logged-in Tutor
+export async function getTutorSessions(tutorId) {
+  // Tutor 'all' endpoint requires a date range. We'll fetch 1 month past to 6 months future.
+  const start = new Date();
+  start.setMonth(start.getMonth() - 1);
+  const end = new Date();
+  end.setMonth(end.getMonth() + 6);
+  
+  const startStr = start.toISOString().split('T')[0];
+  const endStr = end.toISOString().split('T')[0];
+
+  return authRequest(`/api/availability/tutor/${tutorId}/all?startDate=${startStr}&endDate=${endStr}`, { method: "GET" });
+}
+
+// Cancel a booked session for a Learner
+export async function cancelLearnerBooking(slotId, learnerId) {
+  return authRequest(`/api/availability/cancel/${slotId}?learnerId=${learnerId}`, { method: "PATCH" });
+}
+
+// Delete a slot for a Tutor
+export async function deleteTutorSlot(slotId, force = false) {
+  return authRequest(`/api/availability/slot/${slotId}?force=${force}`, { method: "DELETE" });
+}
+
+// Reschedule a session for a Learner
+export async function rescheduleLearnerBooking(currentSlotId, learnerId, newSlotId) {
+  return authRequest(`/api/availability/reschedule/${currentSlotId}?learnerId=${learnerId}&newSlotId=${newSlotId}`, { method: "PATCH" });
+}
+
 // Base request without auth (for public routes)
 async function publicRequest(path, opts = {}) {
   const headers = {

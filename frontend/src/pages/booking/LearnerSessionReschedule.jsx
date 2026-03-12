@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
-import { getTutorAllSlots, searchTutors } from "../../api";
+import { getTutorAllSlots, searchTutors, rescheduleLearnerBooking } from "../../api";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 
 function makeEmptyWeek() {
@@ -248,21 +248,10 @@ export default function LearnerSessionReschedule() {
   }, [upcomingSessions, session]);
 
   const calendarSlotsByDayKey = useMemo(() => {
-    const source = Object.values(slotsByDayKey).some((a) => a.length)
+    return Object.values(slotsByDayKey).some((a) => a.length)
       ? slotsByDayKey
       : demoSlotsByDayKey;
-
-    const merged = makeEmptyWeek();
-
-    for (const key of Object.keys(merged)) {
-      merged[key] = [
-        ...(source[key] ?? []),
-        ...(bookedSlotsByDayKey[key] ?? []),
-      ];
-    }
-
-    return merged;
-  }, [slotsByDayKey, demoSlotsByDayKey, bookedSlotsByDayKey]);
+  }, [slotsByDayKey, demoSlotsByDayKey]);
 
   useEffect(() => {
     if (!tutorId) return;
@@ -438,16 +427,20 @@ export default function LearnerSessionReschedule() {
     try {
       setIsRescheduling(true);
 
-      console.log("Reschedule placeholder:", rescheduleRequest);
+      await rescheduleLearnerBooking(
+        rescheduleRequest.oldSessionId,
+        rescheduleRequest.learnerId,
+        rescheduleRequest.newSlotId
+      );
 
-     // navigate("/dashboard/learner/sessions");
-     setShowRescheduleConfirmation(true);
+      setShowRescheduleConfirmation(true);
     } catch (e) {
       setConfirmError(e?.message ?? "Reschedule failed. Please try again.");
     } finally {
       setIsRescheduling(false);
     }
   }
+
   const tutorForProfile =
   tutorProfile ? {
     ...tutorProfile,
