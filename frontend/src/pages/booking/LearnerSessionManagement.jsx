@@ -1,70 +1,58 @@
 import DashboardLayout from "../../components/layout/DashboardLayout";
+import CancelConfirmationModal from "../../components/ui/CancelConfirmationModal";
 import PageCard from "../../components/ui/PageCard";
 import { Calendar, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser, getLearnerSessions, cancelLearnerBooking } from "../../api";
 
-//Mapping function to convert backend session data to frontend format
-// function mapSlotToSessionCard(slot) {
-//   return {
-//     id: slot.id,
-//     tutorId: slot.tutorId,
-//     learnerId: slot.learnerId,
-//     status: slot.status,
-//     date: slot.date,
-//     time: `${slot.startTime} - ${slot.endTime}`,
-//     tutorName: "Tutor",        // temporary until tutor info endpoint is added
-//     rating: "—",
-//     reviews: "0 reviews",
-//     mode: "Online",
-//   };
-// }
-
 export default function LearnerSessionManagement() {
+
     const navigate = useNavigate();
-    const [slots, setSlots] = useState([]); 
+    const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
+    const [isCancelling, setIsCancelling] = useState(false);
     const [page, setPage] = useState(0);
     const [selectedUpcomingSessionId, setSelectedUpcomingSessionId] = useState(null);  
     const [pastPage, setPastPage] = useState(0);
+    const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+    const [sessionToCancel, setSessionToCancel] = useState(null);
 
     const user = getUser(); 
 
     useEffect(() => {
-        async function loadSessions() {
-            try {
-                setLoading(true);
+    async function loadSessions() {
+        try {
+            setLoading(true);
                 
-                if (!user?.id) {
-                    setSlots([]);
-                    return;
-                }
+            if (!user?.id) {
+                setSlots([]);
+                return;
+            }
 
-                const data = await getLearnerSessions(user.id);
-                const now = new Date();
+            const data = await getLearnerSessions(user.id);
+            const now = new Date();
+            const mapped = (Array.isArray(data) ? data : []).map((slot) => {
+            const slotEndDate = new Date(`${slot.date}T${slot.endTime}`);
+            const computedStatus = slotEndDate < now ? "COMPLETED" : "BOOKED";
+            const extractedTutorName = slot.message ? slot.message.replace("Session with ", "") : "Tutor";
 
-                const mapped = (Array.isArray(data) ? data : []).map((slot) => {
-                    const slotEndDate = new Date(`${slot.date}T${slot.endTime}`);
-                    const computedStatus = slotEndDate < now ? "COMPLETED" : "BOOKED";
-                    const extractedTutorName = slot.message ? slot.message.replace("Session with ", "") : "Tutor";
-
-                    return {
-                        id: slot.slotId,
-                        tutorId: slot.tutorId,
-                        learnerId: slot.learnerId,
-                        status: computedStatus,
-                        date: slot.date, 
-                        time: `${slot.startTime} - ${slot.endTime}`,
-                        tutorName: extractedTutorName, 
-                        rating: "—",
-                        reviews: "0 reviews",
-                        mode: "Online",
-                    };
-                });
-
-                setSlots(mapped);
+                return {
+                    id: slot.slotId,
+                    tutorId: slot.tutorId,
+                    learnerId: slot.learnerId,
+                    status: computedStatus,
+                    date: slot.date, 
+                    time: `${slot.startTime} - ${slot.endTime}`,
+                    tutorName: extractedTutorName, 
+                    rating: "—",
+                    reviews: "0 reviews",
+                    mode: "Online",
+                };
+            });
+            setSlots(mapped);
+            setLoadError("");
             } catch (e) {
                 console.error("Failed to load learner sessions", e);
                 setLoadError("Failed to load sessions.");
@@ -74,50 +62,6 @@ export default function LearnerSessionManagement() {
         }
         loadSessions();
     }, [user?.id]);
-  
-//state for loading (actual functionality to be implemented when backend is ready)
-    // const [loading, setLoading] = useState(true);
-    // const [loadError, setLoadError] = useState("");
-
-    // useEffect(() => {
-    //     async function loadSessions() {
-    //         try {
-    //         setLoading(true);
-    //         setLoadError("");
-
-    //         const learnerId = getUser()?.id;
-    //         if (!learnerId) {
-    //             setSlots([]);
-    //             return;
-    //         }
-
-    //         const data = await getLearnerSessions(learnerId);
-
-    //         const mapped = (Array.isArray(data) ? data : []).map((slot) => ({
-    //             id: slot.id,
-    //             tutorId: slot.tutorId,
-    //             learnerId: slot.learnerId,
-    //             status: slot.status,
-    //             date: slot.date,
-    //             time: `${slot.startTime} - ${slot.endTime}`,
-    //             tutorName: "Tutor",
-    //             rating: "—",
-    //             reviews: "0 reviews",
-    //             mode: "Online",
-    //         }));
-
-    //         setSlots(mapped);
-    //         } catch (e) {
-    //         console.error("Failed to load learner sessions", e);
-    //         setLoadError("Failed to load sessions.");
-    //         setSlots([]);
-    //         } finally {
-    //         setLoading(false);
-    //         }
-    //     }
-
-    //     loadSessions();
-    //     }, []);
     const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
     
@@ -141,19 +85,25 @@ export default function LearnerSessionManagement() {
     (session) => session.id === selectedUpcomingSessionId
     );
     
-    async function handleCancel() {
-        if (!selectedUpcomingSession) return;
+    async function handleCancel(session) {
+        const targetSession = session || selectedUpcomingSession;
+        if (!targetSession || !user?.id || isCancelling) return;
 
         try {
-            await cancelLearnerBooking(selectedUpcomingSession.id, user.id);
+            setIsCancelling(true);
+            await cancelLearnerBooking(targetSession.id, user.id);
 
             setSlots((prevSlots) =>
-                prevSlots.filter((slot) => slot.id !== selectedUpcomingSession.id)
+                prevSlots.filter((slot) => slot.id !== targetSession.id)
             );
+            setShowCancelConfirmation(false);
+            setSessionToCancel(null);
             setSelectedUpcomingSessionId(null);
             setPage(0);
         } catch (err) {
             alert("Could not cancel session. Please try again.");
+        } finally {
+            setIsCancelling(false);
         }
     }
 
@@ -178,6 +128,22 @@ export default function LearnerSessionManagement() {
                     View and manage your upcoming and past tutoring sessions.
                 </p>
             </div>
+
+            {loading && (
+                <PageCard className="mt-4 p-4">
+                    <div className="font-mono text-[18px] font-semibold text-black/70">
+                        Loading sessions...
+                    </div>
+                </PageCard>
+            )}
+
+            {!!loadError && (
+                <PageCard className="mt-4 p-4">
+                    <div className="font-mono text-[18px] font-semibold text-red-700">
+                        {loadError}
+                    </div>
+                </PageCard>
+            )}
             
             <PageCard className="mt-4 p-4">
                 <section className="mt-4">
@@ -186,19 +152,6 @@ export default function LearnerSessionManagement() {
                             Upcoming Sessions
                         </h2>
                         <div className="flex gap-3">
-                            <button
-                                type="button"
-                                disabled={!hasSelectedUpcomingSession}
-                                onClick={handleCancel}
-                                className={`px-4 py-2 rounded-lg text-white font-semibold shadow transition ${
-                                    hasSelectedUpcomingSession
-                                    ? "bg-red-700 hover:bg-red-800"
-                                    : "bg-red-300 cursor-not-allowed shadow-none"
-                                }`}
-                            >
-                                Cancel
-                            </button>
-
                             <button
                                 type="button"
                                 disabled={!hasSelectedUpcomingSession}
@@ -231,8 +184,8 @@ export default function LearnerSessionManagement() {
                                             className={[
                                                 "w-full cursor-pointer rounded-[22px] px-5 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.18)] transition",
                                                 selectedUpcomingSessionId === session.id
-                                                ? "bg-[#CFCFCF] ring-4 ring-[#7C8DB5] scale-[1.01]"
-                                                : "bg-[#D9D9D9] hover:bg-[#D3D3D3]",
+                                                ? "bg-[#CFCFCF] border-[6px] border-[#355C9B] scale-[1.02] shadow-xl"
+                                                : "bg-[#D9D9D9] border border-transparent hover:bg-[#D3D3D3]"
                                             ].join(" ")}
                                         >
                                             <div className="flex items-start gap-3">
@@ -275,12 +228,35 @@ export default function LearnerSessionManagement() {
                                                     {session.mode}
                                                 </div>
 
-                                                <button
-                                                    type="button"
-                                                    className="rounded-full bg-[#FF4B4B] px-5 py-2 text-[14px] font-medium text-white shadow hover:bg-[#D93636]"
-                                                >
-                                                    Join
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        disabled={isCancelling}
+                                                        onClick={(e)=>{
+                                                            e.stopPropagation();
+                                                            setSessionToCancel(session);
+                                                            setShowCancelConfirmation(true);
+                                                        }}
+                                                    className={[
+                                                        "rounded-full px-5 py-2 text-[14px] font-medium text-white shadow transition",
+                                                        isCancelling
+                                                            ? "bg-red-300 cursor-not-allowed shadow-none"
+                                                            : "bg-red-700 hover:bg-red-800",
+                                                        ].join(" ")}
+                                                        >
+                                                            Cancel
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-full 
+                                                        bg-green-600 hover:bg-green-700
+                                                        px-5 py-2
+                                                        text-[14px] font-medium text-white shadow"
+                                                    >
+                                                        Join
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -397,6 +373,18 @@ export default function LearnerSessionManagement() {
                     </div>
                 </section>
             </PageCard>
+                <CancelConfirmationModal
+                    open={showCancelConfirmation}
+                    session={sessionToCancel}
+                    onClose={() => {
+                        setShowCancelConfirmation(false);
+                        setSessionToCancel(null);
+                    }}
+                    onConfirm={() => {
+                        handleCancel(sessionToCancel);
+                    }}
+                />
         </DashboardLayout>
     );
 }
+
