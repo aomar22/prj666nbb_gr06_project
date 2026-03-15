@@ -73,39 +73,29 @@ function isSlotAvailable(slot) {
 
 export default function BookingSession() {
   const location = useLocation();
+  const searchedDate = location.state?.searchedDate;
   const stateTutor = location.state?.tutor;
   const tutorId = location.state?.tutorId ?? stateTutor?.id ?? "T102"; // use passed tutor id so correct tutor is shown
 
   const [tutorProfile, setTutorProfile] = useState(null);
-
   const [slotsByDayKey, setSlotsByDayKey] = useState(() => makeEmptyWeek());
   const [loadingSlots, setLoadingSlots] = useState(false);
   
-  // TEMP: demo slot to test confirm + modal (remove after backend is ready)
-  const demoSlotsByDayKey = useMemo(() => {
-    const next = makeEmptyWeek();
-    const today = new Date();
-    const daysUntilWed = (3 - today.getDay() + 7) % 7 || 7; 
-    const nextWed = new Date(today);
-    nextWed.setDate(today.getDate() + daysUntilWed);
-    const wedDateStr = nextWed.toISOString().slice(0, 10);
+  const [visibleDate, setVisibleDate] = useState(() => {
+    if (searchedDate) {
+      return new Date(`${searchedDate}T00:00:00`); 
+    }
+    return new Date(); // Fallback to today
+  });
 
-    next.WEDNESDAY = [
-      {
-        id: `demo-${wedDateStr}-1430`,
-        label: "2:30 PM",
-        raw: {
-          id: "DEMO_SLOT_1",
-          date: wedDateStr,
-          startTime: "14:30:00",
-          endTime: "15:10:00",
-        },
-      },
-    ];
-    return next;
-  }, []);
+  const [selectedDayKey, setSelectedDayKey] = useState(() => {
+    if (searchedDate) {
+      return dateToDayKey(searchedDate);
+    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return dateToDayKey(todayStr);
+  });
 
-  const [selectedDayKey, setSelectedDayKey] = useState("MONDAY");
   const [selectedSlotId, setSelectedSlotId] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
 
@@ -143,7 +133,7 @@ export default function BookingSession() {
       try {
         setLoadingSlots(true);
 
-        const start = new Date();
+        const start = new Date(visibleDate); 
         start.setHours(0, 0, 0, 0);
 
         const end = new Date(start);
@@ -204,7 +194,7 @@ export default function BookingSession() {
     return () => {
       cancelled = true;
     };
-  }, [tutorId]);
+  }, [tutorId, visibleDate]);
 
   const selectedDateLabel = useMemo(() => {
     if (!selectedSlot?.date) return "—";
@@ -364,8 +354,8 @@ export default function BookingSession() {
         <div className="mt-6">
           <WeeklySlotCalendar
             // slotsByDayKey={slotsByDayKey}
-            slotsByDayKey={Object.values(slotsByDayKey).some((a) => a.length) ? slotsByDayKey : demoSlotsByDayKey} //for demo purpose
-
+            slotsByDayKey={slotsByDayKey}
+            visibleDate={visibleDate} 
             selectedDayKey={selectedDayKey}
             onSelectDayKey={(k) => {
               setSelectedDayKey(k);
@@ -478,7 +468,6 @@ export default function BookingSession() {
         onClose={() => setConfirmOpen(false)}
         onContinue={handleContinue}
       />
-      {/* <div className="pb-10" /> */}
     </DashboardLayout>
   );
 }

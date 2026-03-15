@@ -88,10 +88,14 @@ export default function FindTutorsResults() {
   };
 
   const formatAvailability = (tutor) => {
-    if (tutor.availability) return tutor.availability;
-    const examples = ["Evenings (Mon-Fri)", "Weekends (Sat-Sun)", "Afternoons (Tue-Thu)", "Mon-Wed"];
-    const idx = (tutor.id || tutor.userId || 0) % examples.length;
-    return examples[idx];
+    const queryParams = new URLSearchParams(location.search);
+    const searchedDate = queryParams.get("availableFrom");
+
+    if (searchedDate) {
+      return `Available on ${searchedDate}`;
+    }
+
+    return tutor.availabilitySummary || "Check calendar for availability";
   };
 
   const formatCampus = (tutor) => {
@@ -221,17 +225,21 @@ export default function FindTutorsResults() {
                       </button>
                       <button type="button" style={styles.actionBtn}>Message</button>
                       <button type="button" style={styles.actionBtn}
-                          onClick={() =>
-                            navigate("/dashboard/learner/booking", {
-                              state: {
-                                tutorId: tutor.id ?? tutor.userId,
-                                tutor,
-                              },
-                            })
-                          }
-                        >
-                          Book session
-                        </button>
+                        onClick={() => {
+                          const queryParams = new URLSearchParams(location.search);
+                          const searchedDate = queryParams.get("availableFrom");
+
+                          navigate("/dashboard/learner/booking", {
+                            state: {
+                              tutorId: tutor.id ?? tutor.userId,
+                              tutor,
+                              searchedDate: searchedDate
+                            },
+                          });
+                        }}
+                      >
+                        Book session
+                      </button>
                     </div>
                   </div>
                 ))
