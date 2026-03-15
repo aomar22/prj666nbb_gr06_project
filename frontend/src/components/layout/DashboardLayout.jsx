@@ -6,6 +6,7 @@ export default function DashboardLayout({
   children,
   bgClass = "bg-[#F4E4D7]",
   mainClass = "px-10 py-6",
+  showSearch = true,
 }) {
   
   return (
@@ -13,7 +14,7 @@ export default function DashboardLayout({
       <div className="flex h-screen">
         <Sidebar />
         <main className={`flex-1 overflow-y-auto ${mainClass}`}>
-          <Topbar />
+          <Topbar showSearch={showSearch} />
           {children}
         </main>
       </div>

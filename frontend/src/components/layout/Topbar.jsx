@@ -12,6 +12,7 @@ export default function TopBar({
   onSearchSubmit,
   onSearchBarClick,
   disabled = false,
+  showSearch = true,
 }) {
   const isClickable = typeof onSearchBarClick === "function";
   const handleKeyDown = (e) => {
@@ -43,6 +44,7 @@ export default function TopBar({
     : "Search Tutors or Courses";
   return (
     <div className="flex items-center gap-6">
+      {showSearch && (
       <div
         className={`relative flex-1 ${isClickable ? "cursor-pointer" : ""}`}
         onClick={isClickable ? onSearchBarClick : undefined}
@@ -63,8 +65,9 @@ export default function TopBar({
           placeholder={placeholder || rolePlaceholder}
         />
       </div>
-
-      <div className="flex items-center gap-6">
+      ) }
+        
+      <div className="ml-auto flex items-center gap-6">
         <button className="relative" type="button">
           {showNotificationDot && (
             <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500" />

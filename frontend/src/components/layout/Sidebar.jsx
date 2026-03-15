@@ -61,8 +61,17 @@ export default function Sidebar() {
 
       {/* Bottom actions */}
       <div className="mt-auto pt-6 space-y-2 text-[16px] font-semibold shrink-0">
-        <SideLink
+        {/* <SideLink
           to="/dashboard/settings"
+          active={location.pathname.includes("/settings")}
+          icon={<SettingsIcon />}
+        > */}
+        <SideLink
+          to={
+            isTutor
+              ? "/settings/tutor/profile/edit"
+              : "/settings/learner/profile/edit"
+          }
           active={location.pathname.includes("/settings")}
           icon={<SettingsIcon />}
         >
