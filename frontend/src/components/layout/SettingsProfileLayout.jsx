@@ -20,7 +20,7 @@ export default function SettingsProfileLayout({
     userName
   )}&background=ddd&color=666&size=200`;
 
-  const avatarSrc = user?.avatar || generatedAvatar;
+  const avatarSrc = user?.avatar || user?.profileImageUrl || user?.profilePicture || generatedAvatar;
 
   const editPath =
     roleType === "tutor"
@@ -37,7 +37,9 @@ export default function SettingsProfileLayout({
       ? "Tutor"
       : user?.role === "LEARNER"
         ? "Learner"
-        : user?.role || "Learner";
+        : roleType === "tutor"
+          ? "Tutor"
+          : "Learner";
 
   return (
     <DashboardLayout showSearch={false}>
@@ -103,7 +105,7 @@ export default function SettingsProfileLayout({
                   </p>
 
                   <p className="mt-[8px] text-[18px] font-semibold leading-[1.15]">
-                    {user?.email || "learner1@myseneca.ca"}
+                    {user?.email || "user@myseneca.ca"}
                   </p>
 
                   <p className="mt-[10px] text-[18px] font-semibold leading-[1.15]">
