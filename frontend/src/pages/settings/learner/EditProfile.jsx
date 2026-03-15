@@ -16,7 +16,9 @@ export default function EditProfile() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateError, setUpdateError] = useState("");
 
-  const isUpdateDisabled = !program.trim() || !campus.trim();
+
+  const hasChanges = program !== initialProgram || campus !== initialCampus;
+  const isUpdateDisabled = !program.trim() || !campus.trim() || !hasChanges;
 
   const handleCancel = () => {
     setProgram(initialProgram);
