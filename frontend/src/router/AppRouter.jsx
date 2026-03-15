@@ -16,6 +16,7 @@ import BookingSession from "../pages/booking/BookingSession";
 import LearnerSessionManagement from "../pages/booking/LearnerSessionManagement";
 import LearnerSessionReschedule from "../pages/booking/LearnerSessionReschedule";
 import TutorSessionManagement from "../pages/booking/TutorSessionManagement";
+import EditProfile from "../pages/settings/learner/EditProfile";
 // Component to redirect to role-specific dashboard
 function DashboardRedirect() {
   const user = getUser();
@@ -56,6 +57,8 @@ export default function AppRouter() {
         <Route path='/dashboard/tutor/sessions' element={<TutorSessionManagement />} />
         <Route path='/dashboard/availability-v2' element={<AvailabilityV2 />} />
 
+        {/* Settings Route */}
+        <Route path="/settings/learner/profile/edit" element={<EditProfile />} />
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
