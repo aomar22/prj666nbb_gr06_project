@@ -12,6 +12,7 @@ export default function TutorSessionManagement() {
     const [page, setPage] = useState(0);
     const [selectedUpcomingSessionId, setSelectedUpcomingSessionId] = useState(null);  
     const [pastPage, setPastPage] = useState(0);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     const user = getUser();
 
@@ -68,8 +69,23 @@ export default function TutorSessionManagement() {
         loadSessions();
     }, [user?.id]);
 
-    const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
-    const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
+    const [placeholderUpcoming, setPlaceholderUpcoming] = useState([
+        { id: "ph-u1", status: "BOOKED", studentName: "Bradley Cooper", rating: "4.8", reviews: "12 reviews", date: "2025-10-25", time: "10:00 - 11:00", mode: "Online", learnerId: null, avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" },
+        { id: "ph-u2", status: "BOOKED", studentName: "Megan Fox", rating: "4.5", reviews: "8 reviews", date: "2025-11-13", time: "14:00 - 15:00", mode: "In Person", learnerId: null, avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" },
+        { id: "ph-u3", status: "BOOKED", studentName: "Ryan Reynolds", rating: "4.2", reviews: "5 reviews", date: "2025-11-20", time: "09:00 - 10:00", mode: "Online", learnerId: null, avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
+    ]);
+
+    const PLACEHOLDER_PAST = [
+        { id: "ph-p1", status: "COMPLETED", studentName: "Anne Hathaway", rating: "5.0", reviews: "15 reviews", date: "2025-09-10", time: "11:00 - 12:00", mode: "Online", learnerId: null, avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
+        { id: "ph-p2", status: "COMPLETED", studentName: "Chris Evans", rating: "4.7", reviews: "10 reviews", date: "2025-08-22", time: "15:00 - 16:00", mode: "In Person", learnerId: null, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" },
+        { id: "ph-p3", status: "COMPLETED", studentName: "Scarlett Johansson", rating: "4.9", reviews: "20 reviews", date: "2025-07-15", time: "13:00 - 14:00", mode: "Online", learnerId: null, avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" },
+    ];
+
+    const realUpcoming = slots.filter((slot) => slot.status === "BOOKED");
+    const realPast = slots.filter((slot) => slot.status === "COMPLETED");
+
+    const upcomingSessions = realUpcoming.length > 0 ? realUpcoming : placeholderUpcoming;
+    const pastSessions = realPast.length > 0 ? realPast : PLACEHOLDER_PAST;
     
     const sessionsPrepPage = 3;
     const totalPages = Math.ceil(upcomingSessions.length / sessionsPrepPage); 
@@ -91,8 +107,20 @@ export default function TutorSessionManagement() {
         (session) => session.id === selectedUpcomingSessionId
     );
     
-    async function handleCancel() {
+    async function handleConfirmCancel() {
         if (!selectedUpcomingSession) return;
+        setShowCancelModal(false);
+
+        const isPlaceholder = String(selectedUpcomingSession.id).startsWith("ph-");
+
+        if (isPlaceholder) {
+            setPlaceholderUpcoming((prev) =>
+                prev.filter((s) => s.id !== selectedUpcomingSession.id)
+            );
+            setSelectedUpcomingSessionId(null);
+            setPage(0);
+            return;
+        }
 
         try {
             await cancelLearnerBooking(selectedUpcomingSession.id, selectedUpcomingSession.learnerId);
@@ -133,7 +161,7 @@ export default function TutorSessionManagement() {
                         <button
                             type="button"
                             disabled={!hasSelectedUpcomingSession}
-                            onClick={handleCancel}
+                            onClick={() => setShowCancelModal(true)}
                             className={`px-4 py-2 rounded-lg text-white font-semibold shadow transition ${
                             hasSelectedUpcomingSession
                             ? "bg-red-700 hover:bg-red-800"
@@ -336,6 +364,53 @@ export default function TutorSessionManagement() {
                     </div>
                 </section>
             </PageCard>
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-black/50"
+                        onClick={() => setShowCancelModal(false)}
+                        aria-label="Close modal"
+                    />
+                    <div className="relative w-[420px] rounded-[20px] bg-white px-8 py-7 shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                            <h3 className="mt-4 text-[20px] font-bold text-black">
+                                Cancel Session?
+                            </h3>
+                            <p className="mt-2 text-[15px] text-gray-600">
+                                Are you sure you want to cancel the session with{" "}
+                                <span className="font-semibold text-black">
+                                    {selectedUpcomingSession?.studentName}
+                                </span>
+                                ? This action cannot be undone.
+                            </p>
+                            <div className="mt-6 flex w-full gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCancelModal(false)}
+                                    autoFocus
+                                    className="flex-1 rounded-[12px] border border-gray-300 bg-white py-3 text-[16px] font-semibold text-black shadow-sm hover:bg-gray-50 transition"
+                                >
+                                    No, Keep It
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmCancel}
+                                    className="flex-1 rounded-[12px] bg-red-600 py-3 text-[16px] font-semibold text-white shadow-sm hover:bg-red-700 transition"
+                                >
+                                    Yes, Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

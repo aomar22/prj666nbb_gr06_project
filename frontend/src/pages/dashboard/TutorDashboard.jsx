@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { clearAuth, getUser, searchLearnersByCourse } from "../../api";
+import { clearAuth, getUser, searchLearnersByCourse, getTutorSessions } from "../../api";
 import Topbar from "../../components/layout/Topbar";
 
 export default function TutorDashboard() {
@@ -13,6 +13,33 @@ export default function TutorDashboard() {
   const [learnerSearchResults, setLearnerSearchResults] = useState(null);
   const [learnerSearchLoading, setLearnerSearchLoading] = useState(false);
   const [learnerSearchError, setLearnerSearchError] = useState(null);
+
+  // Real session data from backend
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const allSlots = await getTutorSessions(user.id);
+        if (cancelled) return;
+        const now = new Date();
+        const upcoming = (Array.isArray(allSlots) ? allSlots : [])
+          .filter((s) => s.status === "BOOKED" && new Date(s.startTime) > now)
+          .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        setUpcomingSessions(upcoming);
+      } catch {
+        setUpcomingSessions([]);
+      } finally {
+        if (!cancelled) setSessionsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const handleLearnerSearch = async () => {
     setLearnerSearchError(null);
@@ -49,6 +76,17 @@ export default function TutorDashboard() {
   };
   
   const userName = getUserName();
+
+  const PLACEHOLDER_SESSIONS = [
+    { id: "ph-1", learnerName: "Bradley Cooper", course: "DSA456", startTime: "2025-10-25T10:00:00", teachingMode: "ONLINE", learnerAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" },
+    { id: "ph-2", learnerName: "Megan Fox", course: "DSA456", startTime: "2025-11-13T14:00:00", teachingMode: "IN_PERSON", learnerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" },
+    { id: "ph-3", learnerName: "Ryan Reynolds", course: "DSA456", startTime: "2025-11-20T09:00:00", teachingMode: "ONLINE", learnerAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
+  ];
+
+  const PLACEHOLDER_REVIEWS = [
+    { id: "pr-1", name: "Anne Hathaway", rating: 5.0, text: "Amazing tutor, good know...", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
+    { id: "pr-2", name: "Ryan Reynolds", rating: 3.4, text: "Moderate tutor, need improve...", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
+  ];
 
   const handleLogout = () => {
     clearAuth();
@@ -192,123 +230,73 @@ export default function TutorDashboard() {
           {/* Upcoming Sessions */}
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Upcoming Sessions</h2>
-            <div style={styles.sessionsGrid}>
-                <div style={styles.sessionCard}>
-                  <div style={styles.studentInfo}>
-                    <div style={styles.studentAvatar}>
-                      <img 
-                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" 
-                        alt="Bradley Cooper" 
-                        style={styles.avatarImage}
-                      />
-                    </div>
-                    <div>
-                      <h3 style={styles.studentName}>Bradley Cooper - DSA456</h3>
-                      <p style={styles.sessionDate}>Oct 25, 2025</p>
-                    </div>
-                  </div>
-                  <div style={styles.sessionActions}>
-                    <button style={styles.onlineBadge}>
-                      📍 Online
-                    </button>
-                    <button style={styles.joinButton}>Join</button>
-                  </div>
-                </div>
+            {sessionsLoading ? (
+              <p style={{ color: '#666', fontSize: '14px' }}>Loading sessions…</p>
+            ) : (
+              <div style={styles.sessionsGrid}>
+                {(upcomingSessions.length > 0 ? upcomingSessions.slice(0, 6) : PLACEHOLDER_SESSIONS).map((session) => {
+                  const learnerName = session.learnerName
+                    || [session.learnerFirstName, session.learnerLastName].filter(Boolean).join(" ")
+                    || "Student";
+                  const course = session.course || session.subject || "";
+                  const dateStr = new Date(session.startTime).toLocaleDateString("en-US", {
+                    month: "short", day: "numeric", year: "numeric",
+                  });
+                  const mode = session.mode || session.teachingMode || "Online";
+                  const isOnline = typeof mode === "string" && mode.toUpperCase().includes("ONLINE");
+                  const avatarUrl = session.learnerAvatar
+                    || `https://ui-avatars.com/api/?name=${encodeURIComponent(learnerName)}&background=ddd&color=666&size=100`;
 
-                <div style={styles.sessionCard}>
-                  <div style={styles.studentInfo}>
-                    <div style={styles.studentAvatar}>
-                      <img 
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" 
-                        alt="Megan Fox" 
-                        style={styles.avatarImage}
-                      />
+                  return (
+                    <div key={session.id || session.slotId} style={styles.sessionCard}>
+                      <div style={styles.studentInfo}>
+                        <div style={styles.studentAvatar}>
+                          <img src={avatarUrl} alt={learnerName} style={styles.avatarImage} />
+                        </div>
+                        <div>
+                          <h3 style={styles.studentName}>
+                            {learnerName}{course ? ` - ${course}` : ""}
+                          </h3>
+                          <p style={styles.sessionDate}>{dateStr}</p>
+                        </div>
+                      </div>
+                      <div style={styles.sessionActions}>
+                        <button style={isOnline ? styles.onlineBadge : styles.inPersonBadge}>
+                          📍 {isOnline ? "Online" : "In Person"}
+                        </button>
+                        <button style={styles.joinButton}>Join</button>
+                      </div>
                     </div>
-                    <div>
-                      <h3 style={styles.studentName}>Megan Fox - DSA456</h3>
-                      <p style={styles.sessionDate}>Nov 13, 2025</p>
-                    </div>
-                  </div>
-                  <div style={styles.sessionActions}>
-                    <button style={styles.inPersonBadge}>
-                      📍 In Person
-                    </button>
-                    <button style={styles.joinButton}>Join</button>
-                  </div>
-                </div>
-
-                <div style={styles.sessionCard}>
-                  <div style={styles.studentInfo}>
-                    <div style={styles.studentAvatar}>
-                      <img 
-                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
-                        alt="Ryan Reynolds" 
-                        style={styles.avatarImage}
-                      />
-                    </div>
-                    <div>
-                      <h3 style={styles.studentName}>Ryan Reynolds - DSA456</h3>
-                      <p style={styles.sessionDate}>Nov 20, 2025</p>
-                    </div>
-                  </div>
-                  <div style={styles.sessionActions}>
-                    <button style={styles.onlineBadge}>
-                      📍 Online
-                    </button>
-                    <button style={styles.joinButton}>Join</button>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
+            )}
           </section>
 
           {/* My Reviews */}
           <section style={styles.reviewsSection}>
             <h2 style={styles.sectionTitle}>My Reviews</h2>
             <div style={styles.reviewsList}>
-                <div style={styles.reviewCard}>
+              {PLACEHOLDER_REVIEWS.map((review) => (
+                <div key={review.id} style={styles.reviewCard}>
                   <div style={styles.reviewerInfo}>
                     <div style={styles.reviewerAvatar}>
-                      <img 
-                        src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" 
-                        alt="Anne Hathaway" 
-                        style={styles.avatarImage}
-                      />
+                      <img src={review.avatar} alt={review.name} style={styles.avatarImage} />
                     </div>
                     <div style={styles.reviewContent}>
-                      <h3 style={styles.reviewerName}>Anne Hathaway</h3>
+                      <h3 style={styles.reviewerName}>{review.name}</h3>
                       <div style={styles.reviewRating}>
-                        <span style={styles.starIcon}>⭐</span> 5.0
+                        <span style={styles.starIcon}>⭐</span> {review.rating}
                       </div>
                       <p style={styles.reviewText}>
-                        Amazing tutor, good know... <span style={styles.readMore}>readmore</span>
+                        {review.text} <span style={styles.readMore}>read more</span>
                       </p>
                     </div>
                   </div>
                   <button style={styles.readReviewButton}>Read Review</button>
                 </div>
-
-                <div style={styles.reviewCard}>
-                  <div style={styles.reviewerInfo}>
-                    <div style={styles.reviewerAvatar}>
-                      <img 
-                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
-                        alt="Ryan Reynolds" 
-                        style={styles.avatarImage}
-                      />
-                    </div>
-                    <div style={styles.reviewContent}>
-                      <h3 style={styles.reviewerName}>Ryan Reynolds</h3>
-                      <div style={styles.reviewRating}>
-                        <span style={styles.starIcon}>⭐</span> 3.4
-                      </div>
-                      <p style={styles.reviewText}>
-                        moderate tutor, need improve... <span style={styles.readMore}>readmore</span>
-                      </p>
-                    </div>
-                  </div>
-                  <button style={styles.readReviewButton}>Read Review</button>
-                </div>
-              </div>
+              ))}
+            </div>
           </section>
         </div>
       </main>
