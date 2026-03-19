@@ -741,7 +741,7 @@ export default function TutorOnboarding() {
                   type='button'
                   onClick={() =>
                     navigate("/onboarding/tutor/availability-v2", {
-                      state: { from: "/onboarding/tutor" },
+                      state: { from: "/onboarding/tutor", sessionType },
                     })
                   }
                   className='w-full h-[53px] rounded-[10px]
