@@ -283,6 +283,40 @@ export function searchTutors(params = {}) {
   return authRequest(`/api/tutors/search${query ? `?${query}` : ""}`);
 }
 
+/**
+ * Fetch the authenticated user's profile settings
+ * GET /api/users/settings
+ */
+export async function getUserSettings() {
+  return authRequest(`/api/users/settings`, { 
+    method: "GET" 
+  });
+}
+
+/**
+ * Update the authenticated user's profile settings
+ * PATCH /api/users/settings
+ * @param {Object} payload - { campus, program, coursesOffered, about, teachingMode, sessionType }
+ */
+export async function updateUserSettings(payload) {
+  return authRequest(`/api/users/settings`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Change the authenticated user's password
+ * PATCH /api/users/password
+ * @param {Object} payload - { currentPassword, newPassword }
+ */
+export async function changePassword(payload) {
+  return authRequest(`/api/users/password`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export default {
   register,
   login,
