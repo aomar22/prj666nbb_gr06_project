@@ -196,10 +196,14 @@ export default function AvailabilityV2() {
     return draft?.availabilityV2 || null;
   }, []);
 
+  const rawSessionType = user?.profile?.sessionType ?? location.state?.sessionType;
+  const sessionType = rawSessionType === "GROUP" ? "GROUP" : "INDIVIDUAL";
+
   const [slotDuration, setSlotDuration] = useState(
     initialDraft?.slotDuration ?? 60,
   );
   const [recurring, setRecurring] = useState(initialDraft?.recurring ?? true);
+  const [maxCapacity, setMaxCapacity] = useState(initialDraft?.maxCapacity ?? 3);
   const [weekly, setWeekly] = useState(() => {
     const fallback = makeEmptyWeekly();
     const saved = initialDraft?.weekly;
@@ -415,6 +419,8 @@ export default function AvailabilityV2() {
       weekly,
       slotDuration,
       recurring,
+      sessionType,
+      maxCapacity,
     );
     navigate(backTo, { state: { availability: schedule } });
   };
@@ -441,6 +447,8 @@ export default function AvailabilityV2() {
       weekly,
       slotDuration,
       recurring,
+      sessionType,
+      maxCapacity,
     );
 
     if (!schedule.daySchedules.length) {
@@ -538,7 +546,7 @@ export default function AvailabilityV2() {
     return merged.map(({ s, e }) => minutesToBlock(s, e));
   }
 
-  function buildScheduleRequestFromWeekly(weekly, slotDuration, recurring) {
+  function buildScheduleRequestFromWeekly(weekly, slotDuration, recurring, sessionType, maxCapacity) {
     const startDate = new Date().toISOString().slice(0, 10);
 
     const daySchedules = Object.entries(weekly)
@@ -561,12 +569,19 @@ export default function AvailabilityV2() {
       })
       .filter(Boolean);
 
-    return {
+    const request = {
       startDate,
       slotDuration,
       recurring,
+      sessionType,
       daySchedules,
     };
+
+    if (sessionType === "GROUP") {
+      request.maxCapacity = maxCapacity;
+    }
+
+    return request;
   }
 
   return (
@@ -623,6 +638,23 @@ export default function AvailabilityV2() {
                           </option>
                         ))}
                       </select>
+                      {sessionType === "GROUP" && (
+                        <>
+                          <div className='text-[14px] font-semibold text-black/70'>
+                            Max capacity:
+                          </div>
+                          <input
+                            type='number'
+                            min={2}
+                            max={10}
+                            value={maxCapacity}
+                            onChange={(e) =>
+                              setMaxCapacity(Math.min(10, Math.max(2, Number(e.target.value))))
+                            }
+                            className='h-[30px] w-[60px] rounded-full px-3 bg-[#EAEAEA] shadow-inner outline-none text-[13px] font-bold text-center'
+                          />
+                        </>
+                      )}
                       <span className='text-[14px] font-semibold text-black/70'>
                         Recurring weekly
                       </span>

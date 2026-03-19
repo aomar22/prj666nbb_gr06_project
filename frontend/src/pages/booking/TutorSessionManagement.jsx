@@ -2,7 +2,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import PageCard from "../../components/ui/PageCard";
 import { Calendar, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getUser, getTutorSessions, cancelLearnerBooking } from "../../api";
+import { getUser, getTutorSessions, deleteTutorSlot } from "../../api";
 
 export default function TutorSessionManagement() {
     const [slots, setSlots] = useState([]);
@@ -37,24 +37,30 @@ export default function TutorSessionManagement() {
                         computedStatus = "COMPLETED";
                     }
 
-                    const extractedStudentName = slot.message ? slot.message.replace("Session with ", "") : "Student";
+                    const enrolledCount = (slot.learnerIds ?? []).length;
+                    const capacity = slot.maxCapacity ?? 1;
+                    const sessionType = slot.sessionType ?? "INDIVIDUAL";
+                    const enrollmentLabel = sessionType === "GROUP"
+                        ? `${enrolledCount} / ${capacity} Learners`
+                        : `${enrolledCount} / ${capacity} Learner`;
 
                     return {
                         id: slot.id || slot.slotId,
                         status: computedStatus,
-                        studentName: extractedStudentName,
+                        studentName: enrollmentLabel,
                         rating: "—",
                         reviews: "0 reviews",
                         date: slot.date,
                         time: `${slot.startTime} - ${slot.endTime}`,
                         mode: "Online",
-                        learnerId: slot.learnerId,
-                        avatar: "/avatar.png", 
+                        learnerIds: slot.learnerIds ?? [],
+                        avatar: "/avatar.png",
                     };
                 });
 
                 const sessionSlots = mapped.filter(
-                    (s) => s.status === "BOOKED" || s.status === "COMPLETED"
+                    (s) => s.status === "BOOKED" || s.status === "COMPLETED" ||
+                    (s.status === "AVAILABLE" && s.learnerIds.length > 0)
                 );
 
                 setSlots(sessionSlots);
@@ -68,7 +74,10 @@ export default function TutorSessionManagement() {
         loadSessions();
     }, [user?.id]);
 
-    const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
+    const upcomingSessions = slots.filter(
+        (slot) => slot.status === "BOOKED" ||
+        (slot.status === "AVAILABLE" && slot.learnerIds.length > 0)
+    );
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
     
     const sessionsPrepPage = 3;
@@ -95,7 +104,7 @@ export default function TutorSessionManagement() {
         if (!selectedUpcomingSession) return;
 
         try {
-            await cancelLearnerBooking(selectedUpcomingSession.id, selectedUpcomingSession.learnerId);
+            await deleteTutorSlot(selectedUpcomingSession.id, true);
             setSlots((prevSlots) =>
                 prevSlots.filter((slot) => slot.id !== selectedUpcomingSession.id)
             );

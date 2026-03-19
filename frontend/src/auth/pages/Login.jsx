@@ -56,6 +56,7 @@ export default function Login() {
         lastName: response.lastName,
         campus: response.campus,
         isOnboarded: response.isOnboarded,
+        profile: response.profile ?? null,
       };
       setUser(userData);
 
