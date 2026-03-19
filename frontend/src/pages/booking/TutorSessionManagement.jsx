@@ -12,6 +12,7 @@ export default function TutorSessionManagement() {
     const [page, setPage] = useState(0);
     const [selectedUpcomingSessionId, setSelectedUpcomingSessionId] = useState(null);  
     const [pastPage, setPastPage] = useState(0);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     const user = getUser();
 
@@ -100,8 +101,20 @@ export default function TutorSessionManagement() {
         (session) => session.id === selectedUpcomingSessionId
     );
     
-    async function handleCancel() {
+    async function handleConfirmCancel() {
         if (!selectedUpcomingSession) return;
+        setShowCancelModal(false);
+
+        const isPlaceholder = String(selectedUpcomingSession.id).startsWith("ph-");
+
+        if (isPlaceholder) {
+            setPlaceholderUpcoming((prev) =>
+                prev.filter((s) => s.id !== selectedUpcomingSession.id)
+            );
+            setSelectedUpcomingSessionId(null);
+            setPage(0);
+            return;
+        }
 
         try {
             await deleteTutorSlot(selectedUpcomingSession.id, true);
@@ -142,7 +155,7 @@ export default function TutorSessionManagement() {
                         <button
                             type="button"
                             disabled={!hasSelectedUpcomingSession}
-                            onClick={handleCancel}
+                            onClick={() => setShowCancelModal(true)}
                             className={`px-4 py-2 rounded-lg text-white font-semibold shadow transition ${
                             hasSelectedUpcomingSession
                             ? "bg-red-700 hover:bg-red-800"
@@ -345,6 +358,53 @@ export default function TutorSessionManagement() {
                     </div>
                 </section>
             </PageCard>
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-black/50"
+                        onClick={() => setShowCancelModal(false)}
+                        aria-label="Close modal"
+                    />
+                    <div className="relative w-[420px] rounded-[20px] bg-white px-8 py-7 shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                            <h3 className="mt-4 text-[20px] font-bold text-black">
+                                Cancel Session?
+                            </h3>
+                            <p className="mt-2 text-[15px] text-gray-600">
+                                Are you sure you want to cancel the session with{" "}
+                                <span className="font-semibold text-black">
+                                    {selectedUpcomingSession?.studentName}
+                                </span>
+                                ? This action cannot be undone.
+                            </p>
+                            <div className="mt-6 flex w-full gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCancelModal(false)}
+                                    autoFocus
+                                    className="flex-1 rounded-[12px] border border-gray-300 bg-white py-3 text-[16px] font-semibold text-black shadow-sm hover:bg-gray-50 transition"
+                                >
+                                    No, Keep It
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmCancel}
+                                    className="flex-1 rounded-[12px] bg-red-600 py-3 text-[16px] font-semibold text-white shadow-sm hover:bg-red-700 transition"
+                                >
+                                    Yes, Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }
