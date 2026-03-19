@@ -104,10 +104,13 @@ export default function TutorDashboard() {
           </a>
         </nav>
         <div className="mt-auto pt-6 space-y-2 text-[15px] font-semibold">
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+          <Link
+            to="/settings/tutor/profile/edit"
+            className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline"
+          >
             <span className="opacity-95"><SettingsIcon /></span>
             <span>Settings</span>
-          </a>
+          </Link>
           <button
             type="button"
             onClick={handleLogout}
