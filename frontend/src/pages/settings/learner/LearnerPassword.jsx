@@ -151,7 +151,7 @@ export default function LearnerPassword() {
                   <div className="relative mt-2 w-full max-w-[470px]">
                     <input
                       type="password"
-                      placeholder="Seneca Password"
+                      placeholder="Scholarly Password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       className="h-[53px] w-full rounded-[10px] border border-[#E5E5E5] bg-white px-4 text-[18px] outline-none shadow-[0px_0px_10px_0px_#00000026] placeholder:text-[#A3A3A3]"
@@ -165,7 +165,7 @@ export default function LearnerPassword() {
                   </label>
                   <input
                     type="password"
-                    placeholder="Seneca Password"
+                    placeholder="Scholarly Password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="mt-2 h-[53px] w-full max-w-[470px] rounded-[10px] border border-[#E5E5E5] bg-white px-4 text-[18px] outline-none shadow-[0px_0px_10px_0px_#00000026] placeholder:text-[#A3A3A3]"
@@ -181,7 +181,7 @@ export default function LearnerPassword() {
                   </label>
                   <input
                     type="password"
-                    placeholder="Seneca Password"
+                    placeholder="Scholarly Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="mt-2 h-[53px] w-full max-w-[470px] rounded-[10px] border border-[#E5E5E5] bg-white px-4 text-[18px] outline-none shadow-[0px_0px_10px_0px_#00000026] placeholder:text-[#A3A3A3]"

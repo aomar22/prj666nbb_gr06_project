@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../../components/layout/Sidebar";
 import BellIcon from "../../../components/icons/BellIcon";
 import DropdownArrow from "../../../components/ui/DropdownArrow";
-import { CAMPUSES, PROGRAMS } from "../../../constants/options";
+import { CAMPUSES, PROGRAMS, ALL_COURSES } from "../../../constants/options";
 import { getUser, setUser, getUserSettings, updateUserSettings } from "../../../api";
 import ConfirmationModal from "../../../components/ui/ConfirmationModal";
 
@@ -16,7 +16,11 @@ export default function TutorEditProfile() {
   const [about, setAbout] = useState("");
   const [teachingMode, setTeachingMode] = useState("");
   const [sessionType, setSessionType] = useState("");
-  const [coursesOffered, setCoursesOffered] = useState(""); // Stored as comma-separated string for the UI
+  
+  // Courses offered state (now an array) and UI states
+  const [coursesOffered, setCoursesOffered] = useState([]); 
+  const [coursesOpen, setCoursesOpen] = useState(false);
+  const coursesDropdownRef = useRef(null);
   
   // Track unmodified state to check for changes
   const [initialData, setInitialData] = useState({ 
@@ -25,7 +29,7 @@ export default function TutorEditProfile() {
     about: "",
     teachingMode: "",
     sessionType: "",
-    coursesOffered: ""
+    coursesOffered: []
   });
 
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -48,12 +52,13 @@ export default function TutorEditProfile() {
           setProgram(data.program || "");
           setCampus(data.campus || "");
           setAbout(data.about || "");
-          const modeStr = data.teachingMode && data.teachingMode.length > 0 ? data.teachingMode[0] : "";
-          setTeachingMode(modeStr);
           setSessionType(data.sessionType || "");
           
-          const coursesStr = data.coursesOffered ? data.coursesOffered.join(", ") : "";
-          setCoursesOffered(coursesStr);
+          const modeStr = data.teachingMode && data.teachingMode.length > 0 ? data.teachingMode[0] : "";
+          setTeachingMode(modeStr);
+
+          const coursesArr = data.coursesOffered || [];
+          setCoursesOffered(coursesArr);
 
           setInitialData({ 
             program: data.program || "", 
@@ -61,12 +66,33 @@ export default function TutorEditProfile() {
             about: data.about || "",
             teachingMode: modeStr,
             sessionType: data.sessionType || "",
-            coursesOffered: coursesStr
+            coursesOffered: coursesArr
           });
         }
       })
       .catch((err) => console.error("Failed to fetch settings:", err));
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (coursesDropdownRef.current && !coursesDropdownRef.current.contains(event.target)) {
+        setCoursesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleCourse = (course) => {
+    setCoursesOffered((prev) => {
+      if (prev.includes(course)) return prev.filter((c) => c !== course);
+      return [...prev, course];
+    });
+  };
+
+  const removeCourse = (course) => {
+    setCoursesOffered((prev) => prev.filter((c) => c !== course));
+  };
 
   const hasChanges = 
     program !== initialData.program || 
@@ -74,7 +100,7 @@ export default function TutorEditProfile() {
     about !== initialData.about ||
     teachingMode !== initialData.teachingMode ||
     sessionType !== initialData.sessionType ||
-    coursesOffered !== initialData.coursesOffered;
+    JSON.stringify(coursesOffered) !== JSON.stringify(initialData.coursesOffered);
 
   const isUpdateDisabled = !program.trim() || !campus.trim() || !hasChanges || isUpdating;
 
@@ -95,18 +121,13 @@ export default function TutorEditProfile() {
     setIsUpdating(true);
 
     try {
-      const coursesArray = coursesOffered
-        .split(",")
-        .map(c => c.trim())
-        .filter(c => c.length > 0);
-
       const updatedData = await updateUserSettings({ 
         campus, 
         program,
         about,
         teachingMode: teachingMode ? [teachingMode] : [], 
         sessionType,
-        coursesOffered: coursesArray
+        coursesOffered
       });
 
       const updatedUser = {
@@ -116,14 +137,13 @@ export default function TutorEditProfile() {
       };
       setUser(updatedUser);
       
-      const newCoursesStr = updatedData.coursesOffered ? updatedData.coursesOffered.join(", ") : "";
       setInitialData({ 
         program: updatedData.program, 
         campus: updatedData.campus,
         about: updatedData.about,
         teachingMode: updatedData.teachingMode,
         sessionType: updatedData.sessionType,
-        coursesOffered: newCoursesStr
+        coursesOffered: updatedData.coursesOffered || []
       });
 
       setShowUpdateModal(true);
@@ -250,15 +270,79 @@ export default function TutorEditProfile() {
                   </div>
                 </div>
 
-                <div className="mt-6">
-                    <label className="block text-[16px] font-bold text-black">Courses Offered (Comma separated)</label>
-                    <input
-                        type="text"
-                        placeholder="e.g. DBS311, OOP244"
-                        value={coursesOffered}
-                        onChange={(e) => setCoursesOffered(e.target.value)}
-                        className="mt-2 w-full h-[53px] rounded-[10px] border border-[#E5E5E5] bg-white px-4 text-[18px] outline-none shadow-[0px_0px_10px_0px_#00000026]"
-                    />
+                <div className="mt-6" ref={coursesDropdownRef}>
+                    <label className="block text-[16px] font-bold text-black">Courses Offered <span className="text-red-600">*</span></label>
+                    <div className="relative mt-2 w-full">
+                        <button
+                            type="button"
+                            onClick={() => setCoursesOpen((v) => !v)}
+                            className="w-full h-[53px] rounded-[10px] border border-[#E5E5E5] px-4 pr-14 text-[18px] outline-none bg-white text-left shadow-[0px_0px_10px_0px_#00000026]"
+                        >
+                            <span className="text-[18px] text-black">
+                                {coursesOffered.length === 0
+                                    ? "Select courses..."
+                                    : coursesOffered.length <= 3
+                                    ? coursesOffered.join(", ")
+                                    : `${coursesOffered.slice(0, 3).join(", ")} +${coursesOffered.length - 3}`}
+                            </span>
+                        </button>
+                        <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 h-[34px] w-[44px] rounded-full border border-[#E5E5E5] bg-white flex items-center justify-center shadow-[0px_3px_5px_0px_#00000026]">
+                            <DropdownArrow />
+                        </div>
+
+                        {coursesOpen && (
+                            <div className="absolute z-30 mt-2 w-full rounded-[10px] border border-[#E5E5E5] bg-white shadow-[0px_10px_25px_rgba(0,0,0,0.18)]">
+                                <div className="max-h-[180px] overflow-auto py-2">
+                                    {ALL_COURSES.map((c) => {
+                                        const checked = coursesOffered.includes(c);
+                                        return (
+                                            <button
+                                                key={c}
+                                                type="button"
+                                                onClick={() => toggleCourse(c)}
+                                                className="w-full px-4 py-2 flex items-center gap-3 hover:bg-black/5 text-left"
+                                            >
+                                                <span className={[
+                                                    "h-5 w-5 rounded-[6px] border border-black/20 flex items-center justify-center",
+                                                    checked ? "bg-[#0066CC] border-[#0066CC]" : "bg-white"
+                                                ].join(" ")}>
+                                                    {checked && (
+                                                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                                                            <path d="M16.5 5.5L8.5 13.5L4 9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                    )}
+                                                </span>
+                                                <span className="text-[16px] text-black">{c}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="px-4 py-3 border-t border-black/10 flex items-center justify-between">
+                                    <p className="text-[14px] text-black/60">Selected: {coursesOffered.length}</p>
+                                    <button type="button" onClick={() => setCoursesOpen(false)} className="text-[14px] text-[#0066CC] font-bold">
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Chips for Selected Courses */}
+                    <div className="w-full flex flex-wrap gap-2 pt-3">
+                        {coursesOffered.map((c) => (
+                            <span key={c} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-3 py-1 text-[14px]">
+                                {c}
+                                <button
+                                    type="button"
+                                    onClick={() => removeCourse(c)}
+                                    className="h-5 w-5 rounded-full bg-white border border-black/10 flex items-center justify-center leading-none text-red-600 hover:bg-red-50"
+                                    aria-label={`Remove ${c}`}
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6 mt-6">
