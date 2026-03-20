@@ -121,11 +121,14 @@ function minutesTo12h(mins) {
 }
 
 function isSlotAvailable(slot) {
-  if (typeof slot?.isAvailable === "boolean") return slot.isAvailable;
-  if (typeof slot?.status === "string") return slot.status === "AVAILABLE";
-  if (Number.isFinite(slot?.capacity) && Number.isFinite(slot?.bookedCount)) {
-    return slot.bookedCount < slot.capacity;
+  if (Number.isFinite(slot?.maxCapacity) && Array.isArray(slot?.learnerIds)) {
+    return slot.learnerIds.length < slot.maxCapacity;
   }
+
+  if (typeof slot?.status === "string") {
+    return slot.status === "AVAILABLE";
+  }
+
   return true;
 }
 

@@ -43,12 +43,15 @@ export default function LearnerSessionManagement() {
                     tutorId: slot.tutorId,
                     learnerId: slot.learnerId,
                     status: computedStatus,
-                    date: slot.date, 
+                    date: slot.date,
                     time: `${slot.startTime} - ${slot.endTime}`,
-                    tutorName: extractedTutorName, 
+                    tutorName: extractedTutorName,
                     rating: "—",
                     reviews: "0 reviews",
                     mode: "Online",
+                    sessionType: slot.sessionType ?? "INDIVIDUAL",
+                    currentCount: slot.currentCount ?? 1,
+                    maxCapacity: slot.maxCapacity ?? 1,
                 };
             });
             setSlots(mapped);
@@ -219,13 +222,20 @@ export default function LearnerSessionManagement() {
                                             </div>
 
                                             <div className="mt-6 flex items-center justify-between">
-                                                <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
-                                                    <img
-                                                        src="/location_on.png"
-                                                        alt="location"
-                                                        className="h-[14px] w-[14px]"
-                                                    />
-                                                    {session.mode}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
+                                                        <img
+                                                            src="/location_on.png"
+                                                            alt="location"
+                                                            className="h-[14px] w-[14px]"
+                                                        />
+                                                        {session.mode}
+                                                    </div>
+                                                    <div className="inline-flex items-center justify-center rounded-full bg-[#3F5368] px-4 py-2 text-[13px] font-medium text-white">
+                                                        {session.sessionType === "GROUP"
+                                                            ? `Group · ${session.currentCount}/${session.maxCapacity}`
+                                                            : "One-on-one"}
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex gap-2">
@@ -344,6 +354,10 @@ export default function LearnerSessionManagement() {
                                                         className="h-[14px] w-[14px]"
                                                     />
                                                     {session.mode}
+                                                </div>
+
+                                                <div className="inline-flex items-center justify-center rounded-full bg-[#3F5368] px-4 py-2 text-[13px] font-medium text-white">
+                                                    {session.sessionType === "GROUP" ? "Group" : "One-on-one"}
                                                 </div>
 
                                                 <div className="min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
