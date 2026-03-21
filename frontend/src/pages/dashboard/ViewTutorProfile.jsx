@@ -28,12 +28,30 @@ export default function ViewTutorProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getUser();
-  const tutor = location.state?.tutor;
+  // const tutor = location.state?.tutor;
+  //for demo and frontend development only (hardcoded tutor data)
+  const tutor = location.state?.tutor || {
+  id: "T102",
+  userId: "U102",
+  firstName: "Indira",
+  lastName: "Varma",
+  rating: 4.7,
+  reviewCount: 78,
+  bio: "Dedicated to making object-oriented programming simple and logical. I enjoy helping students understand not just how to code, but why certain design choices matter. My tutoring focuses on practical examples and breaking down complex concepts into small, manageable parts.",
+  teachingMode: ["ONLINE", "IN_PERSON"],
+  campus: ["Newnham", "Seneca@York"],
+  availability: "Mon-Wed",
+  coursesOffered: ["OOP244", "OOP345"],
+  program: ["CPA", "CPP"],
+  sessionType: "ONE_ON_ONE",
+};
 
   const handleClose = () => {
     navigate(-1);
   };
-
+   const handleWriteReview = () => {
+                //Issue 2: open modal
+  };
   if (!tutor) {
     return (
       <div style={styles.container}>
@@ -64,10 +82,21 @@ export default function ViewTutorProfile() {
     tutor.lastName
   );
  
-  const placeholderReviews = [
-    { reviewerName: "Tom Hanks", rating: 5, text: "Excellent tutor! Very patient and explained concepts clearly. Highly recommend for anyone struggling with the material." },
+  // const placeholderReviews = [
+  //   { reviewerName: "Tom Hanks", rating: 5, text: "Excellent tutor! Very patient and explained concepts clearly. Highly recommend for anyone struggling with the material." },
+  // ];
+  const reviews = [
+    {
+      id: "R1",
+      tutorId: tutor.id,
+      learnerId: "L100",
+      learnerName: "Tom Hanks",
+      slotId: "S200",
+      rating: 5,
+      comment: "Excellent tutor! Very patient and explained concepts clearly.",
+      createdAt: "2026-03-20T10:30:00Z",
+    },
   ];
-
   return (
     <div style={styles.container}>
       <Sidebar />
@@ -122,34 +151,54 @@ export default function ViewTutorProfile() {
             <p style={styles.detailRow}><strong>Campus:</strong> {campus}</p>
             <p style={styles.detailRow}><strong>Session Type:</strong> {sessionType}</p>
           </section>
-
+          <div style={styles.divider} />
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Reviews:</h2>
-            {placeholderReviews.map((review, i) => (
-              <div key={i} style={styles.reviewCard}>
-                <div style={styles.reviewerAvatar}>
-                  <img
-                    src={getAvatarUrl(null, null, null, review.reviewerName.split(" ")[0], review.reviewerName.split(" ")[1])}
-                    alt=""
-                    style={styles.reviewerAvatarImg}
-                    onError={(e) => { e.target.style.display = "none"; }}
-                  />
-                  <span style={styles.reviewerAvatarLetter}>{review.reviewerName[0]}</span>
-                </div>
-                <div style={styles.reviewBody}>
-                  <div style={styles.reviewHeader}>
-                    <span style={styles.reviewerName}>{review.reviewerName}</span>
-                    <span style={styles.reviewStars}>
-                      {Array.from({ length: 5 }, (_, j) => (
-                        <span key={j} style={{ color: j < review.rating ? "#000" : "#ccc" }}>★</span>
-                      ))}
-                      {" "}{review.rating}
+            <div style={styles.reviewSectionHeader}>
+              <h2 style={styles.sectionTitle}>Reviews:</h2>
+              <button
+                type="button"
+                style={styles.writeReviewBtn}
+                onClick={handleWriteReview}
+              >
+                Write a review
+              </button>
+            </div>
+            {reviews.map((review) => {
+              const fullName = (review.learnerName || review.reviewerName || "").trim();
+              const [firstName = "", lastName = ""] = fullName.split(" ");
+
+              return (
+                // <div key={i} style={styles.reviewCard}>
+                  <div key={review.id} style={styles.reviewCard}>
+                    <div style={styles.reviewerAvatar}>
+                    <img
+                      src={getAvatarUrl(null, null, null, firstName, lastName)}
+                      alt=""
+                      style={styles.reviewerAvatarImg}
+                      onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                    {/* <span style={styles.reviewerAvatarLetter}>{review.reviewerName[0]}</span> */}
+                    <span style={styles.reviewerAvatarLetter}>
+                      {review.learnerName?.[0] || "L"}
                     </span>
                   </div>
-                  <p style={styles.reviewText}>{review.text}</p>
-                </div>
-              </div>
-            ))}
+                  <div style={styles.reviewBody}>
+                    <div style={styles.reviewHeader}>
+                      {/* <span style={styles.reviewerName}>{review.reviewerName}</span> */}
+                      <span style={styles.reviewerName}>{review.learnerName}</span>
+                      <span style={styles.reviewStars}>
+                        {Array.from({ length: 5 }, (_, j) => (
+                          <span key={j} style={{ color: j < review.rating ? "#000" : "#ccc" }}>★</span>
+                          ))}
+                          {" "}{review.rating}
+                        </span>
+                      </div>
+                      {/* <p style={styles.reviewText}>{review.text}</p> */}
+                          <p style={styles.reviewText}>{review.comment}</p>
+                    </div>
+                  </div>
+                );
+              })}
             <p style={styles.seeMore}>
               <button type="button" style={styles.seeMoreLink}>see more</button>
             </p>
@@ -446,6 +495,33 @@ const styles = {
     zIndex: 0,
     fontFamily: "inherit",
   },
+  //divider
+  divider: {
+  width: "100%",
+  height: "1px",
+  backgroundColor: "#B1B1B1",
+  margin: "16px 0",
+},
+  //for the review section 
+  reviewSectionHeader: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "16px",
+},
+
+writeReviewBtn: {
+  minWidth: "154px",
+  height: "40px",
+  padding: "0 18px",
+  borderRadius: "999px",
+  border: "1px solid #6B6B6B",
+  backgroundColor: "#FFFFFF",
+  color: "#111111",
+  fontSize: "14px",
+  cursor: "pointer",
+  fontFamily: "inherit",
+},
   reviewBody: { flex: 1, minWidth: 0 },
   reviewHeader: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" },
   reviewerName: { fontWeight: 700, fontSize: "15px", fontFamily: "inherit", color: "#000" },
