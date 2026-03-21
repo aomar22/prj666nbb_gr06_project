@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser } from "../../api";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import { TEACHING_MODE_LABELS, SESSION_TYPE_LABELS } from "../../constants/options";
+import LeaveReviewModal from "../../components/ui/LeaveReviewModal";
 
 const TUTOR_PLACEHOLDER_PHOTOS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
@@ -46,12 +48,40 @@ export default function ViewTutorProfile() {
   sessionType: "ONE_ON_ONE",
 };
 
+  //handle write review and modal state
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  
+  const handleWriteReview = () => {
+    setIsReviewModalOpen(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setIsReviewModalOpen(false);
+    setSelectedRating(0);
+    setHoveredRating(0);
+    setReviewComment("");
+    setReviewError("");
+
+  };
   const handleClose = () => {
-    navigate(-1);
-  };
-   const handleWriteReview = () => {
-                //Issue 2: open modal
-  };
+  navigate(-1);
+  }
+  //handle submit + validation
+  const [reviewError, setReviewError] = useState("");
+  const handleSubmitReview = () => {
+  if (selectedRating < 1 || selectedRating > 5) {
+    setReviewError("Please select a rating before submitting.");
+    return;
+  }
+
+  setReviewError("");
+  
+};
+  
+
   if (!tutor) {
     return (
       <div style={styles.container}>
@@ -97,6 +127,7 @@ export default function ViewTutorProfile() {
       createdAt: "2026-03-20T10:30:00Z",
     },
   ];
+  
   return (
     <div style={styles.container}>
       <Sidebar />
@@ -164,7 +195,8 @@ export default function ViewTutorProfile() {
               </button>
             </div>
             {reviews.map((review) => {
-              const fullName = (review.learnerName || review.reviewerName || "").trim();
+              // const fullName = (review.learnerName || review.reviewerName || "").trim();
+                const fullName = (review.learnerName || "").trim();              
               const [firstName = "", lastName = ""] = fullName.split(" ");
 
               return (
@@ -205,6 +237,138 @@ export default function ViewTutorProfile() {
           </section>
         </div>
       </main>
+      <LeaveReviewModal
+        open={isReviewModalOpen}
+        onClose={handleCloseReviewModal}
+        tutor={tutor}
+        tutorAvatarUrl={tutorAvatarUrl}
+      >
+        <div
+          className="
+            flex flex-col items-center
+            text-center
+          "
+        >
+          <h3
+            className="
+              mb-4
+              w-full max-w-[533px]
+              text-center
+              text-[34px] font-bold
+              font-mono
+              leading-[1.1]
+              text-black
+            "
+          >
+            How was your tutoring session with {tutor.firstName}?
+          </h3>
+
+          <p
+            className="
+              mb-6
+              text-[15px]
+              text-black/70
+              font-mono
+            "
+          >
+            Your review will help us improve the overall experience
+          </p>
+
+          <div
+            className="
+              mb-8
+              flex items-center gap-3
+            "
+          >
+            {[1, 2, 3, 4, 5].map((star) => {
+              const activeRating = hoveredRating || selectedRating;
+              const isActive = star <= activeRating;
+
+              return (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRating(star);
+                    setReviewError("");
+                  }}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                  className="
+                    text-[52px] leading-none
+                    transition-transform duration-150
+                    hover:scale-105
+                  "
+                >
+                  <span className={
+                    star <= activeRating
+                      ? "text-[#E0B100]"
+                      : "text-[#B9B9B9]"
+                      }
+                      >
+                    ★
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="w-full text-left">
+            <label
+              htmlFor="review-comment"
+              className="
+                mb-3 block
+                text-[22px] font-bold
+                text-black
+              "
+            >
+              Feedback:
+            </label>
+
+            <textarea
+              id="review-comment"
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              placeholder="Write down here..."
+              className="
+                min-h-[190px] w-full
+                rounded-[22px]
+                border border-[#B9B9B9]
+                bg-transparent
+                px-6 py-4
+                text-[18px]
+                outline-none
+                placeholder:text-[#9A9A9A]
+              "
+            />
+          </div>
+            {reviewError && (
+              <p className="mt-3
+                            text-sm
+                            text-red-600
+                          ">
+                {reviewError}
+              </p>
+          )}
+          <button
+            type="button"
+            onClick={handleSubmitReview}
+            className="
+              mt-8
+              h-[52px] min-w-[130px]
+              rounded-[18px]
+              bg-[#FF4A4A]
+              px-8
+              text-[22px] font-medium
+              text-white
+              shadow-[0_6px_14px_rgba(0,0,0,0.15)]
+            "
+          >
+            Submit
+          </button>
+        </div>
+      </LeaveReviewModal>
     </div>
   );
 }
