@@ -5,6 +5,7 @@ import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import { TEACHING_MODE_LABELS, SESSION_TYPE_LABELS } from "../../constants/options";
 import LeaveReviewModal from "../../components/ui/LeaveReviewModal";
+import ConfirmationModal from "../../components/ui/ConfirmationModal";
 
 const TUTOR_PLACEHOLDER_PHOTOS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
@@ -50,9 +51,11 @@ export default function ViewTutorProfile() {
 
   //handle write review and modal state
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isReviewConfirmationOpen, setIsReviewConfirmationOpen] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
   
   const handleWriteReview = () => {
     setIsReviewModalOpen(true);
@@ -66,11 +69,17 @@ export default function ViewTutorProfile() {
     setReviewError("");
 
   };
+ 
+
+  const handleCloseReviewConfirmation = () => {
+    setIsReviewConfirmationOpen(false);
+  };
   const handleClose = () => {
-  navigate(-1);
-  }
-  //handle submit + validation
-  const [reviewError, setReviewError] = useState("");
+    navigate("/dashboard/learner/find-tutors/results");
+  };
+  
+  //handle submit 
+  
   const handleSubmitReview = () => {
   if (selectedRating < 1 || selectedRating > 5) {
     setReviewError("Please select a rating before submitting.");
@@ -78,6 +87,8 @@ export default function ViewTutorProfile() {
   }
 
   setReviewError("");
+  setIsReviewModalOpen(false);
+  setIsReviewConfirmationOpen(true);
   
 };
   
@@ -369,9 +380,20 @@ export default function ViewTutorProfile() {
           </button>
         </div>
       </LeaveReviewModal>
+      <ConfirmationModal
+        open={isReviewConfirmationOpen}
+        onClose={handleCloseReviewConfirmation}
+        onConfirm={handleCloseReviewConfirmation}
+        title=""
+        message="Thank you. Your review has
+                 successfully been submitted!"
+        confirmText="Continue"
+        icon="/check-mark.svg"
+      />
     </div>
   );
 }
+
 
 const styles = {
   container: {

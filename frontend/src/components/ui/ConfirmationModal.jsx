@@ -75,12 +75,15 @@ export default function ConfirmationModal({
             <p className="mt-1 text-[16px] leading-6 text-slate-700">
               {message}
             </p>
+            </div>
+            </div>
 
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
                 onClick={onConfirm}
                 className="h-[41px] w-[114px]
+              
                 rounded-[17px]
                 bg-[#FF4245]
                 text-[14px]
@@ -95,7 +98,5 @@ export default function ConfirmationModal({
             </div>
           </div>
         </div>
-      </div>
-    </div>
   );
 }
