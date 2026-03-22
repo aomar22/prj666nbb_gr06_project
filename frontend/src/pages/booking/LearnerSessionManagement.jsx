@@ -35,7 +35,7 @@ export default function LearnerSessionManagement() {
             const now = new Date();
             const mapped = (Array.isArray(data) ? data : []).map((slot) => {
             const slotEndDate = new Date(`${slot.date}T${slot.endTime}`);
-            const computedStatus = slotEndDate < now ? "COMPLETED" : "BOOKED";
+            const computedStatus = slot.status || (slotEndDate < now ? "COMPLETED" : "BOOKED");
             const extractedTutorName = slot.message ? slot.message.replace("Session with ", "") : "Tutor";
 
                 return {
@@ -221,24 +221,21 @@ export default function LearnerSessionManagement() {
                                                 </div>
                                             </div>
 
-                                            <div className="mt-6 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
-                                                        <img
-                                                            src="/location_on.png"
-                                                            alt="location"
-                                                            className="h-[14px] w-[14px]"
-                                                        />
-                                                        {session.mode}
-                                                    </div>
-                                                    <div className="inline-flex items-center justify-center rounded-full bg-[#3F5368] px-4 py-2 text-[13px] font-medium text-white">
-                                                        {session.sessionType === "GROUP"
-                                                            ? `Group · ${session.currentCount}/${session.maxCapacity}`
-                                                            : "One-on-one"}
-                                                    </div>
+                                            <div className="mt-6 flex flex-wrap items-center gap-2">
+                                                <div className="inline-flex items-center justify-center rounded-full bg-[#5C8354] px-4 py-2 text-[13px] font-medium text-white">
+                                                    <img
+                                                        src="/location_on.png"
+                                                        alt="location"
+                                                        className="h-[14px] w-[14px]"
+                                                    />
+                                                    {session.mode}
                                                 </div>
-
-                                                <div className="flex gap-2">
+                                                <div className="inline-flex items-center justify-center rounded-full bg-[#3F5368] px-4 py-2 text-[13px] font-medium text-white">
+                                                    {session.sessionType === "GROUP"
+                                                        ? `Group · ${session.currentCount}/${session.maxCapacity}`
+                                                        : "One-on-one"}
+                                                </div>
+                                                <div className="ml-auto flex shrink-0 gap-2">
                                                     <button
                                                         type="button"
                                                         disabled={isCancelling}
@@ -247,22 +244,18 @@ export default function LearnerSessionManagement() {
                                                             setSessionToCancel(session);
                                                             setShowCancelConfirmation(true);
                                                         }}
-                                                    className={[
-                                                        "rounded-full px-5 py-2 text-[14px] font-medium text-white shadow transition",
-                                                        isCancelling
-                                                            ? "bg-red-300 cursor-not-allowed shadow-none"
-                                                            : "bg-red-700 hover:bg-red-800",
+                                                        className={[
+                                                            "rounded-full px-5 py-2 text-[14px] font-medium text-white shadow transition",
+                                                            isCancelling
+                                                                ? "bg-red-300 cursor-not-allowed shadow-none"
+                                                                : "bg-red-700 hover:bg-red-800",
                                                         ].join(" ")}
-                                                        >
-                                                            Cancel
+                                                    >
+                                                        Cancel
                                                     </button>
-
                                                     <button
                                                         type="button"
-                                                        className="rounded-full 
-                                                        bg-green-600 hover:bg-green-700
-                                                        px-5 py-2
-                                                        text-[14px] font-medium text-white shadow"
+                                                        className="rounded-full bg-green-600 px-5 py-2 text-[14px] font-medium text-white shadow hover:bg-green-700"
                                                     >
                                                         Join
                                                     </button>
@@ -346,21 +339,19 @@ export default function LearnerSessionManagement() {
                                                     <span>{session.time}</span>
                                                 </div>
                                             </div>
-                                            <div className="mt-6 flex items-center gap-2">
-                                                <div className="inline-flex min-w-[105px] items-center justify-center rounded-full bg-[#5C8354] px-5 py-2 text-[14px] font-medium text-white">
+                                            <div className="mt-6 flex flex-wrap items-center gap-2">
+                                                <div className="inline-flex items-center justify-center rounded-full bg-[#5C8354] px-4 py-2 text-[13px] font-medium text-white">
                                                     <img
                                                         src="/location_on.png"
                                                         alt="location"
-                                                        className="h-[14px] w-[14px]"
+                                                        className="h-3.5 w-3.5"
                                                     />
                                                     {session.mode}
                                                 </div>
-
                                                 <div className="inline-flex items-center justify-center rounded-full bg-[#3F5368] px-4 py-2 text-[13px] font-medium text-white">
                                                     {session.sessionType === "GROUP" ? "Group" : "One-on-one"}
                                                 </div>
-
-                                                <div className="min-w-[105px] items-center justify-center rounded-full bg-[#3F5368] px-5 py-2 text-[14px] font-medium text-white">
+                                                <div className="inline-flex items-center justify-center rounded-full bg-[#3F5368] px-4 py-2 text-[13px] font-medium text-white">
                                                     {session.status === "COMPLETED" ? "Completed" : session.status}
                                                 </div>
                                             </div>

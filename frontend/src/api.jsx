@@ -159,8 +159,13 @@ async function handleResponse(res) {
 
   if (!res.ok) {
     const msg =
-      json?.message || json?.error || (typeof json === "string" ? json : res.statusText);
-    const err = new Error(msg || "Request failed");
+      json?.message ||
+      json?.error ||
+      (typeof json === "string" ? json : null) ||
+      (json && typeof json === "object" ? Object.values(json).filter(Boolean).join("; ") : null) ||
+      res.statusText ||
+      "Request failed";
+    const err = new Error(msg);
     err.status = res.status;
     err.body = json;
     throw err;
@@ -315,6 +320,38 @@ export async function changePassword(payload) {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}
+
+/**
+ * Get all reviews for a tutor (public)
+ * GET /api/reviews/tutor/{tutorId}
+ */
+export async function getTutorReviews(tutorId) {
+  return authRequest(`/api/reviews/tutor/${tutorId}`);
+}
+
+/**
+ * Submit a review for a tutor (learner only)
+ * POST /api/reviews
+ * @param {string} tutorId
+ * @param {number} rating - 1-5
+ * @param {string} [comment]
+ */
+export async function submitReview(tutorId, rating, comment) {
+  const payload = { tutorId, rating };
+  if (comment && comment.trim()) payload.comment = comment.trim();
+  return authRequest(`/api/reviews`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Get completed sessions with review status for the authenticated learner
+ * GET /api/reviews/my-sessions
+ */
+export async function getMySessions() {
+  return authRequest(`/api/reviews/my-sessions`);
 }
 
 export default {
