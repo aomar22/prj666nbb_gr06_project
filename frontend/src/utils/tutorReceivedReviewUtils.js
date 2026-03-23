@@ -1,4 +1,4 @@
-import { getTutorReviews } from "../api";
+import { getTutorReviews, getTutorSessions, getLearnerById } from "../api";
 import { getCachedTutorReceivedReviews } from "./tutorReceivedReviewsCache";
 
 /** Shown when API + cache return nothing (My Reviews page + dashboard). */
@@ -133,8 +133,7 @@ export function tutorReviewerAvatarSrc(r) {
 }
 
 /**
- * All reviews for a tutor (newest first), merged from API + local cache, with
- * placeholder data only when there is no real data.
+ * All reviews for a tutor (newest first), merged from API + local cache.
  */
 export async function fetchMergedTutorReviewsForTutor(tutorId) {
   let apiRows = [];
@@ -149,12 +148,54 @@ export async function fetchMergedTutorReviewsForTutor(tutorId) {
   const cached =
     tutorId != null ? getCachedTutorReceivedReviews(tutorId) : [];
   const merged = mergeTutorReceivedReviews(apiRows, cached);
-  if (tutorId != null && merged.length === 0) {
-    return TUTOR_PLACEHOLDER_REVIEWS_RAW.map((row) =>
-      normalizeTutorReceivedReview(row)
-    ).filter(Boolean);
+  if (merged.length > 0 || tutorId == null) return merged;
+
+  // Keep placeholder layout, but use real learner names from backend sessions when possible.
+  try {
+    const slots = await getTutorSessions(tutorId);
+    const list = Array.isArray(slots) ? slots : [];
+    const learnerIds = [
+      ...new Set(
+        list
+          .flatMap((s) => (Array.isArray(s?.learnerIds) ? s.learnerIds : []))
+          .filter(Boolean)
+      ),
+    ];
+
+    if (learnerIds.length > 0) {
+      const learners = await Promise.all(
+        learnerIds.slice(0, 6).map(async (id) => {
+          try {
+            return await getLearnerById(id);
+          } catch {
+            return null;
+          }
+        })
+      );
+      const now = Date.now();
+      const backendPlaceholders = learners
+        .filter(Boolean)
+        .map((l, i) =>
+          normalizeTutorReceivedReview({
+            id: `placeholder-backend-${l.id ?? i}`,
+            tutorId,
+            learnerFirstName: l.firstName ?? "",
+            learnerLastName: l.lastName ?? "",
+            rating: 4,
+            comment: "No written review yet.",
+            createdAt: new Date(now - i * 86400000).toISOString(),
+          })
+        )
+        .filter(Boolean);
+      if (backendPlaceholders.length > 0) return backendPlaceholders;
+    }
+  } catch {
+    // Fall through to static placeholders below.
   }
-  return merged;
+
+  return TUTOR_PLACEHOLDER_REVIEWS_RAW.map((row) =>
+    normalizeTutorReceivedReview(row)
+  ).filter(Boolean);
 }
 
 /** Most recent reviews for dashboard widgets (newest first). */

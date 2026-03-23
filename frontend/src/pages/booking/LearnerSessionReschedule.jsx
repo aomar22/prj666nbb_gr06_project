@@ -435,6 +435,7 @@ export default function LearnerSessionReschedule() {
         rescheduleRequest.learnerId,
         rescheduleRequest.newSlotId
       );
+      window.dispatchEvent(new CustomEvent("scholarly-learner-bookings-changed"));
 
       setShowRescheduleConfirmation(true);
     } catch (e) {

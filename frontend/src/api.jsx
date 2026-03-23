@@ -246,6 +246,14 @@ export function searchLearnersByCourse(course) {
 }
 
 /**
+ * Learner profile by id (tutor dashboard — session cards).
+ * GET /api/learners/{id}
+ */
+export async function getLearnerById(learnerId) {
+  return authRequest(`/api/learners/${encodeURIComponent(learnerId)}`, { method: "GET" });
+}
+
+/**
  * Search tutors with filters and pagination - for Learner dashboard (Find Tutors).
  * GET /api/tutors/search?q=...&courses=...&campus=...&page=0&size=10&sortBy=rating&sortDirection=desc
  * @param {Object} params
@@ -355,12 +363,28 @@ export async function getMySessions() {
 }
 
 /**
- * Reviews submitted by the authenticated learner (for My Reviews page)
- * GET /api/reviews/me
- * Expected items: { id, tutorId, tutorFirstName, tutorLastName, tutorProfileImageUrl, rating, comment, createdAt }
+ * Reviews for the authenticated user (role-aware):
+ * LEARNER → reviews they wrote; TUTOR → reviews received.
+ * GET /api/reviews/my-reviews
+ * Items: { id, tutorId, learnerId, learnerName, rating, comment, createdAt }
+ */
+export async function getMyReviews() {
+  return authRequest(`/api/reviews/my-reviews`, { method: "GET" });
+}
+
+/**
+ * Learner alias — same as getMyReviews() when logged in as LEARNER.
  */
 export async function getLearnerMyReviews() {
-  return authRequest(`/api/reviews/me`, { method: "GET" });
+  return getMyReviews();
+}
+
+/**
+ * Tutor profile by id (for enriching learner "my reviews" with tutor names).
+ * GET /api/tutors/{id}
+ */
+export async function getTutorById(tutorId) {
+  return authRequest(`/api/tutors/${encodeURIComponent(tutorId)}`, { method: "GET" });
 }
 
 export default {

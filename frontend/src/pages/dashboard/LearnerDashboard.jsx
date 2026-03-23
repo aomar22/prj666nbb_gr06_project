@@ -1,19 +1,72 @@
-import { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getUser, searchTutors } from "../../api";
+import { fetchLearnerUpcomingSessionsForDashboard } from "../../utils/dashboardUpcomingSessions";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 
+const TUTOR_PLACEHOLDER_PHOTOS = [
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+];
+
+function getTutorPlaceholderPhoto(tutor) {
+  const key =
+    String(tutor?.id ?? tutor?.userId ?? "") ||
+    [tutor?.firstName, tutor?.lastName].filter(Boolean).join(" ") ||
+    "tutor";
+  let idx = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    idx = (idx + key.charCodeAt(i)) % TUTOR_PLACEHOLDER_PHOTOS.length;
+  }
+  return TUTOR_PLACEHOLDER_PHOTOS[Math.abs(idx)];
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const location = useLocation();
   const user = getUser();
+
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUpcomingSessions([]);
+      setSessionsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      setSessionsLoading(true);
+      try {
+        const rows = await fetchLearnerUpcomingSessionsForDashboard(user.id, 12);
+        if (!cancelled) setUpcomingSessions(rows);
+      } catch {
+        if (!cancelled) setUpcomingSessions([]);
+      } finally {
+        if (!cancelled) setSessionsLoading(false);
+      }
+    };
+    load();
+    const onBookingsChanged = () => load();
+    window.addEventListener("scholarly-learner-bookings-changed", onBookingsChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("scholarly-learner-bookings-changed", onBookingsChanged);
+    };
+  }, [user?.id]);
 
   // Tutor search state (for "Find Tutors" / header search)
   const [tutorSearchQuery, setTutorSearchQuery] = useState("");
   const [tutorSearchResults, setTutorSearchResults] = useState(null);
   const [tutorSearchLoading, setTutorSearchLoading] = useState(false);
   const [tutorSearchError, setTutorSearchError] = useState(null);
+  const [recommendedTutors, setRecommendedTutors] = useState([]);
+  const [recommendedTutorsLoading, setRecommendedTutorsLoading] = useState(true);
 
   const handleTutorSearch = async () => {
     setTutorSearchError(null);
@@ -42,6 +95,32 @@ export default function Dashboard() {
       setTutorSearchLoading(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadRecommendedTutors = async () => {
+      setRecommendedTutorsLoading(true);
+      try {
+        const page = await searchTutors({
+          q: "",
+          page: 0,
+          size: 6,
+          sortBy: "rating",
+          sortDirection: "desc",
+        });
+        const rows = Array.isArray(page?.content) ? page.content : [];
+        if (!cancelled) setRecommendedTutors(rows);
+      } catch {
+        if (!cancelled) setRecommendedTutors([]);
+      } finally {
+        if (!cancelled) setRecommendedTutorsLoading(false);
+      }
+    };
+    loadRecommendedTutors();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   
   // Get user's full name
   const getUserName = () => {
@@ -57,16 +136,6 @@ export default function Dashboard() {
   
   const userName = getUserName();
 
-  // Recommended tutors: each has id so "Book session" goes to the correct tutor
-  const RECOMMENDED_TUTORS = [
-    { id: "tom-holland", firstName: "Tom", lastName: "Holland", expertise: "APD545", rating: 4.9, reviewCount: 120, avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
-    { id: "chris-evans", firstName: "Chris", lastName: "Evans", expertise: "IPC144", rating: 5.0, reviewCount: 95, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" },
-    { id: "margot-robbie", firstName: "Margot", lastName: "Robbie", expertise: "PRJ666", rating: 4.0, reviewCount: 64, avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
-    { id: "james-wilson", firstName: "James", lastName: "Wilson", expertise: "OOP345", rating: 4.8, reviewCount: 88, avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face" },
-    { id: "sarah-chen", firstName: "Sarah", lastName: "Chen", expertise: "DBS311", rating: 4.7, reviewCount: 72, avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" },
-    { id: "emma-davis", firstName: "Emma", lastName: "Davis", expertise: "WEB222", rating: 4.6, reviewCount: 51, avatar: "https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face" },
-  ];
-
   return (
     <div style={styles.container}>
       <Sidebar />
@@ -75,6 +144,7 @@ export default function Dashboard() {
           <Topbar
             placeholder="Search Tutor or Courses"
             onSearchBarClick={() => navigate("/dashboard/learner/find-tutors")}
+            onAvatarClick={() => navigate("/settings/learner/profile/edit")}
             avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ddd&color=666&size=100`}
           />
         </div>
@@ -161,101 +231,107 @@ export default function Dashboard() {
 
         {/* Content: Upcoming Sessions and Recommended Tutors stacked, full width */}
         <div style={styles.contentGrid}>
-          {/* Upcoming Sessions */}
+          {/* Upcoming Sessions — GET /api/availability/learner/{id}/bookings */}
           <section style={styles.upcomingSection}>
             <h2 style={styles.upcomingSectionTitle}>Upcoming Sessions</h2>
-            <div style={styles.sessionsGrid}>
-                <div style={styles.sessionCard}>
-                  <div style={styles.tutorInfo}>
-                    <div style={styles.tutorAvatar}>
-                      <img
-                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face"
-                        alt="Brad Pitt"
-                        style={styles.avatarImage}
-                      />
+            {sessionsLoading ? (
+              <p style={styles.sessionsLoadingHint}>Loading sessions…</p>
+            ) : upcomingSessions.length === 0 ? (
+              <p style={styles.sessionsEmptyHint}>
+                No upcoming sessions. Book a tutor from Find Tutors and your sessions will show here.
+              </p>
+            ) : (
+              <div style={styles.sessionsGrid}>
+                {upcomingSessions.map((session) => {
+                  const title =
+                    session.courseLabel && String(session.courseLabel).trim()
+                      ? `${session.tutorName} - ${session.courseLabel}`
+                      : session.tutorName;
+                  const start =
+                    session.start instanceof Date
+                      ? session.start
+                      : new Date(session.start);
+                  const dateStr = Number.isNaN(start.getTime())
+                    ? "—"
+                    : start.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      });
+                  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    session.tutorName || "Tutor"
+                  )}&background=f5e6dc&color=7A0000&size=128`;
+                  return (
+                    <div key={session.id || session.slotId} style={styles.sessionCard}>
+                      <div style={styles.tutorInfo}>
+                        <div style={styles.tutorAvatar}>
+                          <img src={avatarUrl} alt="" style={styles.avatarImage} />
+                        </div>
+                        <div>
+                          <h3 style={styles.tutorName}>{title}</h3>
+                          <p style={styles.sessionDate}>{dateStr}</p>
+                        </div>
+                      </div>
+                      <div style={styles.sessionActions}>
+                        <button type="button" style={styles.onlineBadge}>
+                          📍 Online
+                        </button>
+                        <button type="button" style={styles.joinButton}>
+                          Join
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <h3 style={styles.tutorName}>Brad Pitt - DSA456</h3>
-                      <p style={styles.sessionDate}>Oct 25, 2025</p>
-                    </div>
-                  </div>
-                  <div style={styles.sessionActions}>
-                    <button style={styles.onlineBadge}>
-                      📍 Online
-                    </button>
-                    <button style={styles.joinButton}>Join</button>
-                  </div>
-                </div>
-
-                <div style={styles.sessionCard}>
-                  <div style={styles.tutorInfo}>
-                    <div style={styles.tutorAvatar}>
-                      <img
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face"
-                        alt="Jennifer Aniston"
-                        style={styles.avatarImage}
-                      />
-                    </div>
-                    <div>
-                      <h3 style={styles.tutorName}>Jennifer Aniston - PRJ566</h3>
-                      <p style={styles.sessionDate}>Nov 2, 2025</p>
-                    </div>
-                  </div>
-                  <div style={styles.sessionActions}>
-                    <button style={styles.inPersonBadge}>
-                      📍 In Person
-                    </button>
-                    <button style={styles.joinButton}>Join</button>
-                  </div>
-                </div>
-
-                <div style={styles.sessionCard}>
-                  <div style={styles.tutorInfo}>
-                    <div style={styles.tutorAvatar}>
-                      <img
-                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
-                        alt="Tom Holland"
-                        style={styles.avatarImage}
-                      />
-                    </div>
-                    <div>
-                      <h3 style={styles.tutorName}>Tom Holland - APD545</h3>
-                      <p style={styles.sessionDate}>Nov 10, 2025</p>
-                    </div>
-                  </div>
-                  <div style={styles.sessionActions}>
-                    <button style={styles.onlineBadge}>
-                      📍 Online
-                    </button>
-                    <button style={styles.joinButton}>Join</button>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
+            )}
           </section>
 
           {/* Recommended Tutors */}
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
             <div style={styles.recommendedGrid}>
-                {RECOMMENDED_TUTORS.map((tutor) => (
+                {recommendedTutorsLoading ? (
+                  <p style={styles.noResultsText}>Loading tutors…</p>
+                ) : recommendedTutors.length === 0 ? (
+                  <p style={styles.noResultsText}>No tutors available right now.</p>
+                ) : recommendedTutors.map((tutor) => (
                 <div key={tutor.id} style={styles.recommendedCard}>
                   <div style={styles.recommendedAvatar}>
                     <img
-                      src={tutor.avatar}
-                      alt={`${tutor.firstName} ${tutor.lastName}`}
+                      src={tutor.profilePictureUrl || tutor.avatar || getTutorPlaceholderPhoto(tutor)}
+                      alt={`${[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}`}
                       style={styles.avatarImage}
                     />
                   </div>
-                  <h3 style={styles.recommendedName}>{tutor.firstName} {tutor.lastName}</h3>
-                  <p style={styles.recommendedExpertise}>Expert in {tutor.expertise}</p>
+                  <h3 style={styles.recommendedName}>
+                    {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
+                  </h3>
+                  <p style={styles.recommendedExpertise}>
+                    {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
+                      ? tutor.coursesOffered.join(", ")
+                      : tutor.program || "—"}
+                  </p>
                   <div style={styles.rating}>
-                    <span>⭐</span> {tutor.rating}
+                    <span>⭐</span> {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
+                    {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
                   </div>
                   <button
                     style={styles.bookButton}
                     onClick={() =>
                       navigate("/dashboard/learner/booking", {
-                        state: { tutorId: tutor.id, tutor: tutor },
+                        state: {
+                          tutorId: tutor.id ?? tutor.userId,
+                          tutor: {
+                            id: tutor.id ?? tutor.userId,
+                            firstName: tutor.firstName,
+                            lastName: tutor.lastName,
+                            rating: tutor.rating,
+                            reviewCount: tutor.reviewCount,
+                            profilePictureUrl: tutor.profilePictureUrl,
+                            avatar: tutor.profilePictureUrl,
+                          },
+                        },
                       })
                     }
                   >
@@ -434,6 +510,18 @@ const styles = {
     marginBottom: '16px',
     color: '#000',
   },
+  sessionsLoadingHint: {
+    margin: 0,
+    fontSize: '14px',
+    color: '#666',
+  },
+  sessionsEmptyHint: {
+    margin: 0,
+    fontSize: '14px',
+    color: '#666',
+    maxWidth: '520px',
+    lineHeight: 1.5,
+  },
   sessionsGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr 1fr',
@@ -529,6 +617,9 @@ const styles = {
     textAlign: 'center',
     minWidth: '180px',
     backgroundColor: '#C8D1FF',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '245px',
   },
   recommendedAvatar: {
     width: '60px',
@@ -546,6 +637,7 @@ const styles = {
     margin: '0 0 10px 0',
     fontSize: '14px',
     color: '#666',
+    minHeight: '40px',
   },
   rating: {
     marginBottom: '10px',
@@ -561,6 +653,7 @@ const styles = {
     width: '100%',
     fontSize: '14px',
     fontWeight: '500',
+    marginTop: 'auto',
   },
   arrowButton: {
     position: 'absolute',

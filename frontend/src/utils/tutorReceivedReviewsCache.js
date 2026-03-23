@@ -20,10 +20,7 @@ function writeRaw(list, tutorIdForEvent) {
   );
 }
 
-/**
- * Reviews left by learners for a tutor — cached when a learner submits from
- * ViewTutorProfile so the tutor’s My Reviews page can show them offline.
- */
+
 export function getCachedTutorReceivedReviews(tutorId) {
   if (tutorId == null) return [];
   return readRaw().filter((r) => String(r.tutorId) === String(tutorId));

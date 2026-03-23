@@ -26,7 +26,7 @@ export function getCachedLearnerReviews() {
 
 /**
  * Call after a successful submitReview() so My Reviews stays in sync when the backend
- * is unavailable or does not yet expose GET /api/reviews/me.
+ * is unavailable or GET /api/reviews/my-reviews fails.
  */
 export function appendCachedLearnerReview(entry) {
   const list = readRaw();

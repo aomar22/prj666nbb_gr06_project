@@ -1,77 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getUser, getLearnerMyReviews } from "../../api";
-import { getCachedLearnerReviews } from "../../utils/learnerReviewsCache";
+import { getUser } from "../../api";
+import {
+  fetchMergedLearnerReviewsForLearner,
+  learnerReviewTutorAvatarSrc,
+  learnerReviewTutorDisplayName,
+} from "../../utils/learnerWrittenReviewUtils";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 
 const PAGE_SIZE = 6;
 const GOLD = "#E0B100";
 const STAR_EMPTY = "#D1D1D1";
-
-/** Shown when API + cache return nothing so the page still demonstrates the layout. */
-const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
-  {
-    id: "placeholder-learner-1",
-    tutorFirstName: "Brad",
-    tutorLastName: "Pitt",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-    rating: 5,
-    comment: "Very patient and explains everything clearly!",
-    createdAt: "2026-03-18T10:00:00.000Z",
-  },
-  {
-    id: "placeholder-learner-2",
-    tutorFirstName: "Emma",
-    tutorLastName: "Stone",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-    rating: 4,
-    comment:
-      "Helpful with IPC144 — I finally understand loops and arrays after our session.",
-    createdAt: "2026-03-14T16:20:00.000Z",
-  },
-  {
-    id: "placeholder-learner-3",
-    tutorFirstName: "James",
-    tutorLastName: "Wilson",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    rating: 5,
-    comment: "Structured notes and great examples. Would book again.",
-    createdAt: "2026-03-10T09:15:00.000Z",
-  },
-  {
-    id: "placeholder-learner-4",
-    tutorFirstName: "Sarah",
-    tutorLastName: "Chen",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-    rating: 4,
-    comment: "Good pace for DBS311 — answers questions without rushing.",
-    createdAt: "2026-03-08T11:45:00.000Z",
-  },
-  {
-    id: "placeholder-learner-5",
-    tutorFirstName: "Marcus",
-    tutorLastName: "Nguyen",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    rating: 3,
-    comment: "Solid session; a bit fast on joins but we covered what I needed.",
-    createdAt: "2026-03-05T13:00:00.000Z",
-  },
-  {
-    id: "placeholder-learner-6",
-    tutorFirstName: "Priya",
-    tutorLastName: "Sharma",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-    rating: 5,
-    comment: "Encouraging and clear — my confidence for the midterm is way up.",
-    createdAt: "2026-03-01T08:30:00.000Z",
-  },
-];
 
 function formatDateDdMmYyyy(iso) {
   if (!iso) return "—";
@@ -81,63 +20,6 @@ function formatDateDdMmYyyy(iso) {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = d.getFullYear();
   return `${day}.${month}.${year}`;
-}
-
-function normalizeReview(raw) {
-  if (!raw || typeof raw !== "object") return null;
-  const id =
-    raw.id != null
-      ? String(raw.id)
-      : `row-${raw.tutorId}-${raw.createdAt}-${raw.rating}`;
-  const tutorFirstName =
-    raw.tutorFirstName ?? raw.tutor?.firstName ?? raw.firstName ?? "";
-  const tutorLastName =
-    raw.tutorLastName ?? raw.tutor?.lastName ?? raw.lastName ?? "";
-  const tutorProfileImageUrl =
-    raw.tutorProfileImageUrl ??
-    raw.tutorProfilePicture ??
-    raw.tutor?.profileImageUrl ??
-    raw.tutor?.profilePicture ??
-    raw.tutor?.avatar ??
-    null;
-  return {
-    id,
-    tutorId: raw.tutorId ?? raw.tutor?.id ?? null,
-    tutorFirstName,
-    tutorLastName,
-    tutorProfileImageUrl,
-    rating: Math.min(5, Math.max(0, Number(raw.rating) || 0)),
-    comment: raw.comment ?? raw.text ?? "",
-    createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
-  };
-}
-
-function mergeReviews(apiList, cachedList) {
-  const map = new Map();
-  for (const c of cachedList) {
-    const n = normalizeReview(c);
-    if (n) map.set(n.id, n);
-  }
-  for (const a of apiList) {
-    const n = normalizeReview(a);
-    if (n) map.set(n.id, { ...map.get(n.id), ...n });
-  }
-  return Array.from(map.values()).sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
-}
-
-function tutorDisplayName(r) {
-  const n = [r.tutorFirstName, r.tutorLastName].filter(Boolean).join(" ").trim();
-  return n || "Tutor";
-}
-
-function tutorAvatarSrc(r) {
-  if (r.tutorProfileImageUrl) return r.tutorProfileImageUrl;
-  const name = tutorDisplayName(r);
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    name
-  )}&background=f5e6dc&color=7A0000&size=128`;
 }
 
 export default function LearnerMyReviews() {
@@ -154,25 +36,14 @@ export default function LearnerMyReviews() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    let apiRows = [];
     try {
-      const data = await getLearnerMyReviews();
-      apiRows = Array.isArray(data) ? data : data?.content ?? [];
-    } catch {
-      apiRows = [];
-    }
-    const cached = getCachedLearnerReviews();
-    const merged = mergeReviews(apiRows, cached);
-    if (merged.length === 0) {
-      setReviews(
-        LEARNER_PLACEHOLDER_REVIEWS_RAW.map((r) => normalizeReview(r)).filter(
-          Boolean
-        )
-      );
-    } else {
+      const merged = await fetchMergedLearnerReviewsForLearner();
       setReviews(merged);
+    } catch {
+      setReviews([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -190,7 +61,7 @@ export default function LearnerMyReviews() {
     const q = query.trim().toLowerCase();
     if (!q) return reviews;
     return reviews.filter((r) => {
-      const name = tutorDisplayName(r).toLowerCase();
+      const name = learnerReviewTutorDisplayName(r).toLowerCase();
       const text = (r.comment || "").toLowerCase();
       return name.includes(q) || text.includes(q);
     });
@@ -268,7 +139,7 @@ export default function LearnerMyReviews() {
                   <div style={styles.cardHeader}>
                     <div style={styles.avatarWrap}>
                       <img
-                        src={tutorAvatarSrc(r)}
+                        src={learnerReviewTutorAvatarSrc(r)}
                         alt=""
                         style={styles.avatarImg}
                         onError={(e) => {
@@ -277,7 +148,9 @@ export default function LearnerMyReviews() {
                       />
                     </div>
                     <div style={styles.cardHeaderText}>
-                      <div style={styles.tutorName}>{tutorDisplayName(r)}</div>
+                      <div style={styles.tutorName}>
+                        {learnerReviewTutorDisplayName(r)}
+                      </div>
                       <div style={styles.starsRow} aria-hidden>
                         {[1, 2, 3, 4, 5].map((s) => (
                           <span

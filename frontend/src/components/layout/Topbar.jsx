@@ -11,6 +11,7 @@ export default function TopBar({
   onSearchChange,
   onSearchSubmit,
   onSearchBarClick,
+  onAvatarClick,
   disabled = false,
   showSearch = true,
 }) {
@@ -75,13 +76,18 @@ export default function TopBar({
           <BellIcon />
         </button>
 
-        <div className="h-10 w-10 rounded-full bg-black/20 overflow-hidden">
+        <button
+          type="button"
+          onClick={onAvatarClick}
+          className="h-10 w-10 rounded-full bg-black/20 overflow-hidden border-0 p-0 cursor-pointer"
+          aria-label="Open profile settings"
+        >
           <img
             alt="profile"
             src={avatarSrc || generatedAvatar}
             className="h-full w-full object-cover"
           />
-        </div>
+        </button>
       </div>
     </div>
   );

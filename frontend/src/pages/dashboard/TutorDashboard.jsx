@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { clearAuth, getUser, searchLearnersByCourse, getTutorSessions } from "../../api";
+import { clearAuth, getUser, searchLearnersByCourse } from "../../api";
+import { fetchTutorUpcomingSessionsForDashboard } from "../../utils/dashboardUpcomingSessions";
 import {
   fetchRecentTutorReviewsForDashboard,
   tutorReviewerAvatarSrc,
@@ -35,26 +36,28 @@ export default function TutorDashboard() {
   const [dashboardReviewsLoading, setDashboardReviewsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setUpcomingSessions([]);
+      setSessionsLoading(false);
+      return;
+    }
     let cancelled = false;
 
     (async () => {
+      setSessionsLoading(true);
       try {
-        const allSlots = await getTutorSessions(user.id);
-        if (cancelled) return;
-        const now = new Date();
-        const upcoming = (Array.isArray(allSlots) ? allSlots : [])
-          .filter((s) => s.status === "BOOKED" && new Date(s.startTime) > now)
-          .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-        setUpcomingSessions(upcoming);
+        const rows = await fetchTutorUpcomingSessionsForDashboard(user.id, 6);
+        if (!cancelled) setUpcomingSessions(rows);
       } catch {
-        setUpcomingSessions([]);
+        if (!cancelled) setUpcomingSessions([]);
       } finally {
         if (!cancelled) setSessionsLoading(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -123,12 +126,6 @@ export default function TutorDashboard() {
   };
   
   const userName = getUserName();
-
-  const PLACEHOLDER_SESSIONS = [
-    { id: "ph-1", learnerName: "Bradley Cooper", course: "DSA456", startTime: "2025-10-25T10:00:00", teachingMode: "ONLINE", learnerAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" },
-    { id: "ph-2", learnerName: "Megan Fox", course: "DSA456", startTime: "2025-11-13T14:00:00", teachingMode: "IN_PERSON", learnerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" },
-    { id: "ph-3", learnerName: "Ryan Reynolds", course: "DSA456", startTime: "2025-11-20T09:00:00", teachingMode: "ONLINE", learnerAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
-  ];
 
   const handleLogout = () => {
     clearAuth();
@@ -219,6 +216,7 @@ export default function TutorDashboard() {
             value={learnerSearchQuery}
             onSearchChange={(e) => setLearnerSearchQuery(e.target.value)}
             onSearchSubmit={() => handleLearnerSearch()}
+            onAvatarClick={() => navigate("/settings/tutor/profile/edit")}
             disabled={learnerSearchLoading}
             avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ddd&color=666&size=100`}
           />
@@ -283,16 +281,25 @@ export default function TutorDashboard() {
             <h2 style={styles.sectionTitle}>Upcoming Sessions</h2>
             {sessionsLoading ? (
               <p style={{ color: '#666', fontSize: '14px' }}>Loading sessions…</p>
+            ) : upcomingSessions.length === 0 ? (
+              <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+                No upcoming sessions. When learners book your availability, they will appear here.
+              </p>
             ) : (
               <div style={styles.sessionsGrid}>
-                {(upcomingSessions.length > 0 ? upcomingSessions.slice(0, 6) : PLACEHOLDER_SESSIONS).map((session) => {
+                {upcomingSessions.map((session) => {
                   const learnerName = session.learnerName
                     || [session.learnerFirstName, session.learnerLastName].filter(Boolean).join(" ")
                     || "Student";
                   const course = session.course || session.subject || "";
-                  const dateStr = new Date(session.startTime).toLocaleDateString("en-US", {
-                    month: "short", day: "numeric", year: "numeric",
-                  });
+                  const start = session.startTime instanceof Date
+                    ? session.startTime
+                    : new Date(session.startTime);
+                  const dateStr = Number.isNaN(start.getTime())
+                    ? "—"
+                    : start.toLocaleDateString("en-US", {
+                        month: "short", day: "numeric", year: "numeric",
+                      });
                   const mode = session.mode || session.teachingMode || "Online";
                   const isOnline = typeof mode === "string" && mode.toUpperCase().includes("ONLINE");
                   const avatarUrl = session.learnerAvatar

@@ -95,6 +95,7 @@ export default function LearnerSessionManagement() {
         try {
             setIsCancelling(true);
             await cancelLearnerBooking(targetSession.id, user.id);
+            window.dispatchEvent(new CustomEvent("scholarly-learner-bookings-changed"));
 
             setSlots((prevSlots) =>
                 prevSlots.filter((slot) => slot.id !== targetSession.id)
