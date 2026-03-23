@@ -11,8 +11,17 @@ import TutorOnboarding from "../pages/onboarding/TutorOnboarding";
 import AvailabilityV2 from "../pages/availability/AvailabilityV2";
 import BookingSession from "../pages/booking/BookingSession";
 import TutorSessionManagement from "../pages/booking/TutorSessionManagement";
+import LearnerMyReviews from "../pages/dashboard/LearnerMyReviews";
+import TutorMyReviews from "../pages/dashboard/TutorMyReviews";
 import { getUser } from "../api";
 
+function DashboardReviewsRedirect() {
+  const role = getUser()?.role?.toUpperCase();
+  if (role === "LEARNER") {
+    return <Navigate to="/dashboard/learner/reviews" replace />;
+  }
+  return <Navigate to="/dashboard/tutor/reviews" replace />;
+}
 
 // Component to redirect to role-specific dashboard based on user's role
 function DashboardRedirect() {
@@ -80,6 +89,14 @@ export default function AppRouterDev() {
           path='/dashboard/learner'
           element={<LearnerDashboard />}
         />
+        <Route
+          path='/dashboard/learner/reviews'
+          element={<LearnerMyReviews />}
+        />
+        <Route
+          path="/dashboard/reviews"
+          element={<DashboardReviewsRedirect />}
+        />
          <Route
             path='/dashboard/learner/booking'
             element={<BookingSession />}
@@ -87,6 +104,10 @@ export default function AppRouterDev() {
         <Route
           path='/dashboard/tutor'
           element={<TutorDashboard />}
+        />
+        <Route
+          path='/dashboard/tutor/reviews'
+          element={<TutorMyReviews />}
         />
         <Route
           path='/dashboard/tutor/sessions'

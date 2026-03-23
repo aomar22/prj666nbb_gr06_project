@@ -354,6 +354,15 @@ export async function getMySessions() {
   return authRequest(`/api/reviews/my-sessions`);
 }
 
+/**
+ * Reviews submitted by the authenticated learner (for My Reviews page)
+ * GET /api/reviews/me
+ * Expected items: { id, tutorId, tutorFirstName, tutorLastName, tutorProfileImageUrl, rating, comment, createdAt }
+ */
+export async function getLearnerMyReviews() {
+  return authRequest(`/api/reviews/me`, { method: "GET" });
+}
+
 export default {
   register,
   login,

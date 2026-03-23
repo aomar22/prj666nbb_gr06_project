@@ -119,8 +119,8 @@ const TUTOR_NAV = [
   },
   {
     label: "My Reviews",
-    to: "/dashboard/reviews",
-    isActive: (p) => p.includes("/reviews"),
+    to: "/dashboard/tutor/reviews",
+    isActive: (p) => p.includes("/dashboard/tutor/reviews"),
     icon: <StarIcon />,
   },
 ];
@@ -161,8 +161,8 @@ const LEARNER_NAV = [
   },
   {
     label: "My Reviews",
-    to: "/dashboard/reviews",
-    isActive: (p) => p.includes("/reviews"),
+    to: "/dashboard/learner/reviews",
+    isActive: (p) => p.includes("/dashboard/learner/reviews"),
     icon: <StarIcon />,
   },
 ];

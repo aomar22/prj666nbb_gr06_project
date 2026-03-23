@@ -20,6 +20,16 @@ import EditProfile from "../pages/settings/learner/EditProfile";
 import LearnerPassword from "../pages/settings/learner/LearnerPassword";
 import TutorEditProfile from "../pages/settings/tutor/TutorEditProfile";
 import TutorPassword from "../pages/settings/tutor/TutorPassword";
+import LearnerMyReviews from "../pages/dashboard/LearnerMyReviews";
+import TutorMyReviews from "../pages/dashboard/TutorMyReviews";
+
+function DashboardReviewsRedirect() {
+  const role = getUser()?.role?.toUpperCase();
+  if (role === "LEARNER") {
+    return <Navigate to="/dashboard/learner/reviews" replace />;
+  }
+  return <Navigate to="/dashboard/tutor/reviews" replace />;
+}
 
 // Component to redirect to role-specific dashboard
 function DashboardRedirect() {
@@ -57,7 +67,10 @@ export default function AppRouter() {
         <Route path='/dashboard/learner/booking' element={<BookingSession />} />
         <Route path='/dashboard/learner/sessions' element={<LearnerSessionManagement />} />
         <Route path='/dashboard/learner/sessions/reschedule' element={<LearnerSessionReschedule />} />
+        <Route path='/dashboard/learner/reviews' element={<LearnerMyReviews />} />
+        <Route path="/dashboard/reviews" element={<DashboardReviewsRedirect />} />
         <Route path='/dashboard/tutor' element={<TutorDashboard />} />
+        <Route path='/dashboard/tutor/reviews' element={<TutorMyReviews />} />
         <Route path='/dashboard/tutor/sessions' element={<TutorSessionManagement />} />
         <Route path='/dashboard/availability-v2' element={<AvailabilityV2 />} />
 

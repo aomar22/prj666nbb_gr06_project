@@ -1,7 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { clearAuth, getUser, searchLearnersByCourse, getTutorSessions } from "../../api";
+import {
+  fetchRecentTutorReviewsForDashboard,
+  tutorReviewerAvatarSrc,
+  tutorReviewerDisplayName,
+} from "../../utils/tutorReceivedReviewUtils";
 import Topbar from "../../components/layout/Topbar";
+
+const DASHBOARD_REVIEW_PREVIEW_LEN = 90;
+
+function truncateReviewText(text, maxLen = DASHBOARD_REVIEW_PREVIEW_LEN) {
+  const t = (text || "").trim();
+  if (t.length <= maxLen) return t;
+  return `${t.slice(0, maxLen).trim()}…`;
+}
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
@@ -17,6 +30,9 @@ export default function TutorDashboard() {
   // Real session data from backend
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  const [dashboardReviews, setDashboardReviews] = useState([]);
+  const [dashboardReviewsLoading, setDashboardReviewsLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -39,6 +55,37 @@ export default function TutorDashboard() {
     })();
 
     return () => { cancelled = true; };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setDashboardReviews([]);
+      setDashboardReviewsLoading(false);
+      return;
+    }
+    let cancelled = false;
+
+    const loadDashboardReviews = async () => {
+      setDashboardReviewsLoading(true);
+      try {
+        const rows = await fetchRecentTutorReviewsForDashboard(user.id, 3);
+        if (!cancelled) setDashboardReviews(rows);
+      } catch {
+        if (!cancelled) setDashboardReviews([]);
+      } finally {
+        if (!cancelled) setDashboardReviewsLoading(false);
+      }
+    };
+
+    loadDashboardReviews();
+    const onTutorReviewsChanged = () => {
+      loadDashboardReviews();
+    };
+    window.addEventListener("scholarly-tutor-reviews-changed", onTutorReviewsChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("scholarly-tutor-reviews-changed", onTutorReviewsChanged);
+    };
   }, [user?.id]);
 
   const handleLearnerSearch = async () => {
@@ -83,11 +130,6 @@ export default function TutorDashboard() {
     { id: "ph-3", learnerName: "Ryan Reynolds", course: "DSA456", startTime: "2025-11-20T09:00:00", teachingMode: "ONLINE", learnerAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
   ];
 
-  const PLACEHOLDER_REVIEWS = [
-    { id: "pr-1", name: "Anne Hathaway", rating: 5.0, text: "Amazing tutor, good know...", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
-    { id: "pr-2", name: "Ryan Reynolds", rating: 3.4, text: "Moderate tutor, need improve...", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" },
-  ];
-
   const handleLogout = () => {
     clearAuth();
     navigate("/login", { replace: true });
@@ -128,18 +170,27 @@ export default function TutorDashboard() {
             <span className="opacity-95"><ClockIcon /></span>
             <span>Availability</span>
           </Link>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+          <Link
+            to="/dashboard/find-students"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/find-students") ? "bg-white/15" : "hover:bg-white/10"}`}
+          >
             <span className="opacity-95"><UsersIcon /></span>
             <span>Find Students</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+          </Link>
+          <Link
+            to="/dashboard/messages"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/messages") ? "bg-white/15" : "hover:bg-white/10"}`}
+          >
             <span className="opacity-95"><ChatIcon /></span>
             <span>Messages</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 rounded-[10px] px-3 py-2 transition hover:bg-white/10 text-white no-underline">
+          </Link>
+          <Link
+            to="/dashboard/tutor/reviews"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/dashboard/tutor/reviews") ? "bg-white/15" : "hover:bg-white/10"}`}
+          >
             <span className="opacity-95"><StarIcon /></span>
             <span>My Reviews</span>
-          </a>
+          </Link>
         </nav>
         <div className="mt-auto pt-6 space-y-2 text-[15px] font-semibold">
           <Link
@@ -273,30 +324,52 @@ export default function TutorDashboard() {
             )}
           </section>
 
-          {/* My Reviews */}
+          {/* My Reviews — newest first (same source as My Reviews page) */}
           <section style={styles.reviewsSection}>
             <h2 style={styles.sectionTitle}>My Reviews</h2>
-            <div style={styles.reviewsList}>
-              {PLACEHOLDER_REVIEWS.map((review) => (
-                <div key={review.id} style={styles.reviewCard}>
-                  <div style={styles.reviewerInfo}>
-                    <div style={styles.reviewerAvatar}>
-                      <img src={review.avatar} alt={review.name} style={styles.avatarImage} />
-                    </div>
-                    <div style={styles.reviewContent}>
-                      <h3 style={styles.reviewerName}>{review.name}</h3>
-                      <div style={styles.reviewRating}>
-                        <span style={styles.starIcon}>⭐</span> {review.rating}
+            {dashboardReviewsLoading ? (
+              <p style={styles.reviewsLoadingHint}>Loading reviews…</p>
+            ) : (
+              <div style={styles.reviewsList}>
+                {dashboardReviews.map((review) => {
+                  const name = tutorReviewerDisplayName(review);
+                  const preview = truncateReviewText(review.comment);
+                  return (
+                    <div key={review.id} style={styles.reviewCard}>
+                      <div style={styles.reviewerInfo}>
+                        <div style={styles.reviewerAvatar}>
+                          <img
+                            src={tutorReviewerAvatarSrc(review)}
+                            alt=""
+                            style={styles.avatarImage}
+                          />
+                        </div>
+                        <div style={styles.reviewContent}>
+                          <h3 style={styles.reviewerName}>{name}</h3>
+                          <div style={styles.reviewRating}>
+                            <span style={styles.starIcon}>⭐</span>{" "}
+                            {Number(review.rating).toFixed(1)}
+                          </div>
+                          <p style={styles.reviewText}>
+                            {preview}
+                            {review.comment && review.comment.trim().length > DASHBOARD_REVIEW_PREVIEW_LEN ? (
+                              <span style={styles.readMore}> read more</span>
+                            ) : null}
+                          </p>
+                        </div>
                       </div>
-                      <p style={styles.reviewText}>
-                        {review.text} <span style={styles.readMore}>read more</span>
-                      </p>
+                      <button
+                        type="button"
+                        style={styles.readReviewButton}
+                        onClick={() => navigate("/dashboard/tutor/reviews")}
+                      >
+                        Read Review
+                      </button>
                     </div>
-                  </div>
-                  <button style={styles.readReviewButton}>Read Review</button>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         </div>
       </main>
@@ -567,6 +640,11 @@ const styles = {
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     width: '100%',
+  },
+  reviewsLoadingHint: {
+    margin: 0,
+    fontSize: '14px',
+    color: '#666',
   },
   sectionTitle: {
     fontSize: '20px',

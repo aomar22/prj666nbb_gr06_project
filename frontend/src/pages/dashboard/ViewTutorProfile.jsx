@@ -6,6 +6,8 @@ import {
 	submitReview,
 	getMySessions,
 } from "../../api";
+import { appendCachedLearnerReview } from "../../utils/learnerReviewsCache";
+import { appendTutorReceivedReviewCache } from "../../utils/tutorReceivedReviewsCache";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import {
@@ -124,6 +126,35 @@ export default function ViewTutorProfile() {
 				selectedRating,
 				reviewComment,
 			);
+			appendCachedLearnerReview({
+				id: newReview?.id,
+				tutorId: tutor.id,
+				tutorFirstName: tutor.firstName,
+				tutorLastName: tutor.lastName,
+				tutorProfileImageUrl:
+					tutor.profileImageUrl ||
+					tutor.profilePicture ||
+					tutor.avatar ||
+					null,
+				rating: newReview?.rating ?? selectedRating,
+				comment: newReview?.comment ?? reviewComment,
+				createdAt: newReview?.createdAt ?? new Date().toISOString(),
+			});
+			appendTutorReceivedReviewCache({
+				id: newReview?.id,
+				tutorId: tutor.id,
+				learnerFirstName: user?.firstName,
+				learnerLastName: user?.lastName,
+				learnerName: [user?.firstName, user?.lastName]
+					.filter(Boolean)
+					.join(" ")
+					.trim(),
+				learnerProfileImageUrl:
+					user?.profileImageUrl || user?.profilePicture || user?.avatar || null,
+				rating: newReview?.rating ?? selectedRating,
+				comment: newReview?.comment ?? reviewComment,
+				createdAt: newReview?.createdAt ?? new Date().toISOString(),
+			});
 			setIsReviewModalOpen(false);
 			setIsReviewConfirmationOpen(true);
 			setCanReview(false);
