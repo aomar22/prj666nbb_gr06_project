@@ -79,16 +79,18 @@ export default function ViewTutorProfile() {
 			.then((data) => setReviews(Array.isArray(data) ? data : []))
 			.catch(() => setReviews([]));
 
-		if (user?.role === "LEARNER") {
+		if (user?.role === "LEARNER" || user?.role?.toLowerCase() === "learner") {
 			getMySessions()
-				.then((sessions) => {
-					const tutorSessions = (
-						Array.isArray(sessions) ? sessions : []
-					).filter((s) => s.tutorId === tutor.id);
-					const alreadyReviewed = tutorSessions.some((s) => s.hasReviewed);
-					setCanReview(tutorSessions.length > 0 && !alreadyReviewed);
-				})
-				.catch(() => {});
+			.then((sessions) => {
+				const tutorSessions = (
+					Array.isArray(sessions) ? sessions : []
+				).filter((s) => s.tutorId === tutor.id);
+				const alreadyReviewed = tutorSessions.some((s) => s.hasReviewed);
+				setCanReview(!alreadyReviewed); 
+			})
+			.catch(() => {
+				setCanReview(true);
+			});
 		}
 	}, [tutor?.id]);
 
@@ -320,74 +322,69 @@ export default function ViewTutorProfile() {
 							<h2 style={styles.sectionTitle}>Reviews:</h2>
 							{canReview && (
 								<button
-									type='button'
-									style={styles.writeReviewBtn}
-									onClick={handleWriteReview}
+								type='button'
+								style={styles.writeReviewBtn}
+								onClick={handleWriteReview}
 								>
 									Write a review
 								</button>
-							)}
+								)}
 						</div>
-						{reviews.map((review) => {
-							// const fullName = (review.learnerName || review.reviewerName || "").trim();
-							const fullName = (review.learnerName || "").trim();
-							const [firstName = "", lastName = ""] = fullName.split(" ");
 
-							return (
-								// <div key={i} style={styles.reviewCard}>
-								<div
-									key={review.id}
-									style={styles.reviewCard}
-								>
-									<div style={styles.reviewerAvatar}>
-										<img
-											src={getAvatarUrl(null, null, null, firstName, lastName)}
-											alt=''
-											style={styles.reviewerAvatarImg}
-											onError={(e) => {
-												e.target.style.display = "none";
-											}}
-										/>
-										{/* <span style={styles.reviewerAvatarLetter}>{review.reviewerName[0]}</span> */}
-										<span style={styles.reviewerAvatarLetter}>
-											{review.learnerName?.[0] || "L"}
-										</span>
-									</div>
-									<div style={styles.reviewBody}>
-										<div style={styles.reviewHeader}>
-											{/* <span style={styles.reviewerName}>{review.reviewerName}</span> */}
-											<span style={styles.reviewerName}>
-												{review.learnerName}
-											</span>
-											<span style={styles.reviewStars}>
-												{Array.from({ length: 5 }, (_, j) => (
-													<span
-														key={j}
-														style={{
-															color: j < review.rating ? "#000" : "#ccc",
-														}}
-													>
-														★
-													</span>
-												))}{" "}
-												{review.rating}
-											</span>
-										</div>
-										{/* <p style={styles.reviewText}>{review.text}</p> */}
-										<p style={styles.reviewText}>{review.comment}</p>
-									</div>
-								</div>
-							);
-						})}
-						<p style={styles.seeMore}>
-							<button
-								type='button'
-								style={styles.seeMoreLink}
-							>
-								see more
-							</button>
-						</p>
-					</section>
+                        {reviews.length === 0 ? (
+                            <p style={{ color: "#555", fontStyle: "italic", marginTop: "16px" }}>
+                                No reviews yet.
+                            </p>
+                        ) : (
+                            reviews.map((review) => {
+                                const fullName = (review.learnerName || "").trim();
+                                const [firstName = "", lastName = ""] = fullName.split(" ");
+
+                                return (
+                                    <div key={review.id} style={styles.reviewCard}>
+                                        <div style={styles.reviewerAvatar}>
+                                            <img
+                                                src={getAvatarUrl(null, null, null, firstName, lastName)}
+                                                alt=''
+                                                style={styles.reviewerAvatarImg}
+                                                onError={(e) => { e.target.style.display = "none"; }}
+                                            />
+                                            <span style={styles.reviewerAvatarLetter}>
+                                                {review.learnerName?.[0] || "L"}
+                                            </span>
+                                        </div>
+                                        <div style={styles.reviewBody}>
+                                            <div style={styles.reviewHeader}>
+                                                <span style={styles.reviewerName}>
+                                                    {review.learnerName}
+                                                </span>
+                                                <span style={styles.reviewStars}>
+                                                    {Array.from({ length: 5 }, (_, j) => (
+                                                        <span
+                                                            key={j}
+                                                            style={{ color: j < review.rating ? "#000" : "#ccc" }}
+                                                        >
+                                                            ★
+                                                        </span>
+                                                    ))} {" "}
+                                                    {review.rating}
+                                                </span>
+                                            </div>
+                                            <p style={styles.reviewText}>{review.comment}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+
+                        {reviews.length > 1 && (
+                            <p style={styles.seeMore}>
+                                <button type='button' style={styles.seeMoreLink}>
+                                    see more
+                                </button>
+                            </p>
+                        )}
+						</section>
 				</div>
 			</main>
 			<LeaveReviewModal

@@ -38,7 +38,12 @@ export default function LearnerMyReviews() {
     setLoading(true);
     try {
       const merged = await fetchMergedLearnerReviewsForLearner();
-      setReviews(merged);
+      const actualReviews = merged.filter(r => 
+        !String(r.id).includes("placeholder") && 
+        r.comment !== "No written review yet." &&
+        r.comment !== "—"
+      );
+      setReviews(actualReviews);
     } catch {
       setReviews([]);
     } finally {

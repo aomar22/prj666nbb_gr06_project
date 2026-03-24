@@ -38,8 +38,18 @@ export default function TutorMyReviews() {
   const load = useCallback(async () => {
     setLoading(true);
     if (tutorId != null) {
-      const list = await fetchMergedTutorReviewsForTutor(tutorId);
-      setReviews(list);
+      try {
+        const list = await fetchMergedTutorReviewsForTutor(tutorId);
+        const actualReviews = list.filter((r) => 
+          !String(r.id).includes("placeholder") && 
+          r.comment !== "No written review yet." &&
+          r.comment !== "—"
+        );
+        setReviews(actualReviews);
+      } catch (error) {
+        console.error("Failed to fetch tutor reviews", error);
+        setReviews([]);
+      }
     } else {
       setReviews([]);
     }
