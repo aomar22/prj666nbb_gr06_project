@@ -5,6 +5,7 @@ import { Calendar, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser, getLearnerSessions, cancelLearnerBooking } from "../../api";
+import { mapLearnerSessionToCard } from "../../utils/learnerSessionNormalizer";
 
 export default function LearnerSessionManagement() {
 
@@ -22,39 +23,22 @@ export default function LearnerSessionManagement() {
     const user = getUser(); 
 
     useEffect(() => {
-    async function loadSessions() {
-        try {
-            setLoading(true);
+        async function loadSessions() {
+            try {
+                setLoading(true);
                 
-            if (!user?.id) {
-                setSlots([]);
-                return;
-            }
-            const data = await getLearnerSessions(user.id);
-            const now = new Date();
-            const mapped = (Array.isArray(data) ? data : []).map((slot) => {
-            const slotEndDate = new Date(`${slot.date}T${slot.endTime}`);
-            const computedStatus = slot.status || (slotEndDate < now ? "COMPLETED" : "BOOKED");
-            const extractedTutorName = slot.message ? slot.message.replace("Session with ", "") : "Tutor";
-
-                return {
-                    id: slot.slotId,
-                    tutorId: slot.tutorId,
-                    learnerId: slot.learnerId,
-                    status: computedStatus,
-                    date: slot.date,
-                    time: `${slot.startTime} - ${slot.endTime}`,
-                    tutorName: extractedTutorName,
-                    rating: "—",
-                    reviews: "0 reviews",
-                    mode: "Online",
-                    sessionType: slot.sessionType ?? "INDIVIDUAL",
-                    currentCount: slot.currentCount ?? 1,
-                    maxCapacity: slot.maxCapacity ?? 1,
-                };
-            });
-            setSlots(mapped);
-            setLoadError("");
+                if (!user?.id) {
+                    setSlots([]);
+                    return;
+                }
+                
+                const data = await getLearnerSessions(user.id);
+                const now = new Date();
+                const mapped = (Array.isArray(data) ? data : []).map((slot) =>
+                    mapLearnerSessionToCard(slot, { now })
+                );
+                setSlots(mapped);
+                setLoadError("");
             } catch (e) {
                 console.error("Failed to load learner sessions", e);
                 setLoadError("Failed to load sessions.");
@@ -64,6 +48,8 @@ export default function LearnerSessionManagement() {
         }
         loadSessions();
     }, [user?.id]);
+
+
 
     const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");

@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser, searchTutors } from "../../api";
 import { fetchLearnerUpcomingSessionsForDashboard } from "../../utils/dashboardUpcomingSessions";
+import { mapLearnerSessionToCard } from "../../utils/learnerSessionNormalizer";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import PaginationArrowButton from "../../components/ui/PaginationArrowButton";
+import LearnerUpcomingSessionCard from "../../components/sessions/LearnerUpcomingSessionCard";
 
 const TUTOR_PLACEHOLDER_PHOTOS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
@@ -14,7 +16,80 @@ const TUTOR_PLACEHOLDER_PHOTOS = [
   "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
   "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
 ];
+function formatTime(dateInput) {
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(d.getTime())) return "—";
 
+  return d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function addOneHour(dateInput) {
+  const d = dateInput instanceof Date ? new Date(dateInput) : new Date(dateInput);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setHours(d.getHours() + 1);
+  return d;
+}
+
+function formatDate(dateInput) {
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function mapSessionToCard(session) {
+  const tutorName =
+    session.courseLabel && String(session.courseLabel).trim()
+      ? `${session.tutorName} - ${session.courseLabel}`
+      : session.tutorName || "Tutor";
+
+  if (session.start) {
+    const end = addOneHour(session.start);
+
+    return {
+      id: session.slotId ?? session.id,
+      tutorName,
+      rating: "—",
+      reviews: "0 reviews",
+      date: formatDate(session.start),
+      time: end ? `${formatTime(session.start)} - ${formatTime(end)}` : "—",
+      mode: session.mode ?? "Online",
+      sessionType: session.sessionType ?? "INDIVIDUAL",
+      currentCount: session.currentCount ?? 1,
+      maxCapacity: session.maxCapacity ?? 1,
+      avatarSrc: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        session.tutorName || "Tutor"
+      )}&background=f5e6dc&color=7A0000&size=128`,
+    };
+  }
+
+  return {
+    id: session.slotId ?? session.id,
+    tutorName,
+    rating: "—",
+    reviews: "0 reviews",
+    date: session.date ? formatDate(`${session.date}T00:00:00`) : "—",
+    time:
+      session.startTime && session.endTime
+        ? `${session.startTime} - ${session.endTime}`
+        : "—",
+    mode: session.mode ?? "Online",
+    sessionType: session.sessionType ?? "INDIVIDUAL",
+    currentCount: session.currentCount ?? 1,
+    maxCapacity: session.maxCapacity ?? 1,
+    avatarSrc: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      session.tutorName || "Tutor"
+    )}&background=f5e6dc&color=7A0000&size=128`,
+  };
+}
 function getTutorPlaceholderPhoto(tutor) {
   const key =
     String(tutor?.id ?? tutor?.userId ?? "") ||
@@ -34,26 +109,30 @@ export default function Dashboard() {
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   
-  
-  useEffect(() => {
-    if (!user?.id) {
-      setUpcomingSessions([]);
-      setSessionsLoading(false);
-      return;
+useEffect(() => {
+  if (!user?.id) {
+    setUpcomingSessions([]);
+    setSessionsLoading(false);
+    return;
+  }
+
+  let cancelled = false;
+
+  const load = async () => {
+    setSessionsLoading(true);
+
+    try {
+    const rows = await fetchLearnerUpcomingSessionsForDashboard(user.id, 12);
+    
+    if (!cancelled) setUpcomingSessions(rows);  
+    } catch {
+      if (!cancelled) setUpcomingSessions([]);
+    } finally {
+      if (!cancelled) setSessionsLoading(false);
     }
-    let cancelled = false;
-    const load = async () => {
-      setSessionsLoading(true);
-      try {
-        const rows = await fetchLearnerUpcomingSessionsForDashboard(user.id, 12);
-        if (!cancelled) setUpcomingSessions(rows);
-      } catch {
-        if (!cancelled) setUpcomingSessions([]);
-      } finally {
-        if (!cancelled) setSessionsLoading(false);
-      }
-    };
-    load();
+  };
+
+  load();
     const onBookingsChanged = () => load();
     window.addEventListener("scholarly-learner-bookings-changed", onBookingsChanged);
     return () => {
@@ -62,6 +141,7 @@ export default function Dashboard() {
     };
   }, [user?.id]);
 
+  
   // Tutor search state (for "Find Tutors" / header search)
   const [tutorSearchQuery, setTutorSearchQuery] = useState("");
   const [tutorSearchResults, setTutorSearchResults] = useState(null);
@@ -71,6 +151,10 @@ export default function Dashboard() {
   const [recommendedTutorsLoading, setRecommendedTutorsLoading] = useState(true);
   const [recommendedPage, setRecommendedPage] = useState(0);
   const RECOMMENDED_PAGE_SIZE = 3;
+
+  //For upcoming sessions
+  const [upcomingPage, setUpcomingPage] = useState(0);
+  const UPCOMING_PAGE_SIZE = 3;
 
   const handleTutorSearch = async () => {
     setTutorSearchError(null);
@@ -148,6 +232,19 @@ export default function Dashboard() {
     recommendedPage * RECOMMENDED_PAGE_SIZE,
     recommendedPage * RECOMMENDED_PAGE_SIZE + RECOMMENDED_PAGE_SIZE
   );
+
+  //for upcoming sessions pagination
+  const upcomingTotalPages = Math.ceil(
+  upcomingSessions.length / UPCOMING_PAGE_SIZE
+);
+
+const visibleUpcomingSessions = upcomingSessions.slice(
+  upcomingPage * UPCOMING_PAGE_SIZE,
+  upcomingPage * UPCOMING_PAGE_SIZE + UPCOMING_PAGE_SIZE
+);
+useEffect(() => {
+  setUpcomingPage(0);
+}, [upcomingSessions]);
 
   return (
     <div style={styles.container}>
@@ -245,131 +342,143 @@ export default function Dashboard() {
         {/* Content: Upcoming Sessions and Recommended Tutors stacked, full width */}
         <div style={styles.contentGrid}>
           {/* Upcoming Sessions — GET /api/availability/learner/{id}/bookings */}
-          <section style={styles.upcomingSection}>
-            <h2 style={styles.upcomingSectionTitle}>Upcoming Sessions</h2>
-            {sessionsLoading ? (
-              <p style={styles.sessionsLoadingHint}>Loading sessions…</p>
-            ) : upcomingSessions.length === 0 ? (
-              <p style={styles.sessionsEmptyHint}>
-                No upcoming sessions. Book a tutor from Find Tutors and your sessions will show here.
-              </p>
-            ) : (
-              <div style={styles.sessionsGrid}>
-                {upcomingSessions.map((session) => {
-                  const title =
-                    session.courseLabel && String(session.courseLabel).trim()
-                      ? `${session.tutorName} - ${session.courseLabel}`
-                      : session.tutorName;
-                  const start =
-                    session.start instanceof Date
-                      ? session.start
-                      : new Date(session.start);
-                  const dateStr = Number.isNaN(start.getTime())
-                    ? "—"
-                    : start.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      });
-                  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    session.tutorName || "Tutor"
-                  )}&background=f5e6dc&color=7A0000&size=128`;
-                  return (
-                    <div key={session.id || session.slotId} style={styles.sessionCard}>
-                      <div style={styles.tutorInfo}>
-                        <div style={styles.tutorAvatar}>
-                          <img src={avatarUrl} alt="" style={styles.avatarImage} />
-                        </div>
-                        <div>
-                          <h3 style={styles.tutorName}>{title}</h3>
-                          <p style={styles.sessionDate}>{dateStr}</p>
-                        </div>
-                      </div>
-                      <div style={styles.sessionActions}>
-                        <button type="button" style={styles.onlineBadge}>
-                          📍 Online
-                        </button>
-                        <button type="button" style={styles.joinButton}>
-                          Join
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+            <section style={styles.upcomingSection}>
+              <h2 style={styles.upcomingSectionTitle}>Upcoming Sessions</h2>
 
-          {/* Recommended Tutors */}
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
-            <div style={styles.recommendedRow}>
-            <div style={styles.recommendedGrid}>
-              {recommendedTutorsLoading ? (
-                <p style={styles.noResultsText}>Loading tutors…</p>
-              ) : recommendedTutors.length === 0 ? (
-                <p style={styles.noResultsText}>No tutors available right now.</p>
+              {sessionsLoading ? (
+                <p style={styles.sessionsLoadingHint}>Loading sessions…</p>
+              ) : upcomingSessions.length === 0 ? (
+                <p style={styles.sessionsEmptyHint}>
+                  No upcoming sessions. Book a tutor from Find Tutors and your sessions will show here.
+                </p>
               ) : (
-                recommendedSlice.map((tutor) => (
-                  <div key={tutor.id} style={styles.recommendedCard}>
-                    <div style={styles.recommendedAvatar}>
-                      <img
-                        src={tutor.profilePictureUrl || tutor.avatar || getTutorPlaceholderPhoto(tutor)}
-                        alt={`${[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}`}
-                        style={styles.avatarImage}
+                <div style={styles.upcomingRow}>
+                  <div style={styles.upcomingGrid}>
+                    {visibleUpcomingSessions.map((session) => (
+                      <LearnerUpcomingSessionCard
+                        key={session.id || session.slotId}
+                        session={mapLearnerSessionToCard(session, { appendCourseLabel: true })}
+                        // session={{
+                        //   id: session.id || session.slotId,
+                        //   tutorName:
+                        //     session.courseLabel && String(session.courseLabel).trim()
+                        //       ? `${session.tutorName} - ${session.courseLabel}`
+                        //       : session.tutorName,
+                        //   rating: session.rating ?? "—",
+                        //   reviews: session.reviews ?? "0 reviews",
+                        //   date:
+                        //     session.start instanceof Date
+                        //       ? session.start.toLocaleDateString("en-US", {
+                        //           month: "short",
+                        //           day: "numeric",
+                        //           year: "numeric",
+                        //         })
+                        //       : new Date(session.start).toLocaleDateString("en-US", {
+                        //           month: "short",
+                        //           day: "numeric",
+                        //           year: "numeric",
+                        //         }),
+                        //   // time: session.time ?? "—",
+                        //   time:
+                        //     session.startTime && session.endTime
+                        //       ? `${formatTime(session.startTime)} - ${formatTime(session.endTime)}`
+                        //       : "—",
+                        //   mode: session.mode ?? "Online",
+                        //   sessionType: session.sessionType ?? "INDIVIDUAL",
+                        //   currentCount: session.currentCount ?? 1,
+                        //   maxCapacity: session.maxCapacity ?? 1,
+                        //   avatarSrc: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        //     session.tutorName || "Tutor"
+                        //   )}&background=f5e6dc&color=7A0000&size=128`,
+                        // }}
+                        showCancel={false}
+                      />
+                    ))}
+                  </div>
+
+                  {upcomingTotalPages > 1 && (
+                    <div style={styles.upcomingArrowWrap}>
+                      <PaginationArrowButton
+                        ariaLabel="Next upcoming sessions"
+                        onClick={() =>
+                          setUpcomingPage((prev) =>
+                            prev + 1 < upcomingTotalPages ? prev + 1 : 0
+                          )
+                        }
                       />
                     </div>
-                    <h3 style={styles.recommendedName}>
-                      {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
-                    </h3>
-                    <p style={styles.recommendedExpertise}>
-                      {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
-                        ? tutor.coursesOffered.join(", ")
-                        : tutor.program || "—"}
-                    </p>
-                    <div style={styles.rating}>
-                      <span>⭐</span> {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
-                      {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
-                    </div>
-                    <button
-                      style={styles.bookButton}
-                      onClick={() =>
-                        navigate("/dashboard/learner/booking", {
-                          state: {
-                            tutorId: tutor.id ?? tutor.userId,
-                            tutor: {
-                              id: tutor.id ?? tutor.userId,
-                              firstName: tutor.firstName,
-                              lastName: tutor.lastName,
-                              rating: tutor.rating,
-                              reviewCount: tutor.reviewCount,
-                              profilePictureUrl: tutor.profilePictureUrl,
-                              avatar: tutor.profilePictureUrl,
-                            },
-                          },
-                        })
-                      }
-                    >
-                      Book session
-                    </button>
-                  </div>
-                ))
+                  )}
+                </div>
               )}
-            </div>
+            </section>
 
-            {recommendedTotalPages > 1 && (
-              <div style={styles.recommendedArrowWrap}>
-                <PaginationArrowButton
-                  ariaLabel="Next recommended tutors"
-                  onClick={() =>
-                    setRecommendedPage((prev) =>
-                      prev + 1 < recommendedTotalPages ? prev + 1 : 0
-                    )
-                  }
-                />
+          {/* Recommended Tutors Section */}
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Recommended Tutors</h2>
+            {recommendedTutorsLoading ? (
+              <p style={styles.searchLoadingText}>Loading tutors…</p>
+            ) : recommendedTutors.length === 0 ? (
+              <p style={styles.noResultsText}>No tutors available.</p>
+            ) : (
+              <div style={styles.recommendedRow}>
+                <div style={styles.recommendedGrid}>
+                  {recommendedSlice.map((tutor) => (
+                    <div key={tutor.id || tutor.userId} style={styles.recommendedCard}>
+                      <div style={styles.recommendedAvatar}>
+                        {tutor.firstName?.[0] || "👤"}
+                      </div>
+                      <h3 style={styles.recommendedName}>
+                        {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
+                      </h3>
+                      <p style={styles.recommendedExpertise}>
+                        {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
+                          ? tutor.coursesOffered.join(", ")
+                          : tutor.program || "—"}
+                      </p>
+                      {(tutor.rating != null || tutor.reviewCount != null) && (
+                        <div style={styles.rating}>
+                          ⭐ {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
+                          {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
+                        </div>
+                      )}
+                      <button
+                        style={styles.bookButton}
+                        onClick={() =>
+                          navigate("/dashboard/learner/booking", {
+                            state: {
+                              tutorId: tutor.id ?? tutor.userId,
+                              tutor: {
+                                id: tutor.id ?? tutor.userId,
+                                firstName: tutor.firstName,
+                                lastName: tutor.lastName,
+                                rating: tutor.rating,
+                                reviewCount: tutor.reviewCount,
+                                profilePictureUrl: tutor.profilePictureUrl,
+                                avatar: tutor.profilePictureUrl,
+                              },
+                            },
+                          })
+                        }
+                      >
+                        Book session
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {recommendedTotalPages > 1 && (
+                  <div style={styles.recommendedArrowWrap}>
+                    <PaginationArrowButton
+                      ariaLabel="Next recommended tutors"
+                      onClick={() =>
+                        setRecommendedPage((prev) =>
+                          prev + 1 < recommendedTotalPages ? prev + 1 : 0
+                        )
+                      }
+                    />
+                  </div>
+                )}
               </div>
             )}
-          </div>
           </section>
         </div>
       </main>
@@ -813,5 +922,26 @@ const styles = {
     alignItems: "center",
     flexShrink: 0,
   },
+  //for upcoming sessions pagination
+  upcomingRow: {
+  display: "flex",
+  alignItems: "center",
+  width: "100%",
+},
+
+upcomingGrid: {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  gap: "15px",
+  flex: 1, 
+},
+
+upcomingArrowWrap: {
+  width: "40px",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexShrink: 0, 
+},
 };
 
