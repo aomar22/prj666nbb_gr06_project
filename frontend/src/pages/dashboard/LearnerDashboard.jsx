@@ -4,6 +4,7 @@ import { getUser, searchTutors } from "../../api";
 import { fetchLearnerUpcomingSessionsForDashboard } from "../../utils/dashboardUpcomingSessions";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
+import PaginationArrowButton from "../../components/ui/PaginationArrowButton";
 
 const TUTOR_PLACEHOLDER_PHOTOS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
@@ -32,7 +33,8 @@ export default function Dashboard() {
 
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
-
+  
+  
   useEffect(() => {
     if (!user?.id) {
       setUpcomingSessions([]);
@@ -67,6 +69,8 @@ export default function Dashboard() {
   const [tutorSearchError, setTutorSearchError] = useState(null);
   const [recommendedTutors, setRecommendedTutors] = useState([]);
   const [recommendedTutorsLoading, setRecommendedTutorsLoading] = useState(true);
+  const [recommendedPage, setRecommendedPage] = useState(0);
+  const RECOMMENDED_PAGE_SIZE = 3;
 
   const handleTutorSearch = async () => {
     setTutorSearchError(null);
@@ -135,6 +139,15 @@ export default function Dashboard() {
   };
   
   const userName = getUserName();
+
+  const recommendedTotalPages = Math.ceil(
+    recommendedTutors.length / RECOMMENDED_PAGE_SIZE
+  );
+
+  const recommendedSlice = recommendedTutors.slice(
+    recommendedPage * RECOMMENDED_PAGE_SIZE,
+    recommendedPage * RECOMMENDED_PAGE_SIZE + RECOMMENDED_PAGE_SIZE
+  );
 
   return (
     <div style={styles.container}>
@@ -290,57 +303,73 @@ export default function Dashboard() {
           {/* Recommended Tutors */}
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Recommended Tutor</h2>
+            <div style={styles.recommendedRow}>
             <div style={styles.recommendedGrid}>
-                {recommendedTutorsLoading ? (
-                  <p style={styles.noResultsText}>Loading tutors…</p>
-                ) : recommendedTutors.length === 0 ? (
-                  <p style={styles.noResultsText}>No tutors available right now.</p>
-                ) : recommendedTutors.map((tutor) => (
-                <div key={tutor.id} style={styles.recommendedCard}>
-                  <div style={styles.recommendedAvatar}>
-                    <img
-                      src={tutor.profilePictureUrl || tutor.avatar || getTutorPlaceholderPhoto(tutor)}
-                      alt={`${[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}`}
-                      style={styles.avatarImage}
-                    />
-                  </div>
-                  <h3 style={styles.recommendedName}>
-                    {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
-                  </h3>
-                  <p style={styles.recommendedExpertise}>
-                    {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
-                      ? tutor.coursesOffered.join(", ")
-                      : tutor.program || "—"}
-                  </p>
-                  <div style={styles.rating}>
-                    <span>⭐</span> {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
-                    {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
-                  </div>
-                  <button
-                    style={styles.bookButton}
-                    onClick={() =>
-                      navigate("/dashboard/learner/booking", {
-                        state: {
-                          tutorId: tutor.id ?? tutor.userId,
-                          tutor: {
-                            id: tutor.id ?? tutor.userId,
-                            firstName: tutor.firstName,
-                            lastName: tutor.lastName,
-                            rating: tutor.rating,
-                            reviewCount: tutor.reviewCount,
-                            profilePictureUrl: tutor.profilePictureUrl,
-                            avatar: tutor.profilePictureUrl,
+              {recommendedTutorsLoading ? (
+                <p style={styles.noResultsText}>Loading tutors…</p>
+              ) : recommendedTutors.length === 0 ? (
+                <p style={styles.noResultsText}>No tutors available right now.</p>
+              ) : (
+                recommendedSlice.map((tutor) => (
+                  <div key={tutor.id} style={styles.recommendedCard}>
+                    <div style={styles.recommendedAvatar}>
+                      <img
+                        src={tutor.profilePictureUrl || tutor.avatar || getTutorPlaceholderPhoto(tutor)}
+                        alt={`${[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}`}
+                        style={styles.avatarImage}
+                      />
+                    </div>
+                    <h3 style={styles.recommendedName}>
+                      {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
+                    </h3>
+                    <p style={styles.recommendedExpertise}>
+                      {Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
+                        ? tutor.coursesOffered.join(", ")
+                        : tutor.program || "—"}
+                    </p>
+                    <div style={styles.rating}>
+                      <span>⭐</span> {tutor.rating != null ? Number(tutor.rating).toFixed(1) : "—"}
+                      {tutor.reviewCount != null && ` (${tutor.reviewCount} reviews)`}
+                    </div>
+                    <button
+                      style={styles.bookButton}
+                      onClick={() =>
+                        navigate("/dashboard/learner/booking", {
+                          state: {
+                            tutorId: tutor.id ?? tutor.userId,
+                            tutor: {
+                              id: tutor.id ?? tutor.userId,
+                              firstName: tutor.firstName,
+                              lastName: tutor.lastName,
+                              rating: tutor.rating,
+                              reviewCount: tutor.reviewCount,
+                              profilePictureUrl: tutor.profilePictureUrl,
+                              avatar: tutor.profilePictureUrl,
+                            },
                           },
-                        },
-                      })
-                    }
-                  >
-                    Book session
-                  </button>
-                </div>
-                ))}
-                <button style={styles.arrowButton}>→</button>
+                        })
+                      }
+                    >
+                      Book session
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
+
+            {recommendedTotalPages > 1 && (
+              <div style={styles.recommendedArrowWrap}>
+                <PaginationArrowButton
+                  ariaLabel="Next recommended tutors"
+                  onClick={() =>
+                    setRecommendedPage((prev) =>
+                      prev + 1 < recommendedTotalPages ? prev + 1 : 0
+                    )
+                  }
+                />
+              </div>
+            )}
+          </div>
           </section>
         </div>
       </main>
@@ -605,10 +634,10 @@ const styles = {
     fontSize: '13px',
   },
   recommendedGrid: {
-    display: 'flex',
-    gap: '15px',
-    position: 'relative',
-    width: '100%',
+    display: 'grid',
+    gap: '24px',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    flex: 1,
   },
   recommendedCard: {
     border: '1px solid #e5e7eb',
@@ -655,17 +684,17 @@ const styles = {
     fontWeight: '500',
     marginTop: 'auto',
   },
-  arrowButton: {
-    position: 'absolute',
-    right: '-30px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: 'transparent',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#374151',
-  },
+  // arrowButton: {
+  //   position: 'absolute',
+  //   right: '-30px',
+  //   top: '50%',
+  //   transform: 'translateY(-50%)',
+  //   backgroundColor: 'transparent',
+  //   border: 'none',
+  //   fontSize: '24px',
+  //   cursor: 'pointer',
+  //   color: '#374151',
+  // },
   progressContainer: {
     display: 'flex',
     flexDirection: 'row',
@@ -770,6 +799,19 @@ const styles = {
     backgroundColor: '#0066CC',
     color: 'white',
     borderRadius: '50%',
+  },
+  recommendedRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    width: "100%",
+  },
+  recommendedArrowWrap: {
+    width: "32px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
   },
 };
 
