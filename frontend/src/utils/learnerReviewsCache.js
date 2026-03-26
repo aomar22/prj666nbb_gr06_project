@@ -1,8 +1,17 @@
 const STORAGE_KEY = "scholarly_learner_my_reviews";
 
+function storageKey() {
+  try {
+    const user = JSON.parse(localStorage.getItem("scholarly_user") || "null");
+    return user?.id ? `${STORAGE_KEY}_${user.id}` : STORAGE_KEY;
+  } catch {
+    return STORAGE_KEY;
+  }
+}
+
 function readRaw() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -12,7 +21,7 @@ function readRaw() {
 }
 
 function writeRaw(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  localStorage.setItem(storageKey(), JSON.stringify(list));
   window.dispatchEvent(new CustomEvent("scholarly-learner-reviews-changed"));
 }
 
