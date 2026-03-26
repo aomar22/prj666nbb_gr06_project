@@ -18,7 +18,7 @@ export default function LearnerSessionManagement() {
     const [pastPage, setPastPage] = useState(0);
     const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
     const [sessionToCancel, setSessionToCancel] = useState(null);
-
+    
     const user = getUser(); 
 
     useEffect(() => {
@@ -30,7 +30,6 @@ export default function LearnerSessionManagement() {
                 setSlots([]);
                 return;
             }
-
             const data = await getLearnerSessions(user.id);
             const now = new Date();
             const mapped = (Array.isArray(data) ? data : []).map((slot) => {
@@ -65,6 +64,7 @@ export default function LearnerSessionManagement() {
         }
         loadSessions();
     }, [user?.id]);
+
     const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
     
@@ -254,12 +254,7 @@ export default function LearnerSessionManagement() {
                                                     >
                                                         Cancel
                                                     </button>
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-full bg-green-600 px-5 py-2 text-[14px] font-medium text-white shadow hover:bg-green-700"
-                                                    >
-                                                        Join
-                                                    </button>
+                                                   
                                                 </div>
                                             </div>
                                         </div>
