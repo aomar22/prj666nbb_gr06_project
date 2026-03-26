@@ -1,4 +1,4 @@
-import { getLearnerMyReviews, getTutorById, searchTutors } from "../api";
+import { getLearnerMyReviews, getTutorById } from "../api";
 import { getCachedLearnerReviews } from "./learnerReviewsCache";
 
 /** Shown when API + cache return nothing (My Reviews page + dashboard). */
@@ -171,40 +171,7 @@ export async function fetchMergedLearnerReviewsForLearner() {
   const enriched = await enrichLearnerReviewsWithTutors(apiRows);
   const cached = getCachedLearnerReviews();
   const merged = mergeLearnerWrittenReviews(enriched, cached);
-  if (merged.length > 0) return merged;
-
-  // Keep placeholder layout, but use real tutor names from backend when possible.
-  try {
-    const page = await searchTutors({
-      q: "",
-      page: 0,
-      size: 6,
-      sortBy: "rating",
-      sortDirection: "desc",
-    });
-    const tutors = Array.isArray(page?.content) ? page.content : [];
-    if (tutors.length > 0) {
-      const now = Date.now();
-      return tutors.slice(0, 6).map((t, i) =>
-        normalizeLearnerWrittenReview({
-          id: `placeholder-backend-${t.id ?? i}`,
-          tutorId: t.id ?? null,
-          tutorFirstName: t.firstName ?? "",
-          tutorLastName: t.lastName ?? "",
-          tutorProfileImageUrl: t.profilePictureUrl ?? null,
-          rating: Math.max(1, Number(t.rating) || 4),
-          comment: "No written review yet.",
-          createdAt: new Date(now - i * 86400000).toISOString(),
-        })
-      );
-    }
-  } catch {
-    // Fall through to static placeholders below.
-  }
-
-  return LEARNER_PLACEHOLDER_REVIEWS_RAW.map((row) =>
-    normalizeLearnerWrittenReview(row, null)
-  ).filter(Boolean);
+  return merged;
 }
 
 /** Most recent reviews for learner dashboard (newest first). */
