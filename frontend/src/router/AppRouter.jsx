@@ -43,13 +43,6 @@ function DashboardRedirect() {
   return <Navigate to="/dashboard/learner" replace />;
 }
 
-function DashboardMessagesRedirect() {
-  const role = getUser()?.role?.toUpperCase();
-  if (role === "LEARNER") {
-    return <Navigate to="/dashboard/learner/messages" replace />;
-  }
-  return <Navigate to="/dashboard/tutor/messages" replace />; 
-}
 
 export default function AppRouter() {
   return (
@@ -82,6 +75,7 @@ export default function AppRouter() {
         <Route path='/dashboard/tutor/reviews' element={<TutorMyReviews />} />
         <Route path='/dashboard/tutor/sessions' element={<TutorSessionManagement />} />
         <Route path='/dashboard/availability-v2' element={<AvailabilityV2 />} />
+        <Route path='/dashboard/messages' element={<Messages />} />
         <Route path='/dashboard/learner/messages' element={<Messages />} />
         <Route path='/dashboard/tutor/messages' element={<Messages />} />
 

@@ -1,90 +1,76 @@
 import { useMemo, useState } from "react";
-import {SendHorizontal, Star} from "lucide-react";
+import { SendHorizontal, Star } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
+import { getUser } from "../../api";
 
-const mockConversations = [
-  {
-    id: "c1",
-    tutorName: "Tom Holland",
-    roleLabel: "Certified Peer Tutor",
-    rating: "4.9",
-    reviews: "32 reviews",
-    statusText: "Sending...",
-    avatar: "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-    messages: [
-      {
-        id: "m1",
-        sender: "learner",
-        text: "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
-      },
-      {
-        id: "m2",
-        sender: "tutor",
-        text: "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
-      },
-      {
-        id: "m3",
-        sender: "learner",
-        text: "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
-      },
-    ],
-  },
-  {
-    id: "c2",
-    tutorName: "Brad Pitt",
-    roleLabel: "Certified Peer Tutor",
-    rating: "4.9",
-    reviews: "32 reviews",
-    statusText: "Delivered",
-    avatar: "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-    messages: [],
-  },
-  {
-    id: "c3",
-    tutorName: "Megan Fox",
-    roleLabel: "Certified Peer Tutor",
-    rating: "4.9",
-    reviews: "32 reviews",
-    statusText: "Delivered",
-    avatar: "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-    messages: [],
-  },
-  {
-    id: "c4",
-    tutorName: "Chris Evans",
-    roleLabel: "Certified Peer Tutor",
-    rating: "4.9",
-    reviews: "32 reviews",
-    statusText: "Sent",
-    avatar: "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-    messages: [],
-  },
-  {
-    id: "c5",
-    tutorName: "Chris Hemsworth",
-    roleLabel: "Certified Peer Tutor",
-    rating: "4.9",
-    reviews: "32 reviews",
-    statusText: "Read",
-    avatar: "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-    messages: [],
-  },
-];
 
-const learnerAvatar =
-  "https://ui-avatars.com/api/?name=Learner&background=random";
+function formatConversationTime(sentAt) {
+  if (!sentAt) return "";
+  const date = new Date(sentAt);
+  if (Number.isNaN(date.getTime())) return "";
 
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function getLastMessage(messages = []) {
+  if (!Array.isArray(messages) || messages.length === 0) return null;
+  return messages[messages.length - 1];
+}
+
+function getLastMessagePreview(messages = []) {
+  const lastMessage = getLastMessage(messages);
+  if (!lastMessage?.content) return "No messages yet.";
+
+  const text = lastMessage.content.trim();
+  if (text.length <= 45) return text;
+  return `${text.slice(0, 45).trim()}...`;
+}
+
+function getPeerParticipant(conversation, currentUserRole) {
+  const participants = conversation?.participants || {};
+  const isTutor = currentUserRole === "TUTOR";
+  const peer = isTutor ? participants.learner : participants.tutor;
+
+  if (peer?.name || peer?.avatar) {
+    return {
+      name: peer?.name || "Unknown user",
+      avatar: peer?.avatar ||
+        "https://ui-avatars.com/api/?name=Unknown+User&background=ddd&color=666",
+      roleLabel:
+        peer?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
+    };
+  }
+
+  // Backward-compatible fallback for legacy data shape.
+  return {
+    name: conversation?.tutorName || "Unknown user",
+    avatar:
+      conversation?.avatar ||
+      "https://ui-avatars.com/api/?name=Unknown+User&background=ddd&color=666",
+    roleLabel:
+      conversation?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
+  };
+}
 function ConversationCard({ conversation, selected, onClick }) {
+  const lastMessage = getLastMessage(conversation.messages);
+  const lastPreview = getLastMessagePreview(conversation.messages);
+  const lastTime = formatConversationTime(lastMessage?.sentAt);
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={`
         w-full
-        rounded-[24px]
+        rounded-[20px]
         border
-        px-4
-        py-4
+        px-3
+        py-3
         text-left
         shadow-[0_4px_10px_rgba(0,0,0,0.12)]
         transition
@@ -93,54 +79,89 @@ function ConversationCard({ conversation, selected, onClick }) {
       `}
     >
       <div className="flex items-start gap-4">
-        <img
-          src={conversation.avatar}
-          alt={conversation.tutorName}
+        {/* Left column: avatar + rating */}
+        <div
           className="
-            h-14
-            w-14
-            rounded-full
-            object-cover
+            flex
+            w-[90px]
+            font-bold
+            shrink-0
+            flex-col
+            items-start
           "
-        />
-
-        <div className="min-w-0 flex-1">
-          <h3
+        >
+          <img
+            src={conversation.avatar}
+            alt={conversation.name}
             className="
-              truncate
+              h-14
+              w-14
+              rounded-full
+              object-cover
+            "
+          />
+
+          <div
+            className="
+              mt-2
+              flex
+              items-center
+              gap-1
               font-mono
-              text-[20px]
+              text-[16px]
               font-bold
               text-black
             "
           >
-            {conversation.tutorName}
-          </h3>
+            <Star size={16} fill="currentColor" strokeWidth={1.75} />
+            <span>{conversation.rating}</span>
+          </div>
 
-          <div className="mt-1 flex items-end gap-2">
-            <div
+          <span
+            className="
+              mt-[2px]
+              font-mono
+              text-[11px]
+              text-black
+            "
+          >
+            ({conversation.reviews})
+          </span>
+        </div>
+
+        {/* Right column: name + time + role + status */}
+        <div className="min-w-0 flex-1">
+          <div
+            className="
+              flex
+              items-start
+              justify-between
+              font-bold
+              gap-3
+            "
+          >
+            <h3
               className="
-                flex
-                items-center
-                gap-1
+                truncate
                 font-mono
-                text-[16px]
+                text-[20px]
                 font-bold
                 text-black
               "
             >
-              <Star size={16} fill="currentColor" strokeWidth={1.75} />
-              <span>{conversation.rating}</span>
-            </div>
+              {conversation.name}
+            </h3>
 
             <span
               className="
+                shrink-0
                 font-mono
-                text-[12px]
-                text-black
+                text-[11px]
+                font-semibold
+                text-black/70
               "
             >
-              ({conversation.reviews})
+              {lastTime}
             </span>
           </div>
 
@@ -148,7 +169,7 @@ function ConversationCard({ conversation, selected, onClick }) {
             className="
               mt-1
               font-mono
-              text-[14px]
+              text-[13px]
               font-semibold
               text-black
             "
@@ -159,12 +180,14 @@ function ConversationCard({ conversation, selected, onClick }) {
           <p
             className="
               mt-1
+              truncate
               font-mono
               text-[12px]
-              text-black/80
+              font-semibold
+              text-black/75
             "
           >
-            {conversation.statusText}
+            {lastPreview}
           </p>
         </div>
       </div>
@@ -172,8 +195,13 @@ function ConversationCard({ conversation, selected, onClick }) {
   );
 }
 
-function MessageBubble({ message, avatar }) {
-  const isTutor = message.sender === "tutor";
+function MessageBubble({
+  message,
+  peerAvatar,
+  currentUserId,
+  currentUserAvatar,
+}) {
+  const isPeerMessage = message.senderId !== currentUserId;
 
   return (
     <div
@@ -181,13 +209,13 @@ function MessageBubble({ message, avatar }) {
         flex
         items-end
         gap-3
-        ${isTutor ? "justify-start" : "justify-end"}
+        ${isPeerMessage ? "justify-start" : "justify-end"}
       `}
     >
-      {isTutor && (
+      {isPeerMessage && (
         <img
-          src={avatar}
-          alt="Tutor"
+          src={peerAvatar}
+          alt="Peer"
           className="
             h-12
             w-12
@@ -201,7 +229,7 @@ function MessageBubble({ message, avatar }) {
         className="
           max-w-[78%]
           rounded-[22px]
-          bg-[#f3f3f3]
+          bg-[#F9F9F9]
           px-5
           py-4
           shadow-sm
@@ -218,14 +246,14 @@ function MessageBubble({ message, avatar }) {
             text-black
           "
         >
-          {message.text}
+          {message.content}
         </p>
       </div>
 
-      {!isTutor && (
+      {!isPeerMessage && (
         <img
-          src={learnerAvatar}
-          alt="Learner"
+          src={currentUserAvatar}
+          alt="You"
           className="
             h-12
             w-12
@@ -264,7 +292,7 @@ function TypingIndicator({ avatar }) {
           h-11
           items-center
           rounded-full
-          bg-[#f3f3f3]
+          bg-[#F9F9F9]
           px-4
           shadow-sm
         "
@@ -285,23 +313,266 @@ function TypingIndicator({ avatar }) {
 }
 
 export default function Messages() {
+  const { pathname } = useLocation();
+  const currentUser = getUser();
+  const userRole = (currentUser?.role || "").toUpperCase();
+
+  const isLearnerRoute = pathname.startsWith("/dashboard/learner");
+  const isTutorRoute =
+    pathname.startsWith("/dashboard/tutor") ||
+    pathname.startsWith("/dashboard/availability") ||
+    pathname.startsWith("/dashboard/find-students");
+
+  const currentUserRole = isLearnerRoute
+    ? "LEARNER"
+    : isTutorRoute
+      ? "TUTOR"
+      : userRole || "LEARNER";
+
+  const currentUserId = currentUser?.id || "learner-1";
+
+  const currentUserName =
+    currentUser?.firstName && currentUser?.lastName
+      ? `${currentUser.firstName} ${currentUser.lastName}`
+      : currentUser?.firstName ||
+        currentUser?.lastName ||
+        currentUser?.email ||
+        "You";
+
+  const currentUserAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    currentUserName
+  )}&background=ddd&color=666&size=100`;
+
+  const initialConversations = useMemo(
+    () => [
+      {
+        id: "c1",
+        participants: {
+          tutor: {
+            id: "tutor-1",
+            name: "Tom Holland",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
+          },
+          learner: {
+            id: "learner-11",
+            name: "Sarah Parker",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Sarah+Parker&background=random",
+          },
+        },
+        tutorName: "Tom Holland",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
+        messages: [
+          {
+            id: "m1",
+            conversationId: "c1",
+            senderId: currentUserId,
+            senderName: currentUserName,
+            content:
+              "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
+            sentAt: new Date().toISOString(),
+            read: true,
+          },
+          {
+            id: "m2",
+            conversationId: "c1",
+            senderId: "tutor-1",
+            senderName: "Tom Holland",
+            content:
+              "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
+            sentAt: new Date().toISOString(),
+            read: true,
+          },
+          {
+            id: "m3",
+            conversationId: "c1",
+            senderId: currentUserId,
+            senderName: currentUserName,
+            content:
+              "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
+            sentAt: new Date().toISOString(),
+            read: true,
+          },
+        ],
+      },
+      {
+        id: "c2",
+        participants: {
+          tutor: {
+            id: "tutor-2",
+            name: "Brad Pitt",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
+          },
+          learner: {
+            id: "learner-12",
+            name: "Noah Martinez",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Noah+Martinez&background=random",
+          },
+        },
+        tutorName: "Brad Pitt",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
+        messages: [],
+      },
+      {
+        id: "c3",
+        participants: {
+          tutor: {
+            id: "tutor-3",
+            name: "Megan Fox",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
+          },
+          learner: {
+            id: "learner-13",
+            name: "Ava Johnson",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Ava+Johnson&background=random",
+          },
+        },
+        tutorName: "Megan Fox",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
+        messages: [],
+      },
+      {
+        id: "c4",
+        participants: {
+          tutor: {
+            id: "tutor-4",
+            name: "Chris Evans",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
+          },
+          learner: {
+            id: "learner-14",
+            name: "Liam Kim",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Liam+Kim&background=random",
+          },
+        },
+        tutorName: "Chris Evans",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
+        messages: [],
+      },
+      {
+        id: "c5",
+        participants: {
+          tutor: {
+            id: "tutor-5",
+            name: "Chris Hemsworth",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
+          },
+          learner: {
+            id: "learner-15",
+            name: "Emma Davis",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Emma+Davis&background=random",
+          },
+        },
+        tutorName: "Chris Hemsworth",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
+        messages: [
+          {
+            id: "m4",
+            conversationId: "c5",
+            senderId: currentUserId,
+            senderName: currentUserName,
+            content: "Hi Chris",
+            sentAt: new Date().toISOString(),
+            read: true,
+          },
+        ],
+      },
+    ],
+    [currentUserId, currentUserName]
+  );
+
+  const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversationId, setSelectedConversationId] = useState(
-    mockConversations[0].id
+    initialConversations[0]?.id || null
   );
   const [draftMessage, setDraftMessage] = useState("");
 
+  const conversationsWithPeer = useMemo(
+    () =>
+      conversations.map((conversation) => ({
+        ...conversation,
+        ...getPeerParticipant(conversation, currentUserRole),
+      })),
+    [conversations, currentUserRole]
+  );
+
   const selectedConversation = useMemo(
     () =>
-      mockConversations.find(
+      conversationsWithPeer.find(
         (conversation) => conversation.id === selectedConversationId
-      ) || mockConversations[0],
-    [selectedConversationId]
+      ) || null,
+    [selectedConversationId, conversationsWithPeer]
   );
 
   const handleSend = () => {
-    if (!draftMessage.trim()) return;
+    const trimmed = draftMessage.trim();
+    if (!trimmed || !selectedConversationId) return;
+
+    const newMessage = {
+      id: Date.now().toString(),
+      conversationId: selectedConversationId,
+      senderId: currentUserId,
+      senderName: currentUserName,
+      content: trimmed,
+      sentAt: new Date().toISOString(),
+      read: false,
+    };
+
+    setConversations((prev) =>
+      prev.map((conversation) =>
+        conversation.id === selectedConversationId
+          ? {
+              ...conversation,
+              messages: [...conversation.messages, newMessage],
+            }
+          : conversation
+      )
+    );
+
     setDraftMessage("");
   };
+
+  const hasConversations = conversationsWithPeer.length > 0;
+  const hasSelectedConversation = Boolean(selectedConversation);
 
   return (
     <DashboardLayout>
@@ -324,14 +595,13 @@ export default function Messages() {
             gap-5
           "
         >
-
           <div
             className="
               grid
               min-h-[calc(100vh-170px)]
               grid-cols-1
               gap-4
-              xl:grid-cols-[320px_minmax(0,1fr)]
+              xl:grid-cols-[380px_minmax(0,1fr)]
             "
           >
             <section
@@ -357,25 +627,49 @@ export default function Messages() {
                 Messages
               </h1>
 
-              <div
-                className="
-                  flex
-                  max-h-[calc(100vh-290px)]
-                  flex-col
-                  gap-3
-                  overflow-y-auto
-                  pr-1
-                "
-              >
-                {mockConversations.map((conversation) => (
-                  <ConversationCard
-                    key={conversation.id}
-                    conversation={conversation}
-                    selected={conversation.id === selectedConversationId}
-                    onClick={() => setSelectedConversationId(conversation.id)}
-                  />
-                ))}
-              </div>
+              {hasConversations ? (
+                <div
+                  className="
+                    flex
+                    max-h-[calc(100vh-290px)]
+                    flex-col
+                    gap-3
+                    overflow-y-auto
+                    pr-1
+                  "
+                >
+                  {conversationsWithPeer.map((conversation) => (
+                    <ConversationCard
+                      key={conversation.id}
+                      conversation={conversation}
+                      selected={conversation.id === selectedConversationId}
+                      onClick={() => setSelectedConversationId(conversation.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="
+                    flex
+                    min-h-[220px]
+                    items-center
+                    justify-center
+                    px-4
+                    text-center
+                  "
+                >
+                  <p
+                    className="
+                      font-mono
+                      text-[18px]
+                      font-semibold
+                      text-black/60
+                    "
+                  >
+                    No conversations yet.
+                  </p>
+                </div>
+              )}
             </section>
 
             <section
@@ -391,152 +685,209 @@ export default function Messages() {
                 md:px-6
               "
             >
-              <header
-                className="
-                  flex
-                  items-center
-                  gap-4
-                  pb-4
-                "
-              >
-                <img
-                  src={selectedConversation.avatar}
-                  alt={selectedConversation.tutorName}
-                  className="
-                    h-14
-                    w-14
-                    rounded-full
-                    object-cover
-                  "
-                />
-
-                <h2
-                  className="
-                    font-mono
-                    text-[22px]
-                    font-bold
-                    text-black
-                    md:text-[28px]
-                  "
-                >
-                  {selectedConversation.tutorName}
-                </h2>
-              </header>
-
-              <div
-                className="
-                  flex
-                  flex-1
-                  flex-col
-                  justify-between
-                  pt-4
-                "
-              >
+              {!hasConversations ? (
                 <div
                   className="
                     flex
-                    flex-col
-                    gap-7
-                    overflow-y-auto
-                    pr-1
+                    flex-1
+                    items-center
+                    justify-center
+                    px-6
+                    text-center
                   "
                 >
-                  {selectedConversation.messages.length > 0 ? (
-                    <>
-                      {selectedConversation.messages.map((message) => (
-                        <MessageBubble
-                          key={message.id}
-                          message={message}
-                          avatar={selectedConversation.avatar}
-                        />
-                      ))}
+                  <p
+                    className="
+                      font-mono
+                      text-[20px]
+                      font-semibold
+                      text-black/60
+                    "
+                  >
+                    Start a conversation from a tutor profile to see messages
+                    here.
+                  </p>
+                </div>
+              ) : !hasSelectedConversation ? (
+                <div
+                  className="
+                    flex
+                    flex-1
+                    items-center
+                    justify-center
+                    px-6
+                    text-center
+                  "
+                >
+                  <p
+                    className="
+                      font-mono
+                      text-[20px]
+                      font-semibold
+                      text-black/60
+                    "
+                  >
+                    Select a conversation to open its thread.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <header
+                    className="
+                      flex
+                      items-center
+                      gap-4
+                      pb-4
+                    "
+                  >
+                    <img
+                      src={selectedConversation.avatar}
+                      alt={selectedConversation.name}
+                      className="
+                        h-14
+                        w-14
+                        rounded-full
+                        object-cover
+                      "
+                    />
 
-                      <TypingIndicator avatar={selectedConversation.avatar} />
-                    </>
-                  ) : (
+                    <h2
+                      className="
+                        font-mono
+                        text-[22px]
+                        font-bold
+                        text-black
+                        md:text-[28px]
+                      "
+                    >
+                      {selectedConversation.name}
+                    </h2>
+                  </header>
+
+                  <div
+                    className="
+                      flex
+                      flex-1
+                      flex-col
+                      justify-between
+                      pt-4
+                    "
+                  >
                     <div
                       className="
                         flex
-                        flex-1
-                        items-center
-                        justify-center
-                        py-16
+                        flex-col
+                        gap-7
+                        overflow-y-auto
+                        pr-1
                       "
                     >
-                      <p
-                        className="
-                          text-center
-                          font-mono
-                          text-[18px]
-                          font-semibold
-                          text-black/60
-                        "
-                      >
-                        No messages yet.
-                      </p>
+                      {selectedConversation.messages.length > 0 ? (
+                        <>
+                          {selectedConversation.messages.map((message) => (
+                            <MessageBubble
+                              key={message.id}
+                              message={message}
+                              peerAvatar={selectedConversation.avatar}
+                              currentUserId={currentUserId}
+                              currentUserAvatar={currentUserAvatar}
+                            />
+                          ))}
+
+                          <TypingIndicator avatar={selectedConversation.avatar} />
+                        </>
+                      ) : (
+                        <div
+                          className="
+                            flex
+                            flex-1
+                            items-center
+                            justify-center
+                            py-16
+                          "
+                        >
+                          <p
+                            className="
+                              text-center
+                              font-mono
+                              text-[18px]
+                              font-semibold
+                              text-black/60
+                            "
+                          >
+                            No messages yet.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <div
-                  className="
-                    mt-6
-                    flex
-                    items-center
-                    gap-3
-                  "
-                >
-                  <input
-                    type="text"
-                    value={draftMessage}
-                    onChange={(e) => setDraftMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSend();
-                    }}
-                    className="
-                      h-[52px]
-                      flex-1
-                      rounded-full
-                      border
-                      border-black
-                      bg-white
-                      px-6
-                      font-sans
-                      text-[15px]
-                      text-black
-                      outline-none
-                      shadow-[0_4px_8px_rgba(0,0,0,0.12)]
-                    "
-                  />
+                    <div
+                      className="
+                        mt-6
+                        flex
+                        items-center
+                        gap-3
+                      "
+                    >
+                      <input
+                        type="text"
+                        value={draftMessage}
+                        onChange={(e) => setDraftMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSend();
+                        }}
+                        disabled={!hasSelectedConversation}
+                        className="
+                          h-[52px]
+                          flex-1
+                          rounded-full
+                          border
+                          border-black
+                          bg-white
+                          px-6
+                          font-sans
+                          text-[15px]
+                          text-black
+                          outline-none
+                          shadow-[0_4px_8px_rgba(0,0,0,0.12)]
+                          disabled:cursor-not-allowed
+                          disabled:opacity-60
+                        "
+                      />
 
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    className="
-                      flex
-                      h-[52px]
-                      w-[52px]
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-black
-                      bg-white
-                      text-black
-                      shadow-[0_4px_8px_rgba(0,0,0,0.12)]
-                      transition
-                      hover:scale-[1.02]
-                    "
-                    aria-label="Send message"
-                  >
-                    <SendHorizontal
-                      size={24}
-                      fill="currentColor"
-                      strokeWidth={1.75}
-                    />
-                  </button>
-                </div>
-              </div>
+                      <button
+                        type="button"
+                        onClick={handleSend}
+                        disabled={!hasSelectedConversation}
+                        className="
+                          flex
+                          h-[52px]
+                          w-[52px]
+                          items-center
+                          justify-center
+                          rounded-full
+                          border
+                          border-black
+                          bg-white
+                          text-black
+                          shadow-[0_4px_8px_rgba(0,0,0,0.12)]
+                          transition
+                          hover:scale-[1.02]
+                          disabled:cursor-not-allowed
+                          disabled:opacity-60
+                        "
+                        aria-label="Send message"
+                      >
+                        <SendHorizontal
+                          size={24}
+                          fill="currentColor"
+                          strokeWidth={1.75}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </section>
           </div>
         </div>
