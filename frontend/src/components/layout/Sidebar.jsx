@@ -113,8 +113,8 @@ const TUTOR_NAV = [
   },
   {
     label: "Messages",
-    to: "/dashboard/messages",
-    isActive: (p) => p.includes("/messages"),
+    to: "/dashboard/tutor/messages",
+    isActive: (p) => p.includes("/dashboard/tutor/messages"),
     icon: <ChatIcon />,
   },
   {
@@ -155,8 +155,8 @@ const LEARNER_NAV = [
   },
   {
     label: "Messages",
-    to: "/dashboard/messages",
-    isActive: (p) => p.includes("/messages"),
+    to: "/dashboard/learner/messages",
+    isActive: (p) => p.includes("/dashboard/learner/messages"),
     icon: <ChatIcon />,
   },
   {
