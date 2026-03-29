@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { SendHorizontal, Star } from "lucide-react";
+import { Check, CheckCheck, SendHorizontal, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { getUser } from "../../api";
@@ -56,6 +56,25 @@ function getPeerParticipant(conversation, currentUserRole) {
       conversation?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
   };
 }
+// status: "sending" | "sent" | "delivered" | "read"
+function MessageStatus({ status }) {
+  if (status === "sending") {
+    return (
+      <span className="font-mono text-[11px] text-black/40">sending…</span>
+    );
+  }
+  if (status === "sent") {
+    return <Check size={14} strokeWidth={2.5} className="text-black/40" />;
+  }
+  if (status === "delivered") {
+    return <CheckCheck size={14} strokeWidth={2.5} className="text-black/40" />;
+  }
+  if (status === "read") {
+    return <CheckCheck size={14} strokeWidth={2.5} className="text-[#4A90D9]" />;
+  }
+  return null;
+}
+
 function ConversationCard({ conversation, selected, onClick }) {
   const lastMessage = getLastMessage(conversation.messages);
   const lastPreview = getLastMessagePreview(conversation.messages);
@@ -207,60 +226,83 @@ function MessageBubble({
     <div
       className={`
         flex
-        items-end
-        gap-3
-        ${isPeerMessage ? "justify-start" : "justify-end"}
+        flex-col
+        ${isPeerMessage ? "items-start" : "items-end"}
       `}
     >
-      {isPeerMessage && (
-        <img
-          src={peerAvatar}
-          alt="Peer"
-          className="
-            h-12
-            w-12
-            rounded-full
-            object-cover
-          "
-        />
-      )}
-
       <div
-        className="
-          max-w-[78%]
-          rounded-[22px]
-          bg-[#F9F9F9]
-          px-5
-          py-4
-          shadow-sm
-          sm:max-w-[70%]
-        "
+        className={`
+          flex
+          items-end
+          gap-3
+          ${isPeerMessage ? "justify-start" : "justify-end"}
+        `}
       >
-        <p
+        {isPeerMessage && (
+          <img
+            src={peerAvatar}
+            alt="Peer"
+            className="
+              h-12
+              w-12
+              rounded-full
+              object-cover
+            "
+          />
+        )}
+
+        <div
           className="
-            whitespace-pre-line
-            font-mono
-            text-[15px]
-            font-semibold
-            leading-8
-            text-black
+            max-w-[78%]
+            rounded-[22px]
+            bg-[#F9F9F9]
+            px-5
+            py-4
+            shadow-sm
+            sm:max-w-[70%]
           "
         >
-          {message.content}
-        </p>
+          <p
+            className="
+              whitespace-pre-line
+              font-mono
+              text-[15px]
+              font-semibold
+              leading-8
+              text-black
+            "
+          >
+            {message.content}
+          </p>
+        </div>
+
+        {!isPeerMessage && (
+          <img
+            src={currentUserAvatar}
+            alt="You"
+            className="
+              h-12
+              w-12
+              rounded-full
+              object-cover
+            "
+          />
+        )}
       </div>
 
-      {!isPeerMessage && (
-        <img
-          src={currentUserAvatar}
-          alt="You"
+      {/* Status row — only for own outgoing messages */}
+      {!isPeerMessage && message.status && (
+        <div
           className="
-            h-12
-            w-12
-            rounded-full
-            object-cover
+            mr-[60px]
+            mt-1
+            flex
+            items-center
+            gap-1
           "
-        />
+        >
+          <MessageStatus status={message.status} />
+        </div>
       )}
     </div>
   );
@@ -513,6 +555,7 @@ export default function Messages() {
             content: "Hi Chris",
             sentAt: new Date().toISOString(),
             read: true,
+            status: "read",
           },
         ],
       },
@@ -547,28 +590,48 @@ export default function Messages() {
     const trimmed = draftMessage.trim();
     if (!trimmed || !selectedConversationId) return;
 
+    const msgId = Date.now().toString();
+    const convId = selectedConversationId;
+
     const newMessage = {
-      id: Date.now().toString(),
-      conversationId: selectedConversationId,
+      id: msgId,
+      conversationId: convId,
       senderId: currentUserId,
       senderName: currentUserName,
       content: trimmed,
       sentAt: new Date().toISOString(),
       read: false,
+      status: "sending",
     };
 
     setConversations((prev) =>
       prev.map((conversation) =>
-        conversation.id === selectedConversationId
-          ? {
-              ...conversation,
-              messages: [...conversation.messages, newMessage],
-            }
+        conversation.id === convId
+          ? { ...conversation, messages: [...conversation.messages, newMessage] }
           : conversation
       )
     );
-
     setDraftMessage("");
+
+    // Advance status: sending → sent → delivered
+    const advanceStatus = (nextStatus, delay) =>
+      setTimeout(() => {
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.id === convId
+              ? {
+                  ...conversation,
+                  messages: conversation.messages.map((m) =>
+                    m.id === msgId ? { ...m, status: nextStatus } : m
+                  ),
+                }
+              : conversation
+          )
+        );
+      }, delay);
+
+    advanceStatus("sent", 600);
+    advanceStatus("delivered", 2000);
   };
 
   const hasConversations = conversationsWithPeer.length > 0;
