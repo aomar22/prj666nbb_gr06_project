@@ -155,7 +155,7 @@ export default function TutorDashboard() {
           </Link>
           <Link
             to="/dashboard/tutor/sessions"
-            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/sessions") ? "bg-white/15" : "hover:bg-white/10"}`}
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/dashboard/tutor/sessions") ? "bg-white/15" : "hover:bg-white/10"}`}
           >
             <span className="opacity-95"><CalendarIcon /></span>
             <span>My Sessions</span>
@@ -175,8 +175,8 @@ export default function TutorDashboard() {
             <span>Find Students</span>
           </Link>
           <Link
-            to="/dashboard/messages"
-            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/messages") ? "bg-white/15" : "hover:bg-white/10"}`}
+            to="/dashboard/tutor/messages"
+            className={`flex items-center gap-3 rounded-[10px] px-3 py-2 transition text-white no-underline ${location.pathname.includes("/dashboard/tutor/messages") ? "bg-white/15" : "hover:bg-white/10"}`}
           >
             <span className="opacity-95"><ChatIcon /></span>
             <span>Messages</span>
