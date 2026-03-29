@@ -22,6 +22,7 @@ import TutorEditProfile from "../pages/settings/tutor/TutorEditProfile";
 import TutorPassword from "../pages/settings/tutor/TutorPassword";
 import LearnerMyReviews from "../pages/dashboard/LearnerMyReviews";
 import TutorMyReviews from "../pages/dashboard/TutorMyReviews";
+import Messages from "../pages/dashboard/Messages";
 
 function DashboardReviewsRedirect() {
   const role = getUser()?.role?.toUpperCase();
@@ -40,6 +41,14 @@ function DashboardRedirect() {
     return <Navigate to="/dashboard/tutor" replace />;
   }
   return <Navigate to="/dashboard/learner" replace />;
+}
+
+function DashboardMessagesRedirect() {
+  const role = getUser()?.role?.toUpperCase();
+  if (role === "LEARNER") {
+    return <Navigate to="/dashboard/learner/messages" replace />;
+  }
+  return <Navigate to="/dashboard/tutor/messages" replace />; 
 }
 
 export default function AppRouter() {
@@ -73,6 +82,8 @@ export default function AppRouter() {
         <Route path='/dashboard/tutor/reviews' element={<TutorMyReviews />} />
         <Route path='/dashboard/tutor/sessions' element={<TutorSessionManagement />} />
         <Route path='/dashboard/availability-v2' element={<AvailabilityV2 />} />
+        <Route path='/dashboard/learner/messages' element={<Messages />} />
+        <Route path='/dashboard/tutor/messages' element={<Messages />} />
 
         {/* Settings Routes */}
         <Route path="/settings/learner/profile/edit" element={<EditProfile />} />
