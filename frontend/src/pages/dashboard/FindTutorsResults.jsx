@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getUser, searchTutors } from "../../api";
+import { getUser, searchTutors, getTutorReviews } from "../../api";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import { TEACHING_MODE_LABELS } from "../../constants/options";
@@ -21,6 +21,35 @@ export default function FindTutorsResults() {
   const totalPages = results?.totalPages ?? 0;
   const totalElements = results?.totalElements ?? 0;
   const tutors = results?.content ?? [];
+
+  /** tutorId -> reviews list (newest first), from GET /api/reviews/tutor/{tutorId} */
+  const [reviewsByTutorId, setReviewsByTutorId] = useState({});
+  const tutorIdsForReviewsKey = useMemo(
+    () => (results?.content ?? []).map((t) => t.id ?? t.userId).filter(Boolean).join(","),
+    [results],
+  );
+
+  useEffect(() => {
+    if (!tutorIdsForReviewsKey) {
+      setReviewsByTutorId({});
+      return;
+    }
+    const ids = tutorIdsForReviewsKey.split(",");
+    let cancelled = false;
+    Promise.all(
+      ids.map((id) =>
+        getTutorReviews(id)
+          .then((data) => [id, Array.isArray(data) ? data : []])
+          .catch(() => [id, []]),
+      ),
+    ).then((entries) => {
+      if (cancelled) return;
+      setReviewsByTutorId(Object.fromEntries(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tutorIdsForReviewsKey]);
 
   // Run search when we have params but no initial results (e.g. direct nav) or when page changes
   useEffect(() => {
@@ -105,11 +134,43 @@ export default function FindTutorsResults() {
   };
 
   const tutorQuote = (tutor) => {
-    if (tutor.bio) return tutor.bio;
+    const about = tutor.about ?? tutor.bio;
+    if (about) return about;
     const courses = Array.isArray(tutor.coursesOffered) && tutor.coursesOffered.length
       ? tutor.coursesOffered.join(", ")
       : tutor.program || "subjects";
     return `Passionate about helping students master ${courses}.`;
+  };
+
+  const cardReviewSnippet = (reviewsList) => {
+    const latest = reviewsList?.[0];
+    if (!latest) return null;
+    const name = (latest.learnerName && String(latest.learnerName).trim()) || "Learner";
+    const maxLen = 160;
+    if (latest.comment && String(latest.comment).trim()) {
+      const c = String(latest.comment).trim();
+      const shortened = c.length > maxLen ? `${c.slice(0, maxLen).trimEnd()}…` : c;
+      return { text: `"${shortened}"`, attribution: `— ${name}` };
+    }
+    return {
+      text: `Rated ${latest.rating} out of 5`,
+      attribution: `— ${name}`,
+    };
+  };
+
+  const renderTutorQuoteBlock = (tutor) => {
+    const tid = tutor.id ?? tutor.userId;
+    const snippet = cardReviewSnippet(tid ? reviewsByTutorId[tid] : undefined);
+    if (snippet) {
+      return (
+        <>
+          <p style={styles.reviewLatestLabel}>Latest review</p>
+          <p style={styles.tutorQuote}>{snippet.text}</p>
+          <p style={styles.reviewAttribution}>{snippet.attribution}</p>
+        </>
+      );
+    }
+    return <p style={styles.tutorQuote}>"{tutorQuote(tutor)}"</p>;
   };
 
   const TUTOR_PLACEHOLDER_PHOTOS = [
@@ -166,7 +227,7 @@ export default function FindTutorsResults() {
                 <p style={styles.noResults}>No tutors found. Try adjusting your search or filters.</p>
               ) : (
                 tutors.map((tutor) => (
-                  <div key={tutor.id ?? tutor.userId ?? Math.random()} style={styles.tutorCard}>
+                  <div key={tutor.id ?? tutor.userId} style={styles.tutorCard}>
                     <div style={styles.tutorCardTop}>
                       <div style={styles.tutorCardLeft}>
                         <div style={styles.tutorAvatar}>
@@ -214,7 +275,7 @@ export default function FindTutorsResults() {
                         <strong>Campus:</strong> {formatCampus(tutor)}
                       </p>
                     </div>
-                    <p style={styles.tutorQuote}>"{tutorQuote(tutor)}"</p>
+                    <div style={styles.quoteBlock}>{renderTutorQuoteBlock(tutor)}</div>
                     <div style={styles.tutorActions}>
                       <button
                         type="button"
@@ -503,6 +564,20 @@ const styles = {
     fontWeight: 700,
     color: "#333",
   },
+  quoteBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  reviewLatestLabel: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: "14px",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    color: "#888",
+  },
   tutorQuote: {
     margin: 0,
     fontSize: "15px",
@@ -510,6 +585,14 @@ const styles = {
     fontWeight: 700,
     fontStyle: "italic",
     color: "#555",
+  },
+  reviewAttribution: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: "16px",
+    fontWeight: 600,
+    fontStyle: "normal",
+    color: "#666",
   },
   tutorActions: {
     display: "flex",
