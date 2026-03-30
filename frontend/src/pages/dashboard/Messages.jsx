@@ -1,9 +1,16 @@
 import { useMemo, useState } from "react";
-import { Check, CheckCheck, SendHorizontal, Star } from "lucide-react";
+import { SendHorizontal, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { getUser } from "../../api";
 
+function getRecipientId(conversation, currentUserRole) {
+  const isTutor = currentUserRole === "TUTOR";
+
+  return isTutor
+    ? conversation?.participants?.learner?.id
+    : conversation?.participants?.tutor?.id;
+}
 
 function formatConversationTime(sentAt) {
   if (!sentAt) return "";
@@ -46,7 +53,6 @@ function getPeerParticipant(conversation, currentUserRole) {
     };
   }
 
-  // Backward-compatible fallback for legacy data shape.
   return {
     name: conversation?.tutorName || "Unknown user",
     avatar:
@@ -56,25 +62,6 @@ function getPeerParticipant(conversation, currentUserRole) {
       conversation?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
   };
 }
-// status: "sending" | "sent" | "delivered" | "read"
-function MessageStatus({ status }) {
-  if (status === "sending") {
-    return (
-      <span className="font-mono text-[11px] text-black/40">sending…</span>
-    );
-  }
-  if (status === "sent") {
-    return <Check size={14} strokeWidth={2.5} className="text-black/40" />;
-  }
-  if (status === "delivered") {
-    return <CheckCheck size={14} strokeWidth={2.5} className="text-black/40" />;
-  }
-  if (status === "read") {
-    return <CheckCheck size={14} strokeWidth={2.5} className="text-[#4A90D9]" />;
-  }
-  return null;
-}
-
 function ConversationCard({ conversation, selected, onClick }) {
   const lastMessage = getLastMessage(conversation.messages);
   const lastPreview = getLastMessagePreview(conversation.messages);
@@ -87,14 +74,17 @@ function ConversationCard({ conversation, selected, onClick }) {
       className={`
         w-full
         rounded-[20px]
-        border
+        p-4
+        border-2
         px-3
         py-3
         text-left
         shadow-[0_4px_10px_rgba(0,0,0,0.12)]
         transition
         hover:-translate-y-[1px]
-        ${selected ? "border-black bg-white" : "border-black/80 bg-white"}
+        ${selected 
+           ? "border-[#8D0103] bg-white"
+            : "border-transparent hover:border-gray-200 bg-white"}
       `}
     >
       <div className="flex items-start gap-4">
@@ -188,7 +178,7 @@ function ConversationCard({ conversation, selected, onClick }) {
             className="
               mt-1
               font-mono
-              text-[13px]
+              text-[15px]
               font-semibold
               text-black
             "
@@ -213,6 +203,21 @@ function ConversationCard({ conversation, selected, onClick }) {
     </button>
   );
 }
+function MessageReadStatus({ message, isOwnMessage }) {
+  if (!isOwnMessage) return null;
+
+  return (
+    <span
+      className={`
+        font-mono
+        text-[11px]
+        ${message.read ? "text-[#4A90D9]" : "text-black/40"}
+      `}
+    >
+      {message.read ? "Read" : "Delivered"}
+    </span>
+  );
+}
 
 function MessageBubble({
   message,
@@ -221,6 +226,7 @@ function MessageBubble({
   currentUserAvatar,
 }) {
   const isPeerMessage = message.senderId !== currentUserId;
+  const isOwnMessage = !isPeerMessage;
 
   return (
     <div
@@ -276,7 +282,7 @@ function MessageBubble({
           </p>
         </div>
 
-        {!isPeerMessage && (
+        {isOwnMessage && (
           <img
             src={currentUserAvatar}
             alt="You"
@@ -290,18 +296,19 @@ function MessageBubble({
         )}
       </div>
 
-      {/* Status row — only for own outgoing messages */}
-      {!isPeerMessage && message.status && (
+      {isOwnMessage && (
         <div
           className="
             mr-[60px]
             mt-1
             flex
             items-center
-            gap-1
           "
         >
-          <MessageStatus status={message.status} />
+          <MessageReadStatus
+            message={message}
+            isOwnMessage={isOwnMessage}
+          />
         </div>
       )}
     </div>
@@ -385,189 +392,190 @@ export default function Messages() {
     currentUserName
   )}&background=ddd&color=666&size=100`;
 
-  const initialConversations = useMemo(
-    () => [
-      {
-        id: "c1",
-        participants: {
-          tutor: {
-            id: "tutor-1",
-            name: "Tom Holland",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-          },
-          learner: {
-            id: "learner-11",
-            name: "Sarah Parker",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Sarah+Parker&background=random",
-          },
-        },
-        tutorName: "Tom Holland",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-        messages: [
-          {
-            id: "m1",
-            conversationId: "c1",
-            senderId: currentUserId,
-            senderName: currentUserName,
-            content:
-              "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
-            sentAt: new Date().toISOString(),
-            read: true,
-          },
-          {
-            id: "m2",
-            conversationId: "c1",
-            senderId: "tutor-1",
-            senderName: "Tom Holland",
-            content:
-              "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
-            sentAt: new Date().toISOString(),
-            read: true,
-          },
-          {
-            id: "m3",
-            conversationId: "c1",
-            senderId: currentUserId,
-            senderName: currentUserName,
-            content:
-              "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
-            sentAt: new Date().toISOString(),
-            read: true,
-          },
-        ],
-      },
-      {
-        id: "c2",
-        participants: {
-          tutor: {
-            id: "tutor-2",
-            name: "Brad Pitt",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-          },
-          learner: {
-            id: "learner-12",
-            name: "Noah Martinez",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Noah+Martinez&background=random",
-          },
-        },
-        tutorName: "Brad Pitt",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-        messages: [],
-      },
-      {
-        id: "c3",
-        participants: {
-          tutor: {
-            id: "tutor-3",
-            name: "Megan Fox",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-          },
-          learner: {
-            id: "learner-13",
-            name: "Ava Johnson",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Ava+Johnson&background=random",
-          },
-        },
-        tutorName: "Megan Fox",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-        messages: [],
-      },
-      {
-        id: "c4",
-        participants: {
-          tutor: {
-            id: "tutor-4",
-            name: "Chris Evans",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-          },
-          learner: {
-            id: "learner-14",
-            name: "Liam Kim",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Liam+Kim&background=random",
-          },
-        },
-        tutorName: "Chris Evans",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-        messages: [],
-      },
-      {
-        id: "c5",
-        participants: {
-          tutor: {
-            id: "tutor-5",
-            name: "Chris Hemsworth",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-          },
-          learner: {
-            id: "learner-15",
-            name: "Emma Davis",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Emma+Davis&background=random",
-          },
-        },
-        tutorName: "Chris Hemsworth",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-        messages: [
-          {
-            id: "m4",
-            conversationId: "c5",
-            senderId: currentUserId,
-            senderName: currentUserName,
-            content: "Hi Chris",
-            sentAt: new Date().toISOString(),
-            read: true,
-            status: "read",
-          },
-        ],
-      },
-    ],
-    [currentUserId, currentUserName]
-  );
 
-  const [conversations, setConversations] = useState(initialConversations);
-  const [selectedConversationId, setSelectedConversationId] = useState(
-    initialConversations[0]?.id || null
-  );
+  // const initialConversations = useMemo(
+  //   () => [
+  //     {
+  //       id: "c1",
+  //       participants: {
+  //         tutor: {
+  //           id: "tutor-1",
+  //           name: "Tom Holland",
+  //           roleLabel: "Certified Peer Tutor",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
+  //         },
+  //         learner: {
+  //           id: "learner-11",
+  //           name: "Sarah Parker",
+  //           roleLabel: "Learner",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Sarah+Parker&background=random",
+  //         },
+  //       },
+  //       tutorName: "Tom Holland",
+  //       roleLabel: "Certified Peer Tutor",
+  //       rating: "4.9",
+  //       reviews: "32 reviews",
+  //       avatar:
+  //         "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
+  //       messages: [
+  //         {
+  //           id: "m1",
+  //           conversationId: "c1",
+  //           senderId: currentUserId,
+  //           senderName: currentUserName,
+  //           content:
+  //             "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
+  //           sentAt: new Date().toISOString(),
+  //           read: true,
+  //         },
+  //         {
+  //           id: "m2",
+  //           conversationId: "c1",
+  //           senderId: "tutor-1",
+  //           senderName: "Tom Holland",
+  //           content:
+  //             "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
+  //           sentAt: new Date().toISOString(),
+  //           read: true,
+  //         },
+  //         {
+  //           id: "m3",
+  //           conversationId: "c1",
+  //           senderId: currentUserId,
+  //           senderName: currentUserName,
+  //           content:
+  //             "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
+  //           sentAt: new Date().toISOString(),
+  //           read: true,
+  //         },
+  //       ],
+  //     },
+  //     {
+  //       id: "c2",
+  //       participants: {
+  //         tutor: {
+  //           id: "tutor-2",
+  //           name: "Brad Pitt",
+  //           roleLabel: "Certified Peer Tutor",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
+  //         },
+  //         learner: {
+  //           id: "learner-12",
+  //           name: "Noah Martinez",
+  //           roleLabel: "Learner",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Noah+Martinez&background=random",
+  //         },
+  //       },
+  //       tutorName: "Brad Pitt",
+  //       roleLabel: "Certified Peer Tutor",
+  //       rating: "4.9",
+  //       reviews: "32 reviews",
+  //       avatar:
+  //         "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
+  //       messages: [],
+  //     },
+  //     {
+  //       id: "c3",
+  //       participants: {
+  //         tutor: {
+  //           id: "tutor-3",
+  //           name: "Megan Fox",
+  //           roleLabel: "Certified Peer Tutor",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
+  //         },
+  //         learner: {
+  //           id: "learner-13",
+  //           name: "Ava Johnson",
+  //           roleLabel: "Learner",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Ava+Johnson&background=random",
+  //         },
+  //       },
+  //       tutorName: "Megan Fox",
+  //       roleLabel: "Certified Peer Tutor",
+  //       rating: "4.9",
+  //       reviews: "32 reviews",
+  //       avatar:
+  //         "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
+  //       messages: [],
+  //     },
+  //     {
+  //       id: "c4",
+  //       participants: {
+  //         tutor: {
+  //           id: "tutor-4",
+  //           name: "Chris Evans",
+  //           roleLabel: "Certified Peer Tutor",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
+  //         },
+  //         learner: {
+  //           id: "learner-14",
+  //           name: "Liam Kim",
+  //           roleLabel: "Learner",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Liam+Kim&background=random",
+  //         },
+  //       },
+  //       tutorName: "Chris Evans",
+  //       roleLabel: "Certified Peer Tutor",
+  //       rating: "4.9",
+  //       reviews: "32 reviews",
+  //       avatar:
+  //         "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
+  //       messages: [],
+  //     },
+  //     {
+  //       id: "c5",
+  //       participants: {
+  //         tutor: {
+  //           id: "tutor-5",
+  //           name: "Chris Hemsworth",
+  //           roleLabel: "Certified Peer Tutor",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
+  //         },
+  //         learner: {
+  //           id: "learner-15",
+  //           name: "Emma Davis",
+  //           roleLabel: "Learner",
+  //           avatar:
+  //             "https://ui-avatars.com/api/?name=Emma+Davis&background=random",
+  //         },
+  //       },
+  //       tutorName: "Chris Hemsworth",
+  //       roleLabel: "Certified Peer Tutor",
+  //       rating: "4.9",
+  //       reviews: "32 reviews",
+  //       avatar:
+  //         "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
+  //       messages: [
+  //         {
+  //           id: "m4",
+  //           conversationId: "c5",
+  //           senderId: currentUserId,
+  //           senderName: currentUserName,
+  //           content: "Hi Chris",
+  //           sentAt: new Date().toISOString(),
+  //           read: true,
+  //         },
+  //       ],
+  //     },
+  //   ],
+  //   [currentUserId, currentUserName]
+  // );
+//for frontend testing/demo purposes
+ // const [conversations, setConversations] = useState(initialConversations);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [draftMessage, setDraftMessage] = useState("");
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [conversationsError, setConversationsError] = useState("");
 
   const conversationsWithPeer = useMemo(
     () =>
@@ -590,50 +598,41 @@ export default function Messages() {
     const trimmed = draftMessage.trim();
     if (!trimmed || !selectedConversationId) return;
 
-    const msgId = Date.now().toString();
-    const convId = selectedConversationId;
+    const outgoingPayload = {
+      recipientId: getRecipientId(selectedConversation, currentUserRole),
+      slotId: selectedConversation?.slotId || null,
+      content: trimmed,
+    };
 
     const newMessage = {
-      id: msgId,
-      conversationId: convId,
+      id: Date.now().toString(),
+      conversationId: selectedConversationId,
       senderId: currentUserId,
       senderName: currentUserName,
       content: trimmed,
       sentAt: new Date().toISOString(),
       read: false,
-      status: "sending",
     };
 
     setConversations((prev) =>
       prev.map((conversation) =>
-        conversation.id === convId
-          ? { ...conversation, messages: [...conversation.messages, newMessage] }
+        conversation.id === selectedConversationId
+          ? {
+              ...conversation,
+              messages: [...conversation.messages, newMessage],
+            }
           : conversation
       )
     );
+
     setDraftMessage("");
 
-    // Advance status: sending → sent → delivered
-    const advanceStatus = (nextStatus, delay) =>
-      setTimeout(() => {
-        setConversations((prev) =>
-          prev.map((conversation) =>
-            conversation.id === convId
-              ? {
-                  ...conversation,
-                  messages: conversation.messages.map((m) =>
-                    m.id === msgId ? { ...m, status: nextStatus } : m
-                  ),
-                }
-              : conversation
-          )
-        );
-      }, delay);
-
-    advanceStatus("sent", 600);
-    advanceStatus("delivered", 2000);
+    sendMessagePlaceholder(outgoingPayload);
   };
 
+  function sendMessagePlaceholder(payload) {
+    console.log("ChatMessageRequest payload:", payload);
+  }
   const hasConversations = conversationsWithPeer.length > 0;
   const hasSelectedConversation = Boolean(selectedConversation);
 
@@ -767,8 +766,9 @@ export default function Messages() {
                       text-black/60
                     "
                   >
-                    Start a conversation from a tutor profile to see messages
-                    here.
+                    No messages yet.
+                    <br/>
+                    Start a conversation to begin chatting.
                   </p>
                 </div>
               ) : !hasSelectedConversation ? (
