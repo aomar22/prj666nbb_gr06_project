@@ -27,7 +27,16 @@ const TUTOR_PLACEHOLDER_PHOTOS = [
 	"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
 	"https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face",
 ];
+function getInitials(name) {
+	if (!name) return "U";
 
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
 function getAvatarUrl(profileImageUrl, id, userId, firstName, lastName) {
 	if (profileImageUrl) return profileImageUrl;
 	const seed =
@@ -113,6 +122,38 @@ export default function ViewTutorProfile() {
 		navigate("/dashboard/learner/find-tutors/results");
 	};
 
+	//handle entry point to chat
+		const handleOpenChat = () => {
+		if (!tutor?.id && !tutor?.userId) return;
+
+		navigate("/dashboard/learner/messages", {
+			state: {
+				selectedTutor: {
+					id: tutor.id ?? tutor.userId,
+					name:
+						[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") ||
+						"Tutor",
+					avatar:
+						tutor.profileImageUrl ||
+						tutor.profilePicture ||
+						tutor.avatar ||
+						getAvatarUrl(
+						//	tutor.profileImageUrl || tutor.profilePicture,
+							
+							tutor.id,
+							tutor.userId,
+							tutor.firstName,
+							tutor.lastName,
+							
+						),
+					roleLabel: "Certified Peer Tutor",
+					rating: tutor.rating,
+					reviews: tutor.reviewCount,
+				},
+				slotId: null,
+			},
+		});
+	};
 	//handle submit
 
 	const handleSubmitReview = async () => {
@@ -233,16 +274,16 @@ export default function ViewTutorProfile() {
 				<div style={styles.profileCard}>
 					<div style={styles.profileHeader}>
 						<div style={styles.profileAvatarWrap}>
-							<img
+							{/* <img
 								src={tutorAvatarUrl}
 								alt=''
 								style={styles.profileAvatarImg}
 								onError={(e) => {
 									e.target.style.display = "none";
 								}}
-							/>
+							/> */}
 							<span style={styles.profileAvatarLetter}>
-								{tutor.firstName?.[0] || "T"}
+								{getInitials(tutorName)}
 							</span>
 						</div>
 						<div style={styles.profileHeaderRight}>
@@ -252,6 +293,7 @@ export default function ViewTutorProfile() {
 									<button
 										type='button'
 										style={styles.msgBtn}
+										onClick={handleOpenChat}
 									>
 										Message
 									</button>
@@ -349,7 +391,7 @@ export default function ViewTutorProfile() {
 										style={styles.reviewCard}
 									>
 										<div style={styles.reviewerAvatar}>
-											<img
+											{/* <img
 												src={getAvatarUrl(
 													null,
 													null,
@@ -362,7 +404,7 @@ export default function ViewTutorProfile() {
 												onError={(e) => {
 													e.target.style.display = "none";
 												}}
-											/>
+											/> */}
 											<span style={styles.reviewerAvatarLetter}>
 												{review.learnerName?.[0] || "L"}
 											</span>
@@ -410,7 +452,7 @@ export default function ViewTutorProfile() {
 				open={isReviewModalOpen}
 				onClose={handleCloseReviewModal}
 				tutor={tutor}
-				tutorAvatarUrl={tutorAvatarUrl}
+				//tutorAvatarUrl={tutorAvatarUrl}
 			>
 				<div
 					className='
@@ -713,28 +755,15 @@ const styles = {
 		height: "120px",
 		borderRadius: "50%",
 		backgroundColor: "#E8E0D8",
-		overflow: "hidden",
 		flexShrink: 0,
-		position: "relative",
-	},
-	profileAvatarImg: {
-		position: "absolute",
-		inset: 0,
-		width: "100%",
-		height: "100%",
-		objectFit: "cover",
-		zIndex: 1,
-	},
-	profileAvatarLetter: {
-		position: "absolute",
-		inset: 0,
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "center",
+	},
+	profileAvatarLetter: {
 		fontSize: "48px",
 		fontWeight: "bold",
 		color: "#7A0000",
-		zIndex: 0,
 		fontFamily: "inherit",
 	},
 	profileHeaderRight: { flex: 1, minWidth: 0, paddingRight: "52px" },

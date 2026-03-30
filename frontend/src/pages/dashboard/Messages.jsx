@@ -1,8 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SendHorizontal, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { getUser } from "../../api";
+
+function getInitials(name) {
+  if (!name) return "U";
+
+  const parts = name.trim().split(/\s+/);
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
 
 function getRecipientId(conversation, currentUserRole) {
   const isTutor = currentUserRole === "TUTOR";
@@ -46,7 +58,8 @@ function getPeerParticipant(conversation, currentUserRole) {
   if (peer?.name || peer?.avatar) {
     return {
       name: peer?.name || "Unknown user",
-      avatar: peer?.avatar ||
+      avatar:
+        peer?.avatar ||
         "https://ui-avatars.com/api/?name=Unknown+User&background=ddd&color=666",
       roleLabel:
         peer?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
@@ -62,10 +75,101 @@ function getPeerParticipant(conversation, currentUserRole) {
       conversation?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
   };
 }
+
+function renderMessageContent(content) {
+  if (!content) return null;
+
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+  const parts = content.split(urlRegex);
+
+  return parts.filter(Boolean).map((part, index) => {
+    const isUrl = /^https?:\/\//i.test(part) || /^www\./i.test(part);
+
+    if (!isUrl) {
+      return <span key={`${part}-${index}`}>{part}</span>;
+    }
+
+    const href = part.startsWith("http") ? part : `https://${part}`;
+
+    return (
+      <a
+        key={`${part}-${index}`}
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="break-words underline underline-offset-2"
+      >
+        {part}
+      </a>
+    );
+  });
+}
+
+// For demo/testing purposes - builds a conversation object from selected peer route state
+function buildConversationFromSelectedPeer(
+  selectedPeer,
+  currentUserId,
+  currentUserName,
+  currentUserAvatar,
+  currentUserRole
+) {
+  if (!selectedPeer?.id) return null;
+
+  const isTutor = currentUserRole === "TUTOR";
+
+  return {
+    id: `chat-${selectedPeer.id}`,
+    participants: {
+      tutor: isTutor
+        ? {
+            id: currentUserId,
+            name: currentUserName,
+            roleLabel: "Certified Peer Tutor",
+            avatar: currentUserAvatar,
+          }
+        : {
+            id: selectedPeer.id,
+            name: selectedPeer.name || "Tutor",
+            roleLabel: selectedPeer.roleLabel || "Certified Peer Tutor",
+            avatar:
+              selectedPeer.avatar ||
+              "https://ui-avatars.com/api/?name=Tutor&background=random",
+          },
+      learner: isTutor
+        ? {
+            id: selectedPeer.id,
+            name: selectedPeer.name || "Learner",
+            roleLabel: selectedPeer.roleLabel || "Learner",
+            avatar:
+              selectedPeer.avatar ||
+              "https://ui-avatars.com/api/?name=Learner&background=random",
+          }
+        : {
+            id: currentUserId,
+            name: currentUserName,
+            roleLabel: "Learner",
+            avatar: currentUserAvatar,
+          },
+    },
+    tutorName: isTutor ? currentUserName : selectedPeer.name || "Tutor",
+    roleLabel: isTutor
+      ? selectedPeer.roleLabel || "Learner"
+      : selectedPeer.roleLabel || "Certified Peer Tutor",
+    rating: selectedPeer.rating || "4.9",
+    reviews: selectedPeer.reviews || "0 reviews",
+    avatar:
+      selectedPeer.avatar ||
+      "https://ui-avatars.com/api/?name=User&background=random",
+    slotId: selectedPeer.slotId || null,
+    messages: [],
+  };
+}
+
 function ConversationCard({ conversation, selected, onClick }) {
   const lastMessage = getLastMessage(conversation.messages);
   const lastPreview = getLastMessagePreview(conversation.messages);
   const lastTime = formatConversationTime(lastMessage?.sentAt);
+  const isTutorPeer = conversation.roleLabel === "Certified Peer Tutor";
 
   return (
     <button
@@ -74,79 +178,93 @@ function ConversationCard({ conversation, selected, onClick }) {
       className={`
         w-full
         rounded-[20px]
-        p-4
         border-2
+        bg-white
         px-3
         py-3
         text-left
         shadow-[0_4px_10px_rgba(0,0,0,0.12)]
         transition
         hover:-translate-y-[1px]
-        ${selected 
-           ? "border-[#8D0103] bg-white"
-            : "border-transparent hover:border-gray-200 bg-white"}
+        ${
+          selected
+            ? "border-[#8D0103]"
+            : "border-transparent hover:border-gray-200"
+        }
       `}
     >
       <div className="flex items-start gap-4">
-        {/* Left column: avatar + rating */}
         <div
           className="
             flex
             w-[90px]
-            font-bold
             shrink-0
             flex-col
             items-start
+            font-bold
           "
         >
-          <img
-            src={conversation.avatar}
-            alt={conversation.name}
-            className="
-              h-14
-              w-14
-              rounded-full
-              object-cover
-            "
-          />
-
           <div
             className="
-              mt-2
               flex
               items-center
-              gap-1
+              justify-center
+              rounded-full
+              bg-[#E25555]
+              text-white
+              text-[18px]
               font-mono
-              text-[16px]
-              font-bold
-              text-black
+              font-extrabold
             "
+            style={{ width: 56, height: 56 }}
           >
-            <Star size={16} fill="currentColor" strokeWidth={1.75} />
-            <span>{conversation.rating}</span>
+            {getInitials(conversation.name)}
           </div>
 
-          <span
-            className="
-              mt-[2px]
-              font-mono
-              text-[11px]
-              text-black
-            "
-          >
-            ({conversation.reviews})
-          </span>
+          {isTutorPeer && (
+            <>
+              <div
+                className="
+                  mt-2
+                  flex
+                  items-center
+                  gap-1
+                  font-mono
+                  text-[16px]
+                  font-bold
+                  text-black
+                "
+              >
+                <Star size={16} fill="currentColor" strokeWidth={1.75} />
+                <span>{conversation.rating}</span>
+              </div>
+
+              <span
+                className="
+                  mt-[2px]
+                  font-mono
+                  text-[11px]
+                  text-black
+                "
+              >
+                (
+                {typeof conversation.reviews === "number"
+                  ? `${conversation.reviews} reviews`
+                  : conversation.reviews}
+                )
+              </span>
+            </>
+          )}
         </div>
 
-        {/* Right column: name + time + role + status */}
         <div className="min-w-0 flex-1">
           <div
             className="
               flex
               items-start
               justify-between
-              font-bold
               gap-3
+              font-bold
             "
           >
             <h3
@@ -161,17 +279,18 @@ function ConversationCard({ conversation, selected, onClick }) {
               {conversation.name}
             </h3>
 
-            <span
-              className="
-                shrink-0
-                font-mono
-                text-[11px]
-                font-semibold
-                text-black/70
-              "
-            >
-              {lastTime}
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span
+                className="
+                  font-mono
+                  text-[11px]
+                  font-semibold
+                  text-black/70
+                "
+              >
+                {lastTime}
+              </span>
+            </div>
           </div>
 
           <p
@@ -203,6 +322,7 @@ function ConversationCard({ conversation, selected, onClick }) {
     </button>
   );
 }
+
 function MessageReadStatus({ message, isOwnMessage }) {
   if (!isOwnMessage) return null;
 
@@ -221,9 +341,7 @@ function MessageReadStatus({ message, isOwnMessage }) {
 
 function MessageBubble({
   message,
-  peerAvatar,
   currentUserId,
-  currentUserAvatar,
 }) {
   const isPeerMessage = message.senderId !== currentUserId;
   const isOwnMessage = !isPeerMessage;
@@ -245,16 +363,22 @@ function MessageBubble({
         `}
       >
         {isPeerMessage && (
-          <img
-            src={peerAvatar}
-            alt="Peer"
+          <div
             className="
               h-12
               w-12
               rounded-full
-              object-cover
+              bg-[#E8E0D8]
+              flex
+              items-center
+              justify-center
+              text-[#7A0000]
+              font-mono
+              font-bold
             "
-          />
+          >
+            {getInitials(message.senderName)}
+          </div>
         )}
 
         <div
@@ -278,21 +402,14 @@ function MessageBubble({
               text-black
             "
           >
-            {message.content}
+            {renderMessageContent(message.content)}
           </p>
         </div>
 
         {isOwnMessage && (
-          <img
-            src={currentUserAvatar}
-            alt="You"
-            className="
-              h-12
-              w-12
-              rounded-full
-              object-cover
-            "
-          />
+          <div className="h-12 w-12 rounded-full bg-[#E8E0D8] flex items-center justify-center text-[#7A0000] font-mono font-bold">
+            {getInitials(message.senderName || "You")}
+          </div>
         )}
       </div>
 
@@ -315,7 +432,7 @@ function MessageBubble({
   );
 }
 
-function TypingIndicator({ avatar }) {
+function TypingIndicator() {
   return (
     <div
       className="
@@ -324,16 +441,21 @@ function TypingIndicator({ avatar }) {
         gap-3
       "
     >
-      <img
-        src={avatar}
-        alt="Tutor"
-        className="
-          h-12
-          w-12
-          rounded-full
-          object-cover
-        "
-      />
+      <div className="
+        h-12
+        w-12
+        rounded-full
+        bg-[#E8E0D8]
+        flex
+        items-center
+        justify-center
+        text-[#7A0000]
+        font-mono
+        font-bold
+      "
+    >
+      {getInitials("Tutor")}
+      </div>
 
       <div
         className="
@@ -354,7 +476,7 @@ function TypingIndicator({ avatar }) {
             text-[#78b7c8]
           "
         >
-          ...
+          Typing...
         </span>
       </div>
     </div>
@@ -362,7 +484,8 @@ function TypingIndicator({ avatar }) {
 }
 
 export default function Messages() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname, state } = location;
   const currentUser = getUser();
   const userRole = (currentUser?.role || "").toUpperCase();
 
@@ -392,190 +515,188 @@ export default function Messages() {
     currentUserName
   )}&background=ddd&color=666&size=100`;
 
+  const initialConversations = useMemo(
+    () => [
+      {
+        id: "c1",
+        participants: {
+          tutor: {
+            id: "tutor-1",
+            name: "Tom Holland",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
+          },
+          learner: {
+            id: "learner-11",
+            name: "Sarah Parker",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Sarah+Parker&background=random",
+          },
+        },
+        tutorName: "Tom Holland",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
+        messages: [
+          {
+            id: "m1",
+            conversationId: "c1",
+            senderId: currentUserId,
+            senderName: currentUserName,
+            content:
+              "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
+            sentAt: new Date().toISOString(),
+            read: true,
+          },
+          {
+            id: "m2",
+            conversationId: "c1",
+            senderId: "tutor-1",
+            senderName: "Tom Holland",
+            content:
+              "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
+            sentAt: new Date().toISOString(),
+            read: false,
+          },
+          {
+            id: "m3",
+            conversationId: "c1",
+            senderId: currentUserId,
+            senderName: currentUserName,
+            content:
+              "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
+            sentAt: new Date().toISOString(),
+            read: true,
+          },
+        ],
+      },
+      {
+        id: "c2",
+        participants: {
+          tutor: {
+            id: "tutor-2",
+            name: "Brad Pitt",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
+          },
+          learner: {
+            id: "learner-12",
+            name: "Noah Martinez",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Noah+Martinez&background=random",
+          },
+        },
+        tutorName: "Brad Pitt",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
+        messages: [],
+      },
+      {
+        id: "c3",
+        participants: {
+          tutor: {
+            id: "tutor-3",
+            name: "Megan Fox",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
+          },
+          learner: {
+            id: "learner-13",
+            name: "Ava Johnson",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Ava+Johnson&background=random",
+          },
+        },
+        tutorName: "Megan Fox",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
+        messages: [],
+      },
+      {
+        id: "c4",
+        participants: {
+          tutor: {
+            id: "tutor-4",
+            name: "Chris Evans",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
+          },
+          learner: {
+            id: "learner-14",
+            name: "Liam Kim",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Liam+Kim&background=random",
+          },
+        },
+        tutorName: "Chris Evans",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
+        messages: [],
+      },
+      {
+        id: "c5",
+        participants: {
+          tutor: {
+            id: "tutor-5",
+            name: "Chris Hemsworth",
+            roleLabel: "Certified Peer Tutor",
+            avatar:
+              "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
+          },
+          learner: {
+            id: "learner-15",
+            name: "Emma Davis",
+            roleLabel: "Learner",
+            avatar:
+              "https://ui-avatars.com/api/?name=Emma+Davis&background=random",
+          },
+        },
+        tutorName: "Chris Hemsworth",
+        roleLabel: "Certified Peer Tutor",
+        rating: "4.9",
+        reviews: "32 reviews",
+        avatar:
+          "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
+        messages: [
+          {
+            id: "m4",
+            conversationId: "c5",
+            senderId: currentUserId,
+            senderName: currentUserName,
+            content: "Hi Chris",
+            sentAt: new Date().toISOString(),
+            read: false,
+          },
+        ],
+      },
+    ],
+    [currentUserId, currentUserName]
+  );
 
-  // const initialConversations = useMemo(
-  //   () => [
-  //     {
-  //       id: "c1",
-  //       participants: {
-  //         tutor: {
-  //           id: "tutor-1",
-  //           name: "Tom Holland",
-  //           roleLabel: "Certified Peer Tutor",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-  //         },
-  //         learner: {
-  //           id: "learner-11",
-  //           name: "Sarah Parker",
-  //           roleLabel: "Learner",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Sarah+Parker&background=random",
-  //         },
-  //       },
-  //       tutorName: "Tom Holland",
-  //       roleLabel: "Certified Peer Tutor",
-  //       rating: "4.9",
-  //       reviews: "32 reviews",
-  //       avatar:
-  //         "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-  //       messages: [
-  //         {
-  //           id: "m1",
-  //           conversationId: "c1",
-  //           senderId: currentUserId,
-  //           senderName: currentUserName,
-  //           content:
-  //             "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
-  //           sentAt: new Date().toISOString(),
-  //           read: true,
-  //         },
-  //         {
-  //           id: "m2",
-  //           conversationId: "c1",
-  //           senderId: "tutor-1",
-  //           senderName: "Tom Holland",
-  //           content:
-  //             "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
-  //           sentAt: new Date().toISOString(),
-  //           read: true,
-  //         },
-  //         {
-  //           id: "m3",
-  //           conversationId: "c1",
-  //           senderId: currentUserId,
-  //           senderName: currentUserName,
-  //           content:
-  //             "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
-  //           sentAt: new Date().toISOString(),
-  //           read: true,
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       id: "c2",
-  //       participants: {
-  //         tutor: {
-  //           id: "tutor-2",
-  //           name: "Brad Pitt",
-  //           roleLabel: "Certified Peer Tutor",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-  //         },
-  //         learner: {
-  //           id: "learner-12",
-  //           name: "Noah Martinez",
-  //           roleLabel: "Learner",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Noah+Martinez&background=random",
-  //         },
-  //       },
-  //       tutorName: "Brad Pitt",
-  //       roleLabel: "Certified Peer Tutor",
-  //       rating: "4.9",
-  //       reviews: "32 reviews",
-  //       avatar:
-  //         "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-  //       messages: [],
-  //     },
-  //     {
-  //       id: "c3",
-  //       participants: {
-  //         tutor: {
-  //           id: "tutor-3",
-  //           name: "Megan Fox",
-  //           roleLabel: "Certified Peer Tutor",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-  //         },
-  //         learner: {
-  //           id: "learner-13",
-  //           name: "Ava Johnson",
-  //           roleLabel: "Learner",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Ava+Johnson&background=random",
-  //         },
-  //       },
-  //       tutorName: "Megan Fox",
-  //       roleLabel: "Certified Peer Tutor",
-  //       rating: "4.9",
-  //       reviews: "32 reviews",
-  //       avatar:
-  //         "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-  //       messages: [],
-  //     },
-  //     {
-  //       id: "c4",
-  //       participants: {
-  //         tutor: {
-  //           id: "tutor-4",
-  //           name: "Chris Evans",
-  //           roleLabel: "Certified Peer Tutor",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-  //         },
-  //         learner: {
-  //           id: "learner-14",
-  //           name: "Liam Kim",
-  //           roleLabel: "Learner",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Liam+Kim&background=random",
-  //         },
-  //       },
-  //       tutorName: "Chris Evans",
-  //       roleLabel: "Certified Peer Tutor",
-  //       rating: "4.9",
-  //       reviews: "32 reviews",
-  //       avatar:
-  //         "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-  //       messages: [],
-  //     },
-  //     {
-  //       id: "c5",
-  //       participants: {
-  //         tutor: {
-  //           id: "tutor-5",
-  //           name: "Chris Hemsworth",
-  //           roleLabel: "Certified Peer Tutor",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-  //         },
-  //         learner: {
-  //           id: "learner-15",
-  //           name: "Emma Davis",
-  //           roleLabel: "Learner",
-  //           avatar:
-  //             "https://ui-avatars.com/api/?name=Emma+Davis&background=random",
-  //         },
-  //       },
-  //       tutorName: "Chris Hemsworth",
-  //       roleLabel: "Certified Peer Tutor",
-  //       rating: "4.9",
-  //       reviews: "32 reviews",
-  //       avatar:
-  //         "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-  //       messages: [
-  //         {
-  //           id: "m4",
-  //           conversationId: "c5",
-  //           senderId: currentUserId,
-  //           senderName: currentUserName,
-  //           content: "Hi Chris",
-  //           sentAt: new Date().toISOString(),
-  //           read: true,
-  //         },
-  //       ],
-  //     },
-  //   ],
-  //   [currentUserId, currentUserName]
-  // );
-//for frontend testing/demo purposes
- // const [conversations, setConversations] = useState(initialConversations);
-  const [conversations, setConversations] = useState([]);
+  // for frontend testing/demo purposes
+  const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [draftMessage, setDraftMessage] = useState("");
-  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-  const [conversationsError, setConversationsError] = useState("");
+  const [isPeerTyping, setIsPeerTyping] = useState(false);
 
   const conversationsWithPeer = useMemo(
     () =>
@@ -593,6 +714,42 @@ export default function Messages() {
       ) || null,
     [selectedConversationId, conversationsWithPeer]
   );
+
+  useEffect(() => {
+    const selectedPeer = state?.selectedTutor || state?.selectedLearner;
+    if (!selectedPeer?.id) return;
+
+    const nextConversationId = `chat-${selectedPeer.id}`;
+
+    setConversations((prev) => {
+      const alreadyExists = prev.some(
+        (conversation) => conversation.id === nextConversationId
+      );
+
+      if (alreadyExists) return prev;
+
+      const newConversation = buildConversationFromSelectedPeer(
+        {
+          ...selectedPeer,
+          slotId: state?.slotId || null,
+        },
+        currentUserId,
+        currentUserName,
+        currentUserAvatar,
+        currentUserRole
+      );
+
+      return newConversation ? [newConversation, ...prev] : prev;
+    });
+
+    setSelectedConversationId(nextConversationId);
+  }, [
+    state,
+    currentUserId,
+    currentUserName,
+    currentUserAvatar,
+    currentUserRole,
+  ]);
 
   const handleSend = () => {
     const trimmed = draftMessage.trim();
@@ -633,6 +790,7 @@ export default function Messages() {
   function sendMessagePlaceholder(payload) {
     console.log("ChatMessageRequest payload:", payload);
   }
+
   const hasConversations = conversationsWithPeer.length > 0;
   const hasSelectedConversation = Boolean(selectedConversation);
 
@@ -705,7 +863,10 @@ export default function Messages() {
                       key={conversation.id}
                       conversation={conversation}
                       selected={conversation.id === selectedConversationId}
-                      onClick={() => setSelectedConversationId(conversation.id)}
+                      onClick={() => {
+                        setSelectedConversationId(conversation.id);
+                        setIsPeerTyping(false);
+                      }}
                     />
                   ))}
                 </div>
@@ -767,7 +928,7 @@ export default function Messages() {
                     "
                   >
                     No messages yet.
-                    <br/>
+                    <br />
                     Start a conversation to begin chatting.
                   </p>
                 </div>
@@ -803,16 +964,28 @@ export default function Messages() {
                       pb-4
                     "
                   >
-                    <img
-                      src={selectedConversation.avatar}
-                      alt={selectedConversation.name}
+                    <div
                       className="
                         h-14
                         w-14
                         rounded-full
-                        object-cover
+                        items-center
+                        justify-center
+                        bg-[#E8E0D8]
+                        text-[#7A0000]
+                        font-mono
+                        font-bold
                       "
-                    />
+                    >
+                      <div
+                        className="h-full w-full rounded-full
+                                   flex items-center justify-center
+                                    bg-[#E25555] font-mono font-extrabold
+                                   text-white text-[18px]"
+                      >
+                        {getInitials(selectedConversation.name)}
+                      </div>
+                    </div>
 
                     <h2
                       className="
@@ -839,6 +1012,7 @@ export default function Messages() {
                     <div
                       className="
                         flex
+                        flex-1
                         flex-col
                         gap-7
                         overflow-y-auto
@@ -851,13 +1025,11 @@ export default function Messages() {
                             <MessageBubble
                               key={message.id}
                               message={message}
-                              peerAvatar={selectedConversation.avatar}
                               currentUserId={currentUserId}
-                              currentUserAvatar={currentUserAvatar}
                             />
                           ))}
 
-                          <TypingIndicator avatar={selectedConversation.avatar} />
+                          {isPeerTyping && <TypingIndicator />}
                         </>
                       ) : (
                         <div
