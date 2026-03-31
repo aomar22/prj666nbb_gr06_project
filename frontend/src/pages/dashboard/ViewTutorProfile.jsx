@@ -52,8 +52,21 @@ export default function ViewTutorProfile() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const user = getUser();
-	// const tutor = location.state?.tutor;
-	//for demo and frontend development only (hardcoded tutor data)
+	const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+	const [isReviewConfirmationOpen, setIsReviewConfirmationOpen] = useState(false);
+	const [selectedRating, setSelectedRating] = useState(0);
+	const [hoveredRating, setHoveredRating] = useState(0);
+	const [reviewComment, setReviewComment] = useState("");
+	const [reviewError, setReviewError] = useState("");
+	const [reviews, setReviews] = useState([]);
+	const [reviewableSessions, setReviewableSessions] = useState([]);
+
+	const isLearner =
+		user?.role === "LEARNER" || user?.role?.toLowerCase() === "learner";
+
+	const hasCompletedSessionWithTutor = reviewableSessions.length > 0;
+	const alreadyReviewed = reviewableSessions.some((s) => s.hasReviewed);
+	const canReview = isLearner && hasCompletedSessionWithTutor && !alreadyReviewed;
 	const tutor = location.state?.tutor || {
 		id: "T102",
 		userId: "U102",
@@ -70,41 +83,33 @@ export default function ViewTutorProfile() {
 		sessionType: "ONE_ON_ONE",
 	};
 
-	//handle write review and modal state
-	const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-	const [isReviewConfirmationOpen, setIsReviewConfirmationOpen] =
-		useState(false);
-	const [selectedRating, setSelectedRating] = useState(0);
-	const [hoveredRating, setHoveredRating] = useState(0);
-	const [reviewComment, setReviewComment] = useState("");
-	const [reviewError, setReviewError] = useState("");
-	const [reviews, setReviews] = useState([]);
-	const [canReview, setCanReview] = useState(false);
-
 	useEffect(() => {
-		if (!tutor?.id) return;
+	if (!tutor?.id) return;
 
-		getTutorReviews(tutor.id)
-			.then((data) => setReviews(Array.isArray(data) ? data : []))
-			.catch(() => setReviews([]));
+	getTutorReviews(tutor.id)
+		.then((data) => setReviews(Array.isArray(data) ? data : []))
+		.catch(() => setReviews([]));
 
-		if (user?.role === "LEARNER" || user?.role?.toLowerCase() === "learner") {
-			getMySessions()
-				.then((sessions) => {
-					const tutorSessions = (
-						Array.isArray(sessions) ? sessions : []
-					).filter((s) => s.tutorId === tutor.id);
-					const alreadyReviewed = tutorSessions.some((s) => s.hasReviewed);
-					setCanReview(!alreadyReviewed);
-				})
-				.catch(() => {
-					setCanReview(true);
-				});
-		}
-	}, [tutor?.id]);
+	const isLearner =
+		user?.role === "LEARNER" || user?.role?.toLowerCase() === "learner";
+
+	if (!isLearner) return;
+
+	getMySessions()
+		.then((sessions) => {
+		const tutorSessions = (Array.isArray(sessions) ? sessions : []).filter(
+			(s) => s.tutorId === tutor.id
+		);
+		setReviewableSessions(tutorSessions);
+		})
+		.catch(() => {
+		setReviewableSessions([]);
+		});
+	}, [tutor?.id, user?.role]);
 
 	const handleWriteReview = () => {
-		setIsReviewModalOpen(true);
+		if (!canReview) return;
+			setIsReviewModalOpen(true);
 	};
 
 	const handleCloseReviewModal = () => {
