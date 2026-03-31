@@ -193,6 +193,30 @@ export default function FindTutorsResults() {
     return TUTOR_PLACEHOLDER_PHOTOS[Math.abs(index)];
   };
 
+  const handleOpenChat = (tutor) => {
+    if (!tutor?.id && !tutor?.userId) return;
+
+    navigate("/dashboard/learner/messages", {
+      state: {
+        selectedTutor: {
+          id: tutor.id ?? tutor.userId,
+          name:
+            [tutor.firstName, tutor.lastName].filter(Boolean).join(" ") ||
+            "Tutor",
+          avatar:
+            tutor.profileImageUrl ||
+            tutor.profilePicture ||
+            tutor.avatar ||
+            getTutorAvatarUrl(tutor),
+          roleLabel: "Certified Peer Tutor",
+          rating: tutor.rating,
+          reviews: tutor.reviewCount,
+        },
+        slotId: null,
+      },
+    });
+  };
+
   return (
     <div style={styles.container}>
       <Sidebar />
@@ -284,7 +308,13 @@ export default function FindTutorsResults() {
                       >
                         View Profile
                       </button>
-                      <button type="button" style={styles.actionBtn}>Message</button>
+                      <button 
+                      type="button"
+                      style={styles.actionBtn}
+                      onClick={() => handleOpenChat(tutor)}
+                      >
+                        Message
+                        </button>
                       <button type="button" style={styles.actionBtn}
                         onClick={() => {
                           const queryParams = new URLSearchParams(location.search);
