@@ -51,7 +51,7 @@ export default function LearnerSessionManagement() {
 
 
 
-    const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED");
+    const upcomingSessions = slots.filter((slot) => slot.status === "BOOKED" || slot.status === "AVAILABLE");
     const pastSessions = slots.filter((slot) => slot.status === "COMPLETED");
     
     const sessionsPrepPage = 3;
