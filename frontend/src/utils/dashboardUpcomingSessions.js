@@ -69,6 +69,8 @@ export async function fetchLearnerUpcomingSessionsForDashboard(
       start,
       sessionType: raw.sessionType,
       status: raw.status,
+      currentCount: raw.currentCount,
+      maxCapacity: raw.maxCapacity,
     };
   });
 }

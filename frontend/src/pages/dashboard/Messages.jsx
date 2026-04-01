@@ -1,8 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SendHorizontal, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
-import { getUser } from "../../api";
+import {
+  createChatClient,
+  getDirectChatHistory,
+  getUser,
+  markDirectChatAsRead,
+  sendChatMessage,
+} from "../../api";
+
+function buildDirectConversationId(userId1, userId2) {
+  const a = String(userId1 ?? "");
+  const b = String(userId2 ?? "");
+
+  return a.localeCompare(b) < 0 ? `${a}_${b}` : `${b}_${a}`;
+}
 
 function getInitials(name) {
   if (!name) return "U";
@@ -17,6 +30,8 @@ function getInitials(name) {
 }
 
 function getRecipientId(conversation, currentUserRole) {
+  if (conversation?.otherUserId) return conversation.otherUserId;
+
   const isTutor = currentUserRole === "TUTOR";
 
   return isTutor
@@ -105,7 +120,6 @@ function renderMessageContent(content) {
   });
 }
 
-// For demo/testing purposes - builds a conversation object from selected peer route state
 function buildConversationFromSelectedPeer(
   selectedPeer,
   currentUserId,
@@ -116,9 +130,12 @@ function buildConversationFromSelectedPeer(
   if (!selectedPeer?.id) return null;
 
   const isTutor = currentUserRole === "TUTOR";
+  const conversationId = buildDirectConversationId(currentUserId, selectedPeer.id);
 
   return {
-    id: `chat-${selectedPeer.id}`,
+    id: conversationId,
+    conversationType: "DIRECT",
+    otherUserId: selectedPeer.id,
     participants: {
       tutor: isTutor
         ? {
@@ -155,12 +172,12 @@ function buildConversationFromSelectedPeer(
     roleLabel: isTutor
       ? selectedPeer.roleLabel || "Learner"
       : selectedPeer.roleLabel || "Certified Peer Tutor",
-    rating: selectedPeer.rating || "4.9",
+    rating: selectedPeer.rating || "—",
     reviews: selectedPeer.reviews || "0 reviews",
     avatar:
       selectedPeer.avatar ||
       "https://ui-avatars.com/api/?name=User&background=random",
-    slotId: selectedPeer.slotId || null,
+    slotId: null,
     messages: [],
   };
 }
@@ -339,10 +356,7 @@ function MessageReadStatus({ message, isOwnMessage }) {
   );
 }
 
-function MessageBubble({
-  message,
-  currentUserId,
-}) {
+function MessageBubble({ message, currentUserId }) {
   const isPeerMessage = message.senderId !== currentUserId;
   const isOwnMessage = !isPeerMessage;
 
@@ -432,60 +446,13 @@ function MessageBubble({
   );
 }
 
-function TypingIndicator() {
-  return (
-    <div
-      className="
-        flex
-        items-end
-        gap-3
-      "
-    >
-      <div className="
-        h-12
-        w-12
-        rounded-full
-        bg-[#E8E0D8]
-        flex
-        items-center
-        justify-center
-        text-[#7A0000]
-        font-mono
-        font-bold
-      "
-    >
-      {getInitials("Tutor")}
-      </div>
-
-      <div
-        className="
-          flex
-          h-11
-          items-center
-          rounded-full
-          bg-[#F9F9F9]
-          px-4
-          shadow-sm
-        "
-      >
-        <span
-          className="
-            font-mono
-            text-[18px]
-            leading-none
-            text-[#78b7c8]
-          "
-        >
-          Typing...
-        </span>
-      </div>
-    </div>
-  );
-}
-
 export default function Messages() {
   const location = useLocation();
   const { pathname, state } = location;
+
+  const stompClientRef = useRef(null);
+  const conversationsRef = useRef([]);
+
   const currentUser = getUser();
   const userRole = (currentUser?.role || "").toUpperCase();
 
@@ -501,7 +468,7 @@ export default function Messages() {
       ? "TUTOR"
       : userRole || "LEARNER";
 
-  const currentUserId = currentUser?.id || "learner-1";
+  const currentUserId = String(currentUser?.id || "learner-1");
 
   const currentUserName =
     currentUser?.firstName && currentUser?.lastName
@@ -515,188 +482,16 @@ export default function Messages() {
     currentUserName
   )}&background=ddd&color=666&size=100`;
 
-  const initialConversations = useMemo(
-    () => [
-      {
-        id: "c1",
-        participants: {
-          tutor: {
-            id: "tutor-1",
-            name: "Tom Holland",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-          },
-          learner: {
-            id: "learner-11",
-            name: "Sarah Parker",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Sarah+Parker&background=random",
-          },
-        },
-        tutorName: "Tom Holland",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Tom+Holland&background=random",
-        messages: [
-          {
-            id: "m1",
-            conversationId: "c1",
-            senderId: currentUserId,
-            senderName: currentUserName,
-            content:
-              "Hi! I’m looking for some help with my OOP course. I’m having a hard time understanding inheritance and polymorphism.",
-            sentAt: new Date().toISOString(),
-            read: true,
-          },
-          {
-            id: "m2",
-            conversationId: "c1",
-            senderId: "tutor-1",
-            senderName: "Tom Holland",
-            content:
-              "Hey! No problem — OOP concepts can definitely be tricky at first. What language are you using in your course?",
-            sentAt: new Date().toISOString(),
-            read: false,
-          },
-          {
-            id: "m3",
-            conversationId: "c1",
-            senderId: currentUserId,
-            senderName: currentUserName,
-            content:
-              "We’re learning in C++. I get how classes and objects work, but when it comes to inheritance and overriding functions, I get lost.",
-            sentAt: new Date().toISOString(),
-            read: true,
-          },
-        ],
-      },
-      {
-        id: "c2",
-        participants: {
-          tutor: {
-            id: "tutor-2",
-            name: "Brad Pitt",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-          },
-          learner: {
-            id: "learner-12",
-            name: "Noah Martinez",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Noah+Martinez&background=random",
-          },
-        },
-        tutorName: "Brad Pitt",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Brad+Pitt&background=random",
-        messages: [],
-      },
-      {
-        id: "c3",
-        participants: {
-          tutor: {
-            id: "tutor-3",
-            name: "Megan Fox",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-          },
-          learner: {
-            id: "learner-13",
-            name: "Ava Johnson",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Ava+Johnson&background=random",
-          },
-        },
-        tutorName: "Megan Fox",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Megan+Fox&background=random",
-        messages: [],
-      },
-      {
-        id: "c4",
-        participants: {
-          tutor: {
-            id: "tutor-4",
-            name: "Chris Evans",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-          },
-          learner: {
-            id: "learner-14",
-            name: "Liam Kim",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Liam+Kim&background=random",
-          },
-        },
-        tutorName: "Chris Evans",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Chris+Evans&background=random",
-        messages: [],
-      },
-      {
-        id: "c5",
-        participants: {
-          tutor: {
-            id: "tutor-5",
-            name: "Chris Hemsworth",
-            roleLabel: "Certified Peer Tutor",
-            avatar:
-              "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-          },
-          learner: {
-            id: "learner-15",
-            name: "Emma Davis",
-            roleLabel: "Learner",
-            avatar:
-              "https://ui-avatars.com/api/?name=Emma+Davis&background=random",
-          },
-        },
-        tutorName: "Chris Hemsworth",
-        roleLabel: "Certified Peer Tutor",
-        rating: "4.9",
-        reviews: "32 reviews",
-        avatar:
-          "https://ui-avatars.com/api/?name=Chris+Hemsworth&background=random",
-        messages: [
-          {
-            id: "m4",
-            conversationId: "c5",
-            senderId: currentUserId,
-            senderName: currentUserName,
-            content: "Hi Chris",
-            sentAt: new Date().toISOString(),
-            read: false,
-          },
-        ],
-      },
-    ],
-    [currentUserId, currentUserName]
-  );
-
-  // for frontend testing/demo purposes
-  const [conversations, setConversations] = useState(initialConversations);
+  const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [draftMessage, setDraftMessage] = useState("");
-  const [isPeerTyping, setIsPeerTyping] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [connectionError, setConnectionError] = useState("");
+  const [chatReady, setChatReady] = useState(false);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   const conversationsWithPeer = useMemo(
     () =>
@@ -719,30 +514,34 @@ export default function Messages() {
     const selectedPeer = state?.selectedTutor || state?.selectedLearner;
     if (!selectedPeer?.id) return;
 
-    const nextConversationId = `chat-${selectedPeer.id}`;
+    const newConversation = buildConversationFromSelectedPeer(
+      { ...selectedPeer, slotId: null },
+      currentUserId,
+      currentUserName,
+      currentUserAvatar,
+      currentUserRole
+    );
+
+    if (!newConversation) return;
 
     setConversations((prev) => {
-      const alreadyExists = prev.some(
-        (conversation) => conversation.id === nextConversationId
+      const existingIndex = prev.findIndex(
+        (conversation) => conversation.id === newConversation.id
       );
 
-      if (alreadyExists) return prev;
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          otherUserId: updated[existingIndex].otherUserId || selectedPeer.id,
+        };
+        return updated;
+      }
 
-      const newConversation = buildConversationFromSelectedPeer(
-        {
-          ...selectedPeer,
-          slotId: state?.slotId || null,
-        },
-        currentUserId,
-        currentUserName,
-        currentUserAvatar,
-        currentUserRole
-      );
-
-      return newConversation ? [newConversation, ...prev] : prev;
+      return [newConversation, ...prev];
     });
 
-    setSelectedConversationId(nextConversationId);
+    setSelectedConversationId(newConversation.id);
   }, [
     state,
     currentUserId,
@@ -751,18 +550,195 @@ export default function Messages() {
     currentUserRole,
   ]);
 
+  useEffect(() => {
+    const client = createChatClient({
+      onConnect: () => {
+        setChatReady(true);
+        setConnectionError("");
+      },
+      onMessage: (incoming) => {
+        if (!incoming?.conversationId || !incoming?.id) return;
+
+        setConversations((prev) => {
+          const existingIndex = prev.findIndex(
+            (conversation) => conversation.id === incoming.conversationId
+          );
+
+          if (existingIndex >= 0) {
+            const updated = [...prev];
+            const existingConversation = updated[existingIndex];
+            const existingMessages = Array.isArray(existingConversation.messages)
+              ? existingConversation.messages
+              : [];
+
+            const alreadyExists = existingMessages.some(
+              (message) => message.id === incoming.id
+            );
+
+            const updatedConversation = {
+              ...existingConversation,
+              otherUserId:
+                existingConversation.otherUserId ||
+                (incoming.senderId !== currentUserId
+                  ? incoming.senderId
+                  : existingConversation.otherUserId),
+              messages: alreadyExists
+                ? existingMessages
+                : [...existingMessages, incoming],
+            };
+
+            updated.splice(existingIndex, 1);
+            return [updatedConversation, ...updated];
+          }
+
+          const peerName =
+            incoming.senderName ||
+            (currentUserRole === "TUTOR" ? "Learner" : "Tutor");
+
+          return [
+            {
+              id: incoming.conversationId,
+              conversationType: "DIRECT",
+              otherUserId:
+                incoming.senderId !== currentUserId ? incoming.senderId : null,
+              participants: {
+                tutor:
+                  currentUserRole === "TUTOR"
+                    ? {
+                        id: currentUserId,
+                        name: currentUserName,
+                        roleLabel: "Certified Peer Tutor",
+                        avatar: currentUserAvatar,
+                      }
+                    : {
+                        id: incoming.senderId,
+                        name: peerName,
+                        roleLabel: "Certified Peer Tutor",
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          peerName
+                        )}&background=random`,
+                      },
+                learner:
+                  currentUserRole === "TUTOR"
+                    ? {
+                        id: incoming.senderId,
+                        name: peerName,
+                        roleLabel: "Learner",
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          peerName
+                        )}&background=random`,
+                      }
+                    : {
+                        id: currentUserId,
+                        name: currentUserName,
+                        roleLabel: "Learner",
+                        avatar: currentUserAvatar,
+                      },
+              },
+              tutorName:
+                currentUserRole === "TUTOR" ? currentUserName : peerName,
+              roleLabel:
+                currentUserRole === "TUTOR"
+                  ? "Learner"
+                  : "Certified Peer Tutor",
+              rating: "—",
+              reviews: "0 reviews",
+              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                peerName
+              )}&background=random`,
+              slotId: null,
+              messages: [incoming],
+            },
+            ...prev,
+          ];
+        });
+      },
+      onError: () => {
+        setChatReady(false);
+        setConnectionError("Chat connection failed.");
+      },
+    });
+
+    stompClientRef.current = client;
+
+    return () => {
+      setChatReady(false);
+
+      try {
+        client?.deactivate();
+      } catch {
+        // ignore
+      }
+
+      stompClientRef.current = null;
+    };
+  }, [currentUserId, currentUserName, currentUserAvatar, currentUserRole]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (!selectedConversationId) return;
+
+      const activeConversation = conversationsRef.current.find(
+        (conversation) => conversation.id === selectedConversationId
+      );
+
+      const otherUserId =
+        activeConversation?.otherUserId ||
+        getRecipientId(activeConversation, currentUserRole);
+
+      if (!otherUserId) return;
+
+      try {
+        setLoadingHistory(true);
+
+        const history = await getDirectChatHistory(otherUserId);
+
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.id === selectedConversationId
+              ? {
+                  ...conversation,
+                  otherUserId,
+                  messages: Array.isArray(history) ? history : [],
+                }
+              : conversation
+          )
+        );
+
+        await markDirectChatAsRead(otherUserId);
+      } catch (error) {
+        console.error("Failed to load chat history", error);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    loadHistory();
+  }, [selectedConversationId, currentUserRole]);
+
   const handleSend = () => {
     const trimmed = draftMessage.trim();
-    if (!trimmed || !selectedConversationId) return;
+    if (!trimmed || !selectedConversationId || !chatReady) return;
+
+    const activeConversation = conversationsRef.current.find(
+      (conversation) => conversation.id === selectedConversationId
+    );
+
+    const recipientId =
+      activeConversation?.otherUserId ||
+      getRecipientId(activeConversation, currentUserRole);
+
+    if (!recipientId) return;
+
+    const tempId = `temp-${Date.now()}`;
 
     const outgoingPayload = {
-      recipientId: getRecipientId(selectedConversation, currentUserRole),
-      slotId: selectedConversation?.slotId || null,
+      recipientId,
       content: trimmed,
     };
 
     const newMessage = {
-      id: Date.now().toString(),
+      id: tempId,
       conversationId: selectedConversationId,
       senderId: currentUserId,
       senderName: currentUserName,
@@ -771,25 +747,38 @@ export default function Messages() {
       read: false,
     };
 
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === selectedConversationId
-          ? {
-              ...conversation,
-              messages: [...conversation.messages, newMessage],
-            }
-          : conversation
-      )
-    );
+    setConversations((prev) => {
+      const existingIndex = prev.findIndex(
+        (conversation) => conversation.id === selectedConversationId
+      );
+
+      if (existingIndex < 0) return prev;
+
+      const updated = [...prev];
+      const existingConversation = updated[existingIndex];
+      const existingMessages = Array.isArray(existingConversation.messages)
+        ? existingConversation.messages
+        : [];
+
+      const updatedConversation = {
+        ...existingConversation,
+        otherUserId: recipientId,
+        messages: [...existingMessages, newMessage],
+      };
+
+      updated.splice(existingIndex, 1);
+      return [updatedConversation, ...updated];
+    });
 
     setDraftMessage("");
 
-    sendMessagePlaceholder(outgoingPayload);
+    try {
+      sendChatMessage(stompClientRef.current, outgoingPayload);
+    } catch (error) {
+      console.error("Failed to send chat message", error);
+      setConnectionError("Chat connection is not active.");
+    }
   };
-
-  function sendMessagePlaceholder(payload) {
-    console.log("ChatMessageRequest payload:", payload);
-  }
 
   const hasConversations = conversationsWithPeer.length > 0;
   const hasSelectedConversation = Boolean(selectedConversation);
@@ -865,7 +854,7 @@ export default function Messages() {
                       selected={conversation.id === selectedConversationId}
                       onClick={() => {
                         setSelectedConversationId(conversation.id);
-                        setIsPeerTyping(false);
+                        setConnectionError("");
                       }}
                     />
                   ))}
@@ -980,25 +969,37 @@ export default function Messages() {
                       <div
                         className="h-full w-full rounded-full
                                    flex items-center justify-center
-                                    bg-[#E25555] font-mono font-extrabold
+                                   bg-[#E25555] font-mono font-extrabold
                                    text-white text-[18px]"
                       >
                         {getInitials(selectedConversation.name)}
                       </div>
                     </div>
 
-                    <h2
-                      className="
-                        font-mono
-                        text-[22px]
-                        font-bold
-                        text-black
-                        md:text-[28px]
-                      "
-                    >
-                      {selectedConversation.name}
-                    </h2>
+                    <div className="min-w-0 flex-1">
+                      <h2
+                        className="
+                          font-mono
+                          text-[22px]
+                          font-bold
+                          text-black
+                          md:text-[28px]
+                        "
+                      >
+                        {selectedConversation.name}
+                      </h2>
+
+                      <p className="font-mono text-[13px] font-semibold text-black/60">
+                        {chatReady ? "Connected" : "Connecting..."}
+                      </p>
+                    </div>
                   </header>
+
+                  {connectionError && (
+                    <div className="mb-3 rounded-[14px] border border-red-200 bg-red-50 px-4 py-3 font-mono text-[14px] font-semibold text-red-700">
+                      {connectionError}
+                    </div>
+                  )}
 
                   <div
                     className="
@@ -1019,18 +1020,36 @@ export default function Messages() {
                         pr-1
                       "
                     >
-                      {selectedConversation.messages.length > 0 ? (
-                        <>
-                          {selectedConversation.messages.map((message) => (
-                            <MessageBubble
-                              key={message.id}
-                              message={message}
-                              currentUserId={currentUserId}
-                            />
-                          ))}
-
-                          {isPeerTyping && <TypingIndicator />}
-                        </>
+                      {loadingHistory ? (
+                        <div
+                          className="
+                            flex
+                            flex-1
+                            items-center
+                            justify-center
+                            py-16
+                          "
+                        >
+                          <p
+                            className="
+                              text-center
+                              font-mono
+                              text-[18px]
+                              font-semibold
+                              text-black/60
+                            "
+                          >
+                            Loading messages...
+                          </p>
+                        </div>
+                      ) : selectedConversation.messages.length > 0 ? (
+                        selectedConversation.messages.map((message) => (
+                          <MessageBubble
+                            key={message.id}
+                            message={message}
+                            currentUserId={currentUserId}
+                          />
+                        ))
                       ) : (
                         <div
                           className="
@@ -1071,7 +1090,10 @@ export default function Messages() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSend();
                         }}
-                        disabled={!hasSelectedConversation}
+                        disabled={!hasSelectedConversation || !chatReady}
+                        placeholder={
+                          chatReady ? "Type a message..." : "Connecting to chat..."
+                        }
                         className="
                           h-[52px]
                           flex-1
@@ -1093,7 +1115,7 @@ export default function Messages() {
                       <button
                         type="button"
                         onClick={handleSend}
-                        disabled={!hasSelectedConversation}
+                        disabled={!hasSelectedConversation || !chatReady}
                         className="
                           flex
                           h-[52px]

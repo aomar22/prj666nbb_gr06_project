@@ -1,4 +1,6 @@
 // frontend/src/api.js
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 // Token management helpers
@@ -387,6 +389,65 @@ export async function getTutorById(tutorId) {
   return authRequest(`/api/tutors/${encodeURIComponent(tutorId)}`, { method: "GET" });
 }
 
+export async function getDirectChatHistory(otherUserId) {
+  return authRequest(`/api/chat/history/direct/${encodeURIComponent(otherUserId)}`, {
+    method: "GET",
+  });
+}
+
+export async function markDirectChatAsRead(otherUserId) {
+  return authRequest(`/api/chat/read/direct/${encodeURIComponent(otherUserId)}`, {
+    method: "POST",
+  });
+}
+
+export function createChatClient({ onMessage, onConnect, onError }) {
+  const token = getToken();
+
+  const client = new Client({
+    webSocketFactory: () => new SockJS(`${API_BASE}/ws`),
+    reconnectDelay: 5000,
+    connectHeaders: token
+      ? { Authorization: `Bearer ${token}` }
+      : {},
+    debug: () => {},
+    onConnect: () => {
+      client.subscribe("/user/queue/messages", (frame) => {
+        try {
+          const body = JSON.parse(frame.body);
+          onMessage?.(body);
+        } catch (err) {
+          console.error("Failed to parse chat message", err);
+        }
+      });
+
+      onConnect?.(client);
+    },
+    onStompError: (frame) => {
+      console.error("STOMP error", frame);
+      onError?.(frame);
+    },
+    onWebSocketError: (event) => {
+      console.error("WebSocket error", event);
+      onError?.(event);
+    },
+  });
+
+  client.activate();
+  return client;
+}
+
+export function sendChatMessage(client, payload) {
+  if (!client || !client.connected) {
+    throw new Error("Chat connection is not active");
+  }
+
+  client.publish({
+    destination: "/app/chat.send",
+    body: JSON.stringify(payload),
+  });
+}
+
 export default {
   register,
   login,
@@ -404,4 +465,8 @@ export default {
   replaceTutorSchedule,
   searchLearnersByCourse,
   searchTutors,
+  getDirectChatHistory,
+  markDirectChatAsRead,
+  createChatClient,
+  sendChatMessage,
 };
