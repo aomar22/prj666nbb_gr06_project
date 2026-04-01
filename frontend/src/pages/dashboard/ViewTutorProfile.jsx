@@ -379,11 +379,16 @@ export default function ViewTutorProfile() {
 							<p
 								style={{
 									color: "#555",
-									fontStyle: "italic",
+									fontSize: "15px",
+									lineHeight: "1.5",
+									fontWeight: 600,
+									fontStyle: "normal",
 									marginTop: "16px",
+									maxWidth: "520px",
 								}}
 							>
-								No reviews yet.
+								This tutor has not received any reviews yet. Learners can leave
+								feedback after a completed session.
 							</p>
 						) : (
 							reviews.map((review) => {

@@ -40,12 +40,7 @@ export default function TutorMyReviews() {
     if (tutorId != null) {
       try {
         const list = await fetchMergedTutorReviewsForTutor(tutorId);
-        const actualReviews = list.filter((r) => 
-          !String(r.id).includes("placeholder") && 
-          r.comment !== "No written review yet." &&
-          r.comment !== "—"
-        );
-        setReviews(actualReviews);
+        setReviews(Array.isArray(list) ? list : []);
       } catch (error) {
         console.error("Failed to fetch tutor reviews", error);
         setReviews([]);

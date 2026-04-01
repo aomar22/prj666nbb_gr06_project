@@ -336,6 +336,11 @@ export default function TutorDashboard() {
             <h2 style={styles.sectionTitle}>My Reviews</h2>
             {dashboardReviewsLoading ? (
               <p style={styles.reviewsLoadingHint}>Loading reviews…</p>
+            ) : dashboardReviews.length === 0 ? (
+              <p style={styles.reviewsEmptyHint}>
+                You have not received any reviews yet. Learners can leave feedback after a
+                completed session.
+              </p>
             ) : (
               <div style={styles.reviewsList}>
                 {dashboardReviews.map((review) => {
@@ -652,6 +657,12 @@ const styles = {
     margin: 0,
     fontSize: '14px',
     color: '#666',
+  },
+  reviewsEmptyHint: {
+    margin: 0,
+    fontSize: '14px',
+    lineHeight: '1.5',
+    color: '#555',
   },
   sectionTitle: {
     fontSize: '20px',

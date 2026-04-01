@@ -24,6 +24,8 @@ export default function FindTutorsResults() {
 
   /** tutorId -> reviews list (newest first), from GET /api/reviews/tutor/{tutorId} */
   const [reviewsByTutorId, setReviewsByTutorId] = useState({});
+  /** True once reviews have been fetched for the current result page (so we can show "no reviews" vs about text). */
+  const [tutorReviewsFetchedForKey, setTutorReviewsFetchedForKey] = useState("");
   const tutorIdsForReviewsKey = useMemo(
     () => (results?.content ?? []).map((t) => t.id ?? t.userId).filter(Boolean).join(","),
     [results],
@@ -32,10 +34,12 @@ export default function FindTutorsResults() {
   useEffect(() => {
     if (!tutorIdsForReviewsKey) {
       setReviewsByTutorId({});
+      setTutorReviewsFetchedForKey("");
       return;
     }
     const ids = tutorIdsForReviewsKey.split(",");
     let cancelled = false;
+    setTutorReviewsFetchedForKey("");
     Promise.all(
       ids.map((id) =>
         getTutorReviews(id)
@@ -45,6 +49,7 @@ export default function FindTutorsResults() {
     ).then((entries) => {
       if (cancelled) return;
       setReviewsByTutorId(Object.fromEntries(entries));
+      setTutorReviewsFetchedForKey(tutorIdsForReviewsKey);
     });
     return () => {
       cancelled = true;
@@ -158,9 +163,16 @@ export default function FindTutorsResults() {
     };
   };
 
+  const NO_REVIEWS_FOR_TUTOR_HINT =
+    "This tutor has not received any reviews yet. Learners can leave feedback after a completed session.";
+
   const renderTutorQuoteBlock = (tutor) => {
     const tid = tutor.id ?? tutor.userId;
-    const snippet = cardReviewSnippet(tid ? reviewsByTutorId[tid] : undefined);
+    const list = tid ? reviewsByTutorId[tid] : undefined;
+    const reviewsLoadedForPage =
+      tutorIdsForReviewsKey !== "" && tutorReviewsFetchedForKey === tutorIdsForReviewsKey;
+    const snippet = cardReviewSnippet(list);
+
     if (snippet) {
       return (
         <>
@@ -169,6 +181,9 @@ export default function FindTutorsResults() {
           <p style={styles.reviewAttribution}>{snippet.attribution}</p>
         </>
       );
+    }
+    if (reviewsLoadedForPage && tid && Array.isArray(list) && list.length === 0) {
+      return <p style={styles.noReviewsHint}>{NO_REVIEWS_FOR_TUTOR_HINT}</p>;
     }
     return <p style={styles.tutorQuote}>"{tutorQuote(tutor)}"</p>;
   };
@@ -623,6 +638,14 @@ const styles = {
     fontWeight: 600,
     fontStyle: "normal",
     color: "#666",
+  },
+  noReviewsHint: {
+    margin: 0,
+    fontSize: "14px",
+    lineHeight: "20px",
+    fontWeight: 600,
+    fontStyle: "normal",
+    color: "#555",
   },
   tutorActions: {
     display: "flex",
