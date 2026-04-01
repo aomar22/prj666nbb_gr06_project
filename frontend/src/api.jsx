@@ -401,6 +401,18 @@ export async function markDirectChatAsRead(otherUserId) {
   });
 }
 
+export async function getDirectConversations() {
+  return authRequest("/api/chat/conversations/direct", { method: "GET" });
+}
+
+export async function getGroupChatHistory(slotId) {
+  return authRequest(`/api/chat/history/slot/${encodeURIComponent(slotId)}`, { method: "GET" });
+}
+
+export async function markGroupChatAsRead(slotId) {
+  return authRequest(`/api/chat/read/slot/${encodeURIComponent(slotId)}`, { method: "POST" });
+}
+
 export function createChatClient({ onMessage, onConnect, onError }) {
   const token = getToken();
 
@@ -467,6 +479,9 @@ export default {
   searchTutors,
   getDirectChatHistory,
   markDirectChatAsRead,
+  getDirectConversations,
+  getGroupChatHistory,
+  markGroupChatAsRead,
   createChatClient,
   sendChatMessage,
 };

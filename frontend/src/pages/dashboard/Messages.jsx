@@ -5,8 +5,11 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
   createChatClient,
   getDirectChatHistory,
+  getDirectConversations,
+  getGroupChatHistory,
   getUser,
   markDirectChatAsRead,
+  markGroupChatAsRead,
   sendChatMessage,
 } from "../../api";
 
@@ -177,7 +180,7 @@ function buildConversationFromSelectedPeer(
     avatar:
       selectedPeer.avatar ||
       "https://ui-avatars.com/api/?name=User&background=random",
-    slotId: null,
+    slotId: selectedPeer?.slotId || null,
     messages: [],
   };
 }
@@ -511,11 +514,52 @@ export default function Messages() {
   );
 
   useEffect(() => {
+    async function loadConversations() {
+      try {
+        const data = await getDirectConversations();
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        setConversations((prev) => {
+          const existingIds = new Set(prev.map((c) => c.id));
+          const toAdd = [];
+
+          for (const item of data) {
+            const conversationId = item.conversationId;
+            if (!conversationId || existingIds.has(conversationId)) continue;
+
+            toAdd.push({
+              id: conversationId,
+              conversationType: "DIRECT",
+              otherUserId: item.otherUserId,
+              participants: {},
+              tutorName: item.otherUserName || "Unknown",
+              roleLabel:
+                currentUserRole === "TUTOR" ? "Learner" : "Certified Peer Tutor",
+              rating: "—",
+              reviews: "0 reviews",
+              avatar: "",
+              slotId: null,
+              messages: item.lastMessage ? [item.lastMessage] : [],
+            });
+            existingIds.add(conversationId);
+          }
+
+          return toAdd.length ? [...toAdd, ...prev] : prev;
+        });
+      } catch (err) {
+        console.error("Failed to load conversations", err);
+      }
+    }
+
+    loadConversations();
+  }, [currentUserId, currentUserRole]);
+
+  useEffect(() => {
     const selectedPeer = state?.selectedTutor || state?.selectedLearner;
     if (!selectedPeer?.id) return;
 
     const newConversation = buildConversationFromSelectedPeer(
-      { ...selectedPeer, slotId: null },
+      { ...selectedPeer },
       currentUserId,
       currentUserName,
       currentUserAvatar,
@@ -691,7 +735,13 @@ export default function Messages() {
       try {
         setLoadingHistory(true);
 
-        const history = await getDirectChatHistory(otherUserId);
+        const isGroup = Boolean(activeConversation?.slotId);
+        const history = isGroup
+          ? await getGroupChatHistory(activeConversation.slotId)
+          : await getDirectChatHistory(otherUserId);
+
+        const messages = Array.isArray(history) ? history : [];
+        const peerMessage = messages.find((m) => m.senderId !== currentUserId);
 
         setConversations((prev) =>
           prev.map((conversation) =>
@@ -699,13 +749,19 @@ export default function Messages() {
               ? {
                   ...conversation,
                   otherUserId,
-                  messages: Array.isArray(history) ? history : [],
+                  messages,
+                  tutorName:
+                    peerMessage?.senderName || conversation.tutorName,
                 }
               : conversation
           )
         );
 
-        await markDirectChatAsRead(otherUserId);
+        if (isGroup) {
+          await markGroupChatAsRead(activeConversation.slotId);
+        } else {
+          await markDirectChatAsRead(otherUserId);
+        }
       } catch (error) {
         console.error("Failed to load chat history", error);
       } finally {
@@ -724,51 +780,16 @@ export default function Messages() {
       (conversation) => conversation.id === selectedConversationId
     );
 
+    const isGroup = Boolean(activeConversation?.slotId);
     const recipientId =
       activeConversation?.otherUserId ||
       getRecipientId(activeConversation, currentUserRole);
 
-    if (!recipientId) return;
+    if (!isGroup && !recipientId) return;
 
-    const tempId = `temp-${Date.now()}`;
-
-    const outgoingPayload = {
-      recipientId,
-      content: trimmed,
-    };
-
-    const newMessage = {
-      id: tempId,
-      conversationId: selectedConversationId,
-      senderId: currentUserId,
-      senderName: currentUserName,
-      content: trimmed,
-      sentAt: new Date().toISOString(),
-      read: false,
-    };
-
-    setConversations((prev) => {
-      const existingIndex = prev.findIndex(
-        (conversation) => conversation.id === selectedConversationId
-      );
-
-      if (existingIndex < 0) return prev;
-
-      const updated = [...prev];
-      const existingConversation = updated[existingIndex];
-      const existingMessages = Array.isArray(existingConversation.messages)
-        ? existingConversation.messages
-        : [];
-
-      const updatedConversation = {
-        ...existingConversation,
-        otherUserId: recipientId,
-        messages: [...existingMessages, newMessage],
-      };
-
-      updated.splice(existingIndex, 1);
-      return [updatedConversation, ...updated];
-    });
+    const outgoingPayload = isGroup
+      ? { slotId: activeConversation.slotId, content: trimmed }
+      : { recipientId, content: trimmed };
 
     setDraftMessage("");
 
