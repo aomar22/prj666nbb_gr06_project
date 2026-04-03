@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../layout/DashboardLayout";
 import { getUser } from "../../api";
+import Avatar from "../ui/Avatar";
 
 export default function SettingsProfileLayout({
   activeTab = "edit",
@@ -16,11 +17,12 @@ export default function SettingsProfileLayout({
       ? `${user.firstName} ${user.lastName}`
       : user?.email || "User";
 
-  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    userName
-  )}&background=ddd&color=666&size=200`;
-
-  const avatarSrc = user?.avatar || user?.profileImageUrl || user?.profilePicture || generatedAvatar;
+  const avatarPerson = {
+    firstName: user?.firstName,
+    lastName: user?.lastName,
+    name: userName,
+    profileImageUrl: user?.avatar || user?.profileImageUrl || user?.profilePicture || null,
+  };
 
   const editPath =
     roleType === "tutor"
@@ -91,13 +93,9 @@ export default function SettingsProfileLayout({
 
               {/* Profile summary */}
               <div className="mt-[28px] flex items-center">
-                <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]">
-                  <img
-                    src={avatarSrc}
-                    alt={userName}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+                {/* <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]"> */}
+                  <Avatar person={avatarPerson} size={102} fallbackName="User" />
+                {/* </div> */}
 
                 <div className="ml-[42px] w-[297px] text-black">
                   <p className="text-[22px] font-bold leading-[1.15]">

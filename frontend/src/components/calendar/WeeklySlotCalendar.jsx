@@ -32,7 +32,7 @@ export default function WeeklySlotCalendar({
     d.setDate(d.getDate() - day);
     d.setHours(0, 0, 0, 0);
     return d;
-  }, []);
+  }, [visibleDate]);
 
   const WeekColumns = useMemo(() => {
     const start = new Date(baseWeekStart);
@@ -64,10 +64,21 @@ export default function WeeklySlotCalendar({
   }, [baseWeekStart, weekOffset]);
 
   const monthLabel = useMemo(() => {
-    const dt = WeekColumns[0]?.date;
+    const dt = 
+      //WeekColumns[0]?.date;
+      WeekColumns.find((c) => c.key === selectedDayKey)?.date ||
+      visibleDate ||
+      WeekColumns[0]?.date;
+
     if (!dt) return "";
-    return dt.toLocaleString("en-US", { month: "long", year: "numeric" });
-  }, [WeekColumns]);
+    const dateObj = dt instanceof Date ? dt : new Date(dt);
+    return dateObj.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",  
+    });
+    //})
+    //return dt.toLocaleString("en-US", { month: "long", year: "numeric" });
+  }, [WeekColumns, selectedDayKey, visibleDate]);
 
   const weekRangeLabel = useMemo(() => {
     if (!WeekColumns.length) return "";
@@ -85,8 +96,14 @@ export default function WeeklySlotCalendar({
 
   const handleSelectDay = (dayKey) => {
     onSelectDayKey?.(dayKey);
-  };
 
+    const selectedColumn = WeekColumns.find((c) => c.key === dayKey);
+    if (selectedColumn) {
+      onChangeVisibleDate?.(selectedColumn.date);
+    }
+ };
+  
+ 
   return (
     <div>
       {/* Week Navigation (same as AvailabilityV2) */}
@@ -112,15 +129,29 @@ export default function WeeklySlotCalendar({
       {/* 7-day grid (same as AvailabilityV2) */}
       <div className="mt-6 rounded-[14px] bg-white border border-black/10 overflow-hidden">
         <div className="grid grid-cols-7">
-          {WeekColumns.map((c) => (
+          {WeekColumns.map((c) => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+
+              const columnDate = new Date(c.date);
+              columnDate.setHours(0, 0, 0, 0);
+
+              const isPastDay = columnDate < today;
+
+             return (
             <div key={c.key} className="border-r border-black/10 last:border-r-0">
               <div className="px-4 pt-4 pb-3 text-center">
                 <button
                   type="button"
-                  onClick={() => handleSelectDay(c.key)}
+                  onClick={() => {
+                    if (!isPastDay) handleSelectDay(c.key);
+                  }}
+                  disabled={isPastDay}
                   className={[
                     "mx-auto text-[16px] font-bold transition-colors",
-                    selectedDayKey === c.key
+                    isPastDay
+                    ? "text-black/20 cursor-not-allowed"
+                    : selectedDayKey === c.key
                       ? "text-[#C00000]"
                       : "text-black/40 hover:text-black/70",
                   ].join(" ")}
@@ -139,7 +170,6 @@ export default function WeeklySlotCalendar({
                   {c.dayNum}
                 </div>
               </div>
-
               <div
                 className="px-3 pb-4 space-y-3"
                 style={{ minHeight: `${minBodyHeight}px` }}
@@ -161,13 +191,16 @@ export default function WeeklySlotCalendar({
                         key={s.id}
                         type="button"
                         onClick={() => {
+                          if (isPastDay) return;
                           handleSelectDay(c.key);
                           onSelectSlotId?.(active ? null : s.id);
                           onSlotClick?.(s, c);
-                        }}
+                        }} disabled={isPastDay}
                         className={[
                           "w-full rounded-full px-3 py-2 text-center text-[12px] font-extrabold shadow-sm",
-                          active
+                          isPastDay
+                            ? "bg-black/10 text-black/20 cursor-not-allowed"
+                             : active
                             ? "bg-black/20 text-black"
                             : "bg-black/10 text-black/70 hover:bg-black/15",
                         ].join(" ")}
@@ -178,7 +211,8 @@ export default function WeeklySlotCalendar({
                   })}
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       </div>
     </div>

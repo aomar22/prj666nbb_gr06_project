@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../../components/layout/Sidebar";
 import BellIcon from "../../../components/icons/BellIcon";
 import DropdownArrow from "../../../components/ui/DropdownArrow";
+import Avatar from "../../../components/ui/Avatar";
 import { CAMPUSES, PROGRAMS, ALL_COURSES } from "../../../constants/options";
 import { getUser, setUser, getUserSettings, updateUserSettings } from "../../../api";
 import ConfirmationModal from "../../../components/ui/ConfirmationModal";
@@ -40,10 +41,6 @@ export default function TutorEditProfile() {
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
       : user?.email || "Tutor";
-
-  const avatarSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    userName
-  )}&background=ddd&color=666&size=100`;
 
   useEffect(() => {
     getUserSettings()
@@ -183,11 +180,7 @@ export default function TutorEditProfile() {
               </button>
 
               <div className="h-10 w-10 overflow-hidden rounded-full bg-black/20">
-                <img
-                  alt="profile"
-                  src={avatarSrc}
-                  className="h-full w-full object-cover"
-                />
+                <Avatar person={user || { name: userName }} size={40} fallbackName="Tutor" />
               </div>
             </div>
           </div>
@@ -221,9 +214,10 @@ export default function TutorEditProfile() {
               </h2>
 
               <div className="mt-[28px] flex items-center">
-                <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]">
+                {/* <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]">
                   <img src={avatarSrc} alt={userName} className="h-full w-full object-cover" />
-                </div>
+                </div> */}
+                <Avatar person={user || { name: userName }} size={102} fallbackName="User" />
                 <div className="ml-[38px] text-black">
                   <p className="text-[22px] font-bold leading-[1.15]">{userName}</p>
                   <p className="mt-[8px] text-[18px] font-semibold leading-[1.15]">{user?.email}</p>

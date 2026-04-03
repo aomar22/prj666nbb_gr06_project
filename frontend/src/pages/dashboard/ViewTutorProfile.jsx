@@ -16,37 +16,7 @@ import {
 } from "../../constants/options";
 import LeaveReviewModal from "../../components/ui/LeaveReviewModal";
 import ConfirmationModal from "../../components/ui/ConfirmationModal";
-
-const TUTOR_PLACEHOLDER_PHOTOS = [
-	"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-	"https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face",
-];
-function getInitials(name) {
-	if (!name) return "U";
-
-  const parts = String(name).trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-}
-function getAvatarUrl(profileImageUrl, id, userId, firstName, lastName) {
-	if (profileImageUrl) return profileImageUrl;
-	const seed =
-		(id ?? userId ?? [firstName, lastName].filter(Boolean).join(" ")) || "user";
-	const str = String(seed);
-	let index = 0;
-	for (let i = 0; i < str.length; i++)
-		index = (index + str.charCodeAt(i)) % TUTOR_PLACEHOLDER_PHOTOS.length;
-	return TUTOR_PLACEHOLDER_PHOTOS[Math.abs(index)];
-}
+import Avatar from "../../components/ui/Avatar";
 
 export default function ViewTutorProfile() {
 	const navigate = useNavigate();
@@ -138,19 +108,7 @@ export default function ViewTutorProfile() {
 					name:
 						[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") ||
 						"Tutor",
-					avatar:
-						tutor.profileImageUrl ||
-						tutor.profilePicture ||
-						tutor.avatar ||
-						getAvatarUrl(
-						//	tutor.profileImageUrl || tutor.profilePicture,
-							
-							tutor.id,
-							tutor.userId,
-							tutor.firstName,
-							tutor.lastName,
-							
-						),
+					avatar: tutor.avatar || null,
 					roleLabel: "Certified Peer Tutor",
 					rating: tutor.rating,
 					reviews: tutor.reviewCount,
@@ -179,8 +137,7 @@ export default function ViewTutorProfile() {
 				tutorId: tutor.id,
 				tutorFirstName: tutor.firstName,
 				tutorLastName: tutor.lastName,
-				tutorProfileImageUrl:
-					tutor.profileImageUrl || tutor.profilePicture || tutor.avatar || null,
+				tutorProfileImageUrl: tutor.avatar || null,
 				rating: newReview?.rating ?? selectedRating,
 				comment: newReview?.comment ?? reviewComment,
 				createdAt: newReview?.createdAt ?? new Date().toISOString(),
@@ -195,7 +152,7 @@ export default function ViewTutorProfile() {
 					.join(" ")
 					.trim(),
 				learnerProfileImageUrl:
-					user?.profileImageUrl || user?.profilePicture || user?.avatar || null,
+					user?.avatar || null,
 				rating: newReview?.rating ?? selectedRating,
 				comment: newReview?.comment ?? reviewComment,
 				createdAt: newReview?.createdAt ?? new Date().toISOString(),
@@ -256,14 +213,6 @@ export default function ViewTutorProfile() {
 		tutor.bio ||
 		`Dedicated to making learning accessible and effective. ${tutorName} brings a structured yet supportive approach to tutoring, helping students build strong foundations and confidence in their coursework.`;
 
-	const tutorAvatarUrl = getAvatarUrl(
-		tutor.profileImageUrl || tutor.profilePicture,
-		tutor.id,
-		tutor.userId,
-		tutor.firstName,
-		tutor.lastName,
-	);
-
 	return (
 		<div style={styles.container}>
 			<Sidebar />
@@ -272,24 +221,16 @@ export default function ViewTutorProfile() {
 					<Topbar
 						placeholder='Search Tutor or Courses'
 						onSearchBarClick={() => navigate("/dashboard/learner/find-tutors")}
-						avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent([user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User")}&background=ddd&color=666&size=100`}
 					/>
 				</div>
 
 				<div style={styles.profileCard}>
 					<div style={styles.profileHeader}>
 						<div style={styles.profileAvatarWrap}>
-							{/* <img
-								src={tutorAvatarUrl}
-								alt=''
-								style={styles.profileAvatarImg}
-								onError={(e) => {
-									e.target.style.display = "none";
-								}}
-							/> */}
-							<span style={styles.profileAvatarLetter}>
-								{getInitials(tutorName)}
-							</span>
+							<Avatar
+								person={tutor}
+								size={84}
+							/>
 						</div>
 						<div style={styles.profileHeaderRight}>
 							<div style={styles.profileNameRow}>
@@ -392,32 +333,20 @@ export default function ViewTutorProfile() {
 							</p>
 						) : (
 							reviews.map((review) => {
-								const fullName = (review.learnerName || "").trim();
-								const [firstName = "", lastName = ""] = fullName.split(" ");
-
 								return (
 									<div
 										key={review.id}
 										style={styles.reviewCard}
 									>
 										<div style={styles.reviewerAvatar}>
-											{/* <img
-												src={getAvatarUrl(
-													null,
-													null,
-													null,
-													firstName,
-													lastName,
-												)}
-												alt=''
-												style={styles.reviewerAvatarImg}
-												onError={(e) => {
-													e.target.style.display = "none";
+											<Avatar
+												person={{
+													name: review.learnerName || "Learner",
+													profileImageUrl: null,
 												}}
-											/> */}
-											<span style={styles.reviewerAvatarLetter}>
-												{review.learnerName?.[0] || "L"}
-											</span>
+												size={50}
+												fallbackName='Learner'
+											/>
 										</div>
 										<div style={styles.reviewBody}>
 											<div style={styles.reviewHeader}>

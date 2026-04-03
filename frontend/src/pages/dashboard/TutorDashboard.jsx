@@ -4,10 +4,10 @@ import { clearAuth, getUser, searchLearnersByCourse } from "../../api";
 import { fetchTutorUpcomingSessionsForDashboard } from "../../utils/dashboardUpcomingSessions";
 import {
   fetchRecentTutorReviewsForDashboard,
-  tutorReviewerAvatarSrc,
   tutorReviewerDisplayName,
 } from "../../utils/tutorReceivedReviewUtils";
 import Topbar from "../../components/layout/Topbar";
+import Avatar from "../../components/ui/Avatar";
 
 const DASHBOARD_REVIEW_PREVIEW_LEN = 90;
 
@@ -218,7 +218,6 @@ export default function TutorDashboard() {
             onSearchSubmit={() => handleLearnerSearch()}
             onAvatarClick={() => navigate("/settings/tutor/profile/edit")}
             disabled={learnerSearchLoading}
-            avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ddd&color=666&size=100`}
           />
         </div>
 
@@ -302,14 +301,19 @@ export default function TutorDashboard() {
                       });
                   const mode = session.mode || session.teachingMode || "Online";
                   const isOnline = typeof mode === "string" && mode.toUpperCase().includes("ONLINE");
-                  const avatarUrl = session.learnerAvatar
-                    || `https://ui-avatars.com/api/?name=${encodeURIComponent(learnerName)}&background=ddd&color=666&size=100`;
 
                   return (
                     <div key={session.id || session.slotId} style={styles.sessionCard}>
                       <div style={styles.studentInfo}>
                         <div style={styles.studentAvatar}>
-                          <img src={avatarUrl} alt={learnerName} style={styles.avatarImage} />
+                          <Avatar
+                            person={{
+                              name: learnerName,
+                              profileImageUrl: session.learnerAvatar || null,
+                            }}
+                            size={44}
+                            fallbackName="Student"
+                          />
                         </div>
                         <div>
                           <h3 style={styles.studentName}>
@@ -350,10 +354,14 @@ export default function TutorDashboard() {
                     <div key={review.id} style={styles.reviewCard}>
                       <div style={styles.reviewerInfo}>
                         <div style={styles.reviewerAvatar}>
-                          <img
-                            src={tutorReviewerAvatarSrc(review)}
-                            alt=""
-                            style={styles.avatarImage}
+                          <Avatar
+                            person={{
+                              firstName: review.learnerFirstName,
+                              lastName: review.learnerLastName,
+                              profileImageUrl: review.learnerProfileImageUrl || null,
+                            }}
+                            size={44}
+                            fallbackName="Student"
                           />
                         </div>
                         <div style={styles.reviewContent}>

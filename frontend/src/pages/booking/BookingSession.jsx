@@ -5,6 +5,7 @@ import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
 import { bookSlot, getUser, getTutorAllSlots, searchTutors } from "../../api";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
+import Avatar from "../../components/ui/Avatar";
 
 function makeEmptyWeek() {
   return {
@@ -66,7 +67,6 @@ function isSlotAvailable(slot) {
 
   return true;
 }
-
 export default function BookingSession() {
   const location = useLocation();
   const searchedDate = location.state?.searchedDate;
@@ -96,7 +96,7 @@ export default function BookingSession() {
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const [confirmError, setConfirmError] = useState("");
-  const profilePic = "/profile_pic2.png";
+  //const profilePic = "/profile_pic2.png";
 
   const canConfirm = Boolean(selectedSlot?.raw?.id);
 
@@ -255,7 +255,18 @@ export default function BookingSession() {
     }
     return "Tutor";
   }, [tutorProfile, stateTutor]);
+  const tutorAvatarPerson = useMemo(() => {
+    const source = tutorProfile || stateTutor || {};
 
+    return {
+      ...source,
+      name:
+        [source.firstName, source.lastName].filter(Boolean).join(" ") ||
+        source.name ||
+        tutorName,
+
+    };
+  }, [tutorProfile, stateTutor, tutorName]);
   const ratingLabel = useMemo(() => {
     const r = tutorProfile?.rating ?? stateTutor?.rating;
     if (typeof r === "number") return r.toFixed(1);
@@ -264,7 +275,7 @@ export default function BookingSession() {
 
   const reviewCount = tutorProfile?.reviewCount ?? stateTutor?.reviewCount ?? 0;
 
-  const tutorAvatarUrl = tutorProfile?.profilePictureUrl ?? stateTutor?.avatar ?? stateTutor?.profilePictureUrl ?? profilePic;
+  //const tutorAvatarUrl = tutorProfile?.profilePictureUrl ?? stateTutor?.avatar ?? stateTutor?.profilePictureUrl ?? profilePic;
   
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -274,20 +285,37 @@ export default function BookingSession() {
     navigate("/dashboard/learner");
   };
 
+  const handleOpenChat = () => {
+    const selectedTutor = tutorProfile || stateTutor;
+
+    if (!selectedTutor?.id && !selectedTutor?.userId) return;
+
+    navigate("/dashboard/learner/messages", {
+      state: {
+        selectedTutor: {
+          ...selectedTutor,
+          id: selectedTutor.id ?? selectedTutor.userId,
+          name:
+            [selectedTutor.firstName, selectedTutor.lastName]
+              .filter(Boolean)
+              .join(" ") || selectedTutor.name || "Tutor",
+          roleLabel: "Certified Peer Tutor",
+          rating: selectedTutor.rating,
+          reviews: selectedTutor.reviewCount,
+        },
+        slotId: null,
+      },
+    });
+  };
+
   return (
     <DashboardLayout>
       <PageCard className="mt-6 p-8">
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="h-[83px] w-[85px]
-                             top-[12px]overflow-hidden
-                             rounded-full shadow bg-black/10">
-              <img
-                src={tutorAvatarUrl}
-                alt={tutorName}
-                className="h-full w-full object-cover"
-              />
-            </div>
+             
+          <Avatar person={tutorAvatarPerson} size={84}/>
+             
 
             <div className="font-mono">
               <div className="text-[30px] font-extrabold leading-none">
@@ -303,6 +331,7 @@ export default function BookingSession() {
           <div className="flex items-center gap-[10px]">
             <button
               type="button"
+              onClick={handleOpenChat}
               className="
                 w-[156px] h-[61px] rounded-[17px]
                 bg-[#FF4245] text-white
@@ -349,7 +378,7 @@ export default function BookingSession() {
 
         <div className="mt-6">
           <WeeklySlotCalendar
-            // slotsByDayKey={slotsByDayKey}
+
             slotsByDayKey={slotsByDayKey}
             visibleDate={visibleDate} 
             selectedDayKey={selectedDayKey}

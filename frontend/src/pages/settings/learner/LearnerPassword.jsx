@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../../components/layout/Sidebar";
 import BellIcon from "../../../components/icons/BellIcon";
 import ConfirmationModal from "../../../components/ui/ConfirmationModal";
+import Avatar from "../../../components/ui/Avatar";
 import { changePassword, getUser } from "../../../api";
 
 export default function LearnerPassword() {
@@ -13,10 +14,6 @@ export default function LearnerPassword() {
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
       : user?.email || "User";
-
-  const avatarSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    userName
-  )}&background=ddd&color=666&size=100`;
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -93,11 +90,7 @@ export default function LearnerPassword() {
               </button>
 
               <div className="h-10 w-10 overflow-hidden rounded-full bg-black/20">
-                <img
-                  alt="profile"
-                  src={avatarSrc}
-                  className="h-full w-full object-cover"
-                />
+                <Avatar person={user || { name: userName }} size={40} fallbackName="User" />
               </div>
             </div>
           </div>

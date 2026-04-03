@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getUser } from "../../api";
 import {
   fetchMergedLearnerReviewsForLearner,
-  learnerReviewTutorAvatarSrc,
   learnerReviewTutorDisplayName,
 } from "../../utils/learnerWrittenReviewUtils";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
+import Avatar from "../../components/ui/Avatar";
 
 const PAGE_SIZE = 6;
 const GOLD = "#E0B100";
@@ -105,9 +105,6 @@ export default function LearnerMyReviews() {
               value={query}
               onSearchChange={(e) => setQuery(e.target.value)}
               onSearchSubmit={() => {}}
-              avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                userName
-              )}&background=ddd&color=666&size=100`}
             />
           </div>
           <button
@@ -143,13 +140,14 @@ export default function LearnerMyReviews() {
                 <article key={r.id} style={styles.card}>
                   <div style={styles.cardHeader}>
                     <div style={styles.avatarWrap}>
-                      <img
-                        src={learnerReviewTutorAvatarSrc(r)}
-                        alt=""
-                        style={styles.avatarImg}
-                        onError={(e) => {
-                          e.target.style.display = "none";
+                      <Avatar
+                        person={{
+                          firstName: r.tutorFirstName,
+                          lastName: r.tutorLastName,
+                         
                         }}
+                        size={44}
+                        fallbackName="Tutor"
                       />
                     </div>
                     <div style={styles.cardHeaderText}>
@@ -308,11 +306,11 @@ const styles = {
     background: "#eee",
     flexShrink: 0,
   },
-  avatarImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
+  // avatarImg: {
+  //   width: "100%",
+  //   height: "100%",
+  //   objectFit: "cover",
+  // },
   cardHeaderText: {
     flex: 1,
     minWidth: 0,

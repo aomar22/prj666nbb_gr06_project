@@ -7,15 +7,7 @@ import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import PaginationArrowButton from "../../components/ui/PaginationArrowButton";
 import LearnerUpcomingSessionCard from "../../components/sessions/LearnerUpcomingSessionCard";
-
-const TUTOR_PLACEHOLDER_PHOTOS = [
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-];
+import Avatar from "../../components/ui/Avatar";
 function formatTime(dateInput) {
   const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
   if (Number.isNaN(d.getTime())) return "—";
@@ -57,6 +49,9 @@ function mapSessionToCard(session) {
     return {
       id: session.slotId ?? session.id,
       tutorName,
+      tutor: session.tutor || {
+        name: session.tutorName,
+      },
       rating: "—",
       reviews: "0 reviews",
       date: formatDate(session.start),
@@ -65,15 +60,13 @@ function mapSessionToCard(session) {
       sessionType: session.sessionType ?? "INDIVIDUAL",
       currentCount: session.currentCount ?? 1,
       maxCapacity: session.maxCapacity ?? 1,
-      avatarSrc: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        session.tutorName || "Tutor"
-      )}&background=f5e6dc&color=7A0000&size=128`,
     };
   }
 
   return {
     id: session.slotId ?? session.id,
     tutorName,
+    tutor: session.tutor || { name: session.tutorName},
     rating: "—",
     reviews: "0 reviews",
     date: session.date ? formatDate(`${session.date}T00:00:00`) : "—",
@@ -85,21 +78,7 @@ function mapSessionToCard(session) {
     sessionType: session.sessionType ?? "INDIVIDUAL",
     currentCount: session.currentCount ?? 1,
     maxCapacity: session.maxCapacity ?? 1,
-    avatarSrc: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      session.tutorName || "Tutor"
-    )}&background=f5e6dc&color=7A0000&size=128`,
   };
-}
-function getTutorPlaceholderPhoto(tutor) {
-  const key =
-    String(tutor?.id ?? tutor?.userId ?? "") ||
-    [tutor?.firstName, tutor?.lastName].filter(Boolean).join(" ") ||
-    "tutor";
-  let idx = 0;
-  for (let i = 0; i < key.length; i += 1) {
-    idx = (idx + key.charCodeAt(i)) % TUTOR_PLACEHOLDER_PHOTOS.length;
-  }
-  return TUTOR_PLACEHOLDER_PHOTOS[Math.abs(idx)];
 }
 
 export default function Dashboard() {
@@ -255,7 +234,6 @@ useEffect(() => {
             placeholder="Search Tutor or Courses"
             onSearchBarClick={() => navigate("/dashboard/learner/find-tutors")}
             onAvatarClick={() => navigate("/settings/learner/profile/edit")}
-            avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ddd&color=666&size=100`}
           />
         </div>
 
@@ -294,9 +272,20 @@ useEffect(() => {
               <div style={styles.tutorSearchGrid}>
                 {tutorSearchResults.content.map((tutor) => (
                   <div key={tutor.id || tutor.userId} style={styles.recommendedCard}>
-                    <div style={styles.recommendedAvatar}>
+                    {/* <div style={styles.recommendedAvatar}>
                       {tutor.firstName?.[0] || "👤"}
-                    </div>
+                    </div> */}
+                    <Avatar
+                      person={{
+                        firstName: tutor.firstName,
+                        lastName: tutor.lastName,
+                        profilePictureUrl: tutor.profilePictureUrl,
+                        avatar: tutor.profilePictureUrl,
+                      }}
+                      size={56}
+                      fallbackName={[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
+                    />
+                 
                     <h3 style={styles.recommendedName}>
                       {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
                     </h3>
@@ -357,7 +346,9 @@ useEffect(() => {
                     {visibleUpcomingSessions.map((session) => (
                       <LearnerUpcomingSessionCard
                         key={session.id || session.slotId}
-                        session={mapLearnerSessionToCard(session, { appendCourseLabel: true })}
+                        session={mapLearnerSessionToCard(session,
+                           { appendCourseLabel: true }
+                          )}
                         // session={{
                         //   id: session.id || session.slotId,
                         //   tutorName:
@@ -387,10 +378,8 @@ useEffect(() => {
                         //   sessionType: session.sessionType ?? "INDIVIDUAL",
                         //   currentCount: session.currentCount ?? 1,
                         //   maxCapacity: session.maxCapacity ?? 1,
-                        //   avatarSrc: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        //     session.tutorName || "Tutor"
-                        //   )}&background=f5e6dc&color=7A0000&size=128`,
                         // }}
+                        
                         showCancel={false}
                       />
                     ))}
@@ -424,9 +413,19 @@ useEffect(() => {
                 <div style={styles.recommendedGrid}>
                   {recommendedSlice.map((tutor) => (
                     <div key={tutor.id || tutor.userId} style={styles.recommendedCard}>
-                      <div style={styles.recommendedAvatar}>
+                      {/* <div style={styles.recommendedAvatar}>
                         {tutor.firstName?.[0] || "👤"}
-                      </div>
+                      </div> */}
+                      <Avatar
+                        person={{
+                          firstName: tutor.firstName,
+                          lastName: tutor.lastName,
+                          profilePictureUrl: tutor.profilePictureUrl,
+                          avatar: tutor.profilePictureUrl,
+                        }}
+                        size={56}
+                        fallbackName={[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
+                      />
                       <h3 style={styles.recommendedName}>
                         {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}
                       </h3>
@@ -753,6 +752,7 @@ const styles = {
     borderRadius: '10px',
     padding: '15px',
     textAlign: 'center',
+    alignItems: 'center',
     minWidth: '180px',
     backgroundColor: '#C8D1FF',
     display: 'flex',
@@ -767,7 +767,7 @@ const styles = {
     margin: '0 auto 10px',
   },
   recommendedName: {
-    margin: '0 0 5px 0',
+    margin: '10px 0 5px 0',
     fontSize: '16px',
     fontWeight: 'bold',
   },
@@ -793,17 +793,6 @@ const styles = {
     fontWeight: '500',
     marginTop: 'auto',
   },
-  // arrowButton: {
-  //   position: 'absolute',
-  //   right: '-30px',
-  //   top: '50%',
-  //   transform: 'translateY(-50%)',
-  //   backgroundColor: 'transparent',
-  //   border: 'none',
-  //   fontSize: '24px',
-  //   cursor: 'pointer',
-  //   color: '#374151',
-  // },
   progressContainer: {
     display: 'flex',
     flexDirection: 'row',

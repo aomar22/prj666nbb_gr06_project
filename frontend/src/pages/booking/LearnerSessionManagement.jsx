@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser, getLearnerSessions, cancelLearnerBooking } from "../../api";
 import { mapLearnerSessionToCard } from "../../utils/learnerSessionNormalizer";
-
+import Avatar from "../../components/ui/Avatar";
 export default function LearnerSessionManagement() {
 
     const navigate = useNavigate();
@@ -179,11 +179,12 @@ export default function LearnerSessionManagement() {
                                             ].join(" ")}
                                         >
                                             <div className="flex items-start gap-3">
-                                                <img
+                                                {/* <img
                                                     src="/avatar.png"
                                                     alt="Tutor"
                                                     className="h-[58px] w-[58px] rounded-full object-cover"
-                                                />
+                                                /> */}
+                                                <Avatar person={session.tutor || { name: session.tutorName }} size={50} fallbackName="Tutor" />
 
                                                 <div className="font-mono">
                                                     <div className="text-[20px] font-extrabold leading-none text-black">
@@ -290,11 +291,12 @@ export default function LearnerSessionManagement() {
                                             className="w-full rounded-[22px] bg-[#D9D9D9] px-5 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.18)]"
                                         >
                                             <div className="flex items-start gap-3">
-                                                <img
+                                                {/* <img
                                                     src="/avatar.png"
                                                     alt="Tutor"
                                                     className="h-[58px] w-[58px] rounded-full object-cover"
-                                                />
+                                                /> */}
+                                                <Avatar person={session.tutor || { name: session.tutorName }} size={50} fallbackName="Tutor" />
 
                                                 <div className="font-mono">
                                                     <div className="text-[20px] font-extrabold leading-none text-black">
