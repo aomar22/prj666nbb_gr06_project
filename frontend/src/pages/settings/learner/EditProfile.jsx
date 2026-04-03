@@ -4,6 +4,7 @@ import ConfirmationModal from "../../../components/ui/ConfirmationModal";
 import Sidebar from "../../../components/layout/Sidebar";
 import BellIcon from "../../../components/icons/BellIcon";
 import DropdownArrow from "../../../components/ui/DropdownArrow";
+import Avatar from "../../../components/ui/Avatar";
 import { CAMPUSES, PROGRAMS } from "../../../constants/options";
 import { getUser, setUser, getUserSettings, updateUserSettings } from "../../../api";
 
@@ -27,14 +28,6 @@ export default function EditProfile() {
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
       : user?.email || "User";
-
-  const avatarSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    userName
-  )}&background=ddd&color=666&size=100`;
-  
-  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    userName
-  )}&background=ddd&color=666&size=200`;
 
   useEffect(() => {
     getUserSettings()
@@ -111,11 +104,7 @@ export default function EditProfile() {
               </button>
 
               <div className="h-10 w-10 overflow-hidden rounded-full bg-black/20">
-                <img
-                  alt="profile"
-                  src={avatarSrc}
-                  className="h-full w-full object-cover"
-                />
+                <Avatar person={user || { name: userName }} size={40} fallbackName="User" />
               </div>
             </div>
           </div>
@@ -157,13 +146,15 @@ export default function EditProfile() {
               </h2>
 
               <div className="mt-[28px] flex items-center">
-                <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]">
-                  <img
+                  {/* <img
                     src={user?.profile?.avatar || generatedAvatar}
                     alt={userName}
                     className="h-full w-full object-cover"
-                  />
-                </div>
+                  /> */}
+                  <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]">
+                  <Avatar person={user || { name: userName }} size={102} fallbackName="User" />
+                  </div>
+                
 
                 <div className="ml-[38px] text-black">
                   <p className="text-[22px] font-bold leading-[1.15]">

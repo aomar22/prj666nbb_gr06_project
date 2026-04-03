@@ -5,6 +5,7 @@ import PageCard from "../../components/ui/PageCard";
 import WeeklySlotCalendar from "../../components/calendar/WeeklySlotCalendar";
 import { getTutorAllSlots, searchTutors, rescheduleLearnerBooking } from "../../api";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
+import Avatar from "../../components/ui/Avatar";
 
 function makeEmptyWeek() {
   return {
@@ -477,11 +478,13 @@ export default function LearnerSessionReschedule() {
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="h-[83px] w-[85px] overflow-hidden rounded-full bg-black/10 shadow">
-              <img
+              {/* <img
                 src={tutorProfile?.profilePictureUrl || "/avatar.png"}
                 alt="Tutor"
                 className="h-full w-full object-cover"
-              />
+              /> */}
+              <Avatar person={tutorForProfile} size={83} fallbackName="Tutor" />
+
             </div>
 
             <div className="font-mono">
