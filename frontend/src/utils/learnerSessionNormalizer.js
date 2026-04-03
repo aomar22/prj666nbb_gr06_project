@@ -1,5 +1,10 @@
 import { combineLocalDateAndTime } from "./sessionTimeUtils";
 
+function isGenericTutorLabel(value) {
+  const v = String(value || "").trim().toLowerCase();
+  return !v || v === "tutor" || v === "unknown" || v === "unknown user";
+}
+
 function formatTime(dateInput) {
   const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
   if (Number.isNaN(d.getTime())) return "--";
@@ -27,11 +32,6 @@ function addOneHour(dateInput) {
   if (Number.isNaN(d.getTime())) return null;
   d.setHours(d.getHours() + 1);
   return d;
-}
-
-function tutorNameFromMessage(message) {
-  const s = (message || "").replace(/^Session with\s+/i, "").trim();
-  return s || "Tutor";
 }
 
 function toStartDate(session) {
@@ -63,6 +63,16 @@ function computeStatus(session, endDate, now) {
   return "BOOKED";
 }
 
+function parseTutorNameFromText(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const sessionWithMatch = text.match(/^session\s+with\s+(.+)$/i);
+  if (sessionWithMatch?.[1]) return sessionWithMatch[1].trim();
+
+  return "";
+}
+
 /**
  * Normalize any learner-session-like object to the shared card model.
  * Supports both learner booking DTO rows and dashboard utility rows.
@@ -75,11 +85,19 @@ export function mapLearnerSessionToCard(session, options = {}) {
   const endDate = toEndDate(session, startDate);
   const status = computeStatus(session, endDate, now);
 
-  const baseTutorName = session?.tutorName || tutorNameFromMessage(session?.message);
+  const tutorObjName = String(session?.tutor?.name || "").trim();
+  const baseTutorName =
+    (!isGenericTutorLabel(session?.tutorName) && String(session?.tutorName || "").trim()) ||
+    [session?.tutorFirstName, session?.tutorLastName].filter(Boolean).join(" ").trim() ||
+    (!isGenericTutorLabel(tutorObjName) && tutorObjName) ||
+    [session?.tutor?.firstName, session?.tutor?.lastName].filter(Boolean).join(" ").trim() ||
+    parseTutorNameFromText(session?.message) ||
+    "Tutor";
   const tutorName =
     appendCourseLabel && session?.courseLabel && String(session.courseLabel).trim()
       ? `${baseTutorName} - ${session.courseLabel}`
       : baseTutorName;
+  const existingTutor = session?.tutor || {};
 
   const dateLabel = startDate
     ? formatDate(startDate)
@@ -109,6 +127,16 @@ export function mapLearnerSessionToCard(session, options = {}) {
     sessionType: session?.sessionType ?? "INDIVIDUAL",
     currentCount: session?.currentCount ?? 1,
     maxCapacity: session?.maxCapacity ?? 1,
-    avatarSrc: session?.avatarSrc || `https://ui-avatars.com/api/?name=${encodeURIComponent(baseTutorName || "Tutor")}&background=f5e6dc&color=7A0000&size=128`,
+    tutor: {
+      ...existingTutor,
+      id: existingTutor?.id || existingTutor?.userId || session?.tutorId || null,
+      name:
+        !isGenericTutorLabel(existingTutor?.name) && String(existingTutor?.name || "").trim()
+          ? String(existingTutor.name).trim()
+          : baseTutorName,
+      firstName: existingTutor?.firstName || session?.tutorFirstName || "",
+      lastName: existingTutor?.lastName || session?.tutorLastName || "",
+      avatar: null,
+    },
   };
 }

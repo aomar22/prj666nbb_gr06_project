@@ -154,8 +154,6 @@ export default function EditProfile() {
                   <div className="h-[102px] w-[102px] shrink-0 overflow-hidden rounded-full bg-[#D9D9D9]">
                   <Avatar person={user || { name: userName }} size={102} fallbackName="User" />
                   </div>
-                
-
                 <div className="ml-[38px] text-black">
                   <p className="text-[22px] font-bold leading-[1.15]">
                     {userName}
