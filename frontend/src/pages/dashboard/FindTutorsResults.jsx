@@ -4,6 +4,7 @@ import { getUser, searchTutors, getTutorReviews } from "../../api";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
 import { TEACHING_MODE_LABELS } from "../../constants/options";
+import Avatar from "../../components/ui/Avatar";
 
 export default function FindTutorsResults() {
   const navigate = useNavigate();
@@ -188,25 +189,6 @@ export default function FindTutorsResults() {
     return <p style={styles.tutorQuote}>"{tutorQuote(tutor)}"</p>;
   };
 
-  const TUTOR_PLACEHOLDER_PHOTOS = [
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-    "https://images.unsplash.com/photo-1507081323647-4d250478b919?w=100&h=100&fit=crop&crop=face",
-  ];
-
-  const getTutorAvatarUrl = (tutor) => {
-    if (tutor.profileImageUrl) return tutor.profileImageUrl;
-    const seed = (tutor.id ?? tutor.userId ?? [tutor.firstName, tutor.lastName].filter(Boolean).join(" ")) || "tutor";
-    const str = String(seed);
-    let index = 0;
-    for (let i = 0; i < str.length; i++) index = (index + str.charCodeAt(i)) % TUTOR_PLACEHOLDER_PHOTOS.length;
-    return TUTOR_PLACEHOLDER_PHOTOS[Math.abs(index)];
-  };
 
   const handleOpenChat = (tutor) => {
     if (!tutor?.id && !tutor?.userId) return;
@@ -222,7 +204,7 @@ export default function FindTutorsResults() {
             tutor.profileImageUrl ||
             tutor.profilePicture ||
             tutor.avatar ||
-            getTutorAvatarUrl(tutor),
+            null,
           roleLabel: "Certified Peer Tutor",
           rating: tutor.rating,
           reviews: tutor.reviewCount,
@@ -245,7 +227,6 @@ export default function FindTutorsResults() {
               e?.preventDefault?.();
               handleSearchSubmit(e);
             }}
-            avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent([user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User")}&background=ddd&color=666&size=100`}
           />
         </div>
 
@@ -269,7 +250,8 @@ export default function FindTutorsResults() {
                   <div key={tutor.id ?? tutor.userId} style={styles.tutorCard}>
                     <div style={styles.tutorCardTop}>
                       <div style={styles.tutorCardLeft}>
-                        <div style={styles.tutorAvatar}>
+                        <Avatar person={tutor} size={56} />
+                        {/* <div style={styles.tutorAvatar}>
                           <img
                             src={getTutorAvatarUrl(tutor)}
                             alt=""
@@ -279,7 +261,7 @@ export default function FindTutorsResults() {
                           <span style={styles.tutorAvatarLetter} aria-hidden="true">
                             {tutor.firstName?.[0] || "T"}
                           </span>
-                        </div>
+                        </div> */}
                         <div style={styles.tutorCardHead}>
                           <h3 style={styles.tutorName}>
                             {[tutor.firstName, tutor.lastName].filter(Boolean).join(" ") || "Tutor"}

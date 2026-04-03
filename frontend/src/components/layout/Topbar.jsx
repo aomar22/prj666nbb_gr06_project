@@ -2,9 +2,10 @@ import SearchIcon from "../icons/SearchIcon";
 import BellIcon from "../icons/BellIcon";
 import { getUser} from "../../api";
 import { useLocation } from "react-router-dom";
+import Avatar from "../ui/Avatar";
 
 export default function TopBar({
-  avatarSrc,
+  
   showNotificationDot = true,
   placeholder,
   value,
@@ -23,12 +24,18 @@ export default function TopBar({
     }
   };
   const user = getUser();
-    const userName =
-      user?.firstName && user?.lastName
-          ? `${user.firstName} ${user.lastName}`
-          : user?.email || "User";
-  const generatedAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-  userName)}&background=ddd&color=666&size=100`;
+  const userName =
+    user?.firstName && user?.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : user?.email || "User";
+  const avatarPerson = {
+    firstName: user?.firstName,
+    lastName: user?.lastName,
+    name: userName,
+    
+    // profileImageUrl:
+    //   avatarSrc || user?.avatar || user?.profileImageUrl || user?.profilePicture || null,
+  };
   // const rolePlaceholder =
   //     user?.role === "TUTOR"
   //         ? "Search Students or Courses"
@@ -82,11 +89,7 @@ export default function TopBar({
           className="h-10 w-10 rounded-full bg-black/20 overflow-hidden border-0 p-0 cursor-pointer"
           aria-label="Open profile settings"
         >
-          <img
-            alt="profile"
-            src={avatarSrc || generatedAvatar}
-            className="h-full w-full object-cover"
-          />
+          <Avatar person={avatarPerson} size={40} fallbackName="User" />
         </button>
       </div>
     </div>

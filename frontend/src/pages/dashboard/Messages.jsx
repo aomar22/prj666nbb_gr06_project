@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SendHorizontal, Star } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
+import Avatar from "../../components/ui/Avatar";
 import {
   createChatClient,
   getDirectChatHistory,
@@ -76,9 +77,7 @@ function getPeerParticipant(conversation, currentUserRole) {
   if (peer?.name || peer?.avatar) {
     return {
       name: peer?.name || "Unknown user",
-      avatar:
-        peer?.avatar ||
-        "https://ui-avatars.com/api/?name=Unknown+User&background=ddd&color=666",
+      avatar: peer?.avatar || null,
       roleLabel:
         peer?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
     };
@@ -86,9 +85,7 @@ function getPeerParticipant(conversation, currentUserRole) {
 
   return {
     name: conversation?.tutorName || "Unknown user",
-    avatar:
-      conversation?.avatar ||
-      "https://ui-avatars.com/api/?name=Unknown+User&background=ddd&color=666",
+    avatar: conversation?.avatar || null,
     roleLabel:
       conversation?.roleLabel || (isTutor ? "Learner" : "Certified Peer Tutor"),
   };
@@ -151,18 +148,14 @@ function buildConversationFromSelectedPeer(
             id: selectedPeer.id,
             name: selectedPeer.name || "Tutor",
             roleLabel: selectedPeer.roleLabel || "Certified Peer Tutor",
-            avatar:
-              selectedPeer.avatar ||
-              "https://ui-avatars.com/api/?name=Tutor&background=random",
+            avatar: selectedPeer.avatar || null,
           },
       learner: isTutor
         ? {
             id: selectedPeer.id,
             name: selectedPeer.name || "Learner",
             roleLabel: selectedPeer.roleLabel || "Learner",
-            avatar:
-              selectedPeer.avatar ||
-              "https://ui-avatars.com/api/?name=Learner&background=random",
+            avatar: selectedPeer.avatar || null,
           }
         : {
             id: currentUserId,
@@ -177,9 +170,7 @@ function buildConversationFromSelectedPeer(
       : selectedPeer.roleLabel || "Certified Peer Tutor",
     rating: selectedPeer.rating || "—",
     reviews: selectedPeer.reviews || "0 reviews",
-    avatar:
-      selectedPeer.avatar ||
-      "https://ui-avatars.com/api/?name=User&background=random",
+    avatar: selectedPeer.avatar || null,
     slotId: selectedPeer?.slotId || null,
     messages: [],
   };
@@ -224,22 +215,12 @@ function ConversationCard({ conversation, selected, onClick }) {
             font-bold
           "
         >
-          <div
-            className="
-              flex
-              items-center
-              justify-center
-              rounded-full
-              bg-[#E25555]
-              text-white
-              text-[18px]
-              font-mono
-              font-extrabold
-            "
-            style={{ width: 56, height: 56 }}
-          >
-            {getInitials(conversation.name)}
-          </div>
+        
+          <Avatar
+            person={conversation}
+            size={56}
+            
+          />
 
           {isTutorPeer && (
             <>
@@ -392,6 +373,7 @@ function MessageBubble({ message, currentUserId }) {
               text-[#7A0000]
               font-mono
               font-bold
+              text-[22px]
             "
           >
             {getInitials(message.senderName)}
@@ -424,7 +406,7 @@ function MessageBubble({ message, currentUserId }) {
         </div>
 
         {isOwnMessage && (
-          <div className="h-12 w-12 rounded-full bg-[#E8E0D8] flex items-center justify-center text-[#7A0000] font-mono font-bold">
+          <div className="h-12 w-12 rounded-full bg-[#E8E0D8] flex items-center justify-center text-[#7A0000] font-mono font-bold text-[22px]">
             {getInitials(message.senderName || "You")}
           </div>
         )}
@@ -481,9 +463,11 @@ export default function Messages() {
         currentUser?.email ||
         "You";
 
-  const currentUserAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    currentUserName
-  )}&background=ddd&color=666&size=100`;
+  const currentUserAvatar =
+    currentUser?.avatar ||
+    currentUser?.profileImageUrl ||
+    currentUser?.profilePicture ||
+    null;
 
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
@@ -658,9 +642,7 @@ export default function Messages() {
                         id: incoming.senderId,
                         name: peerName,
                         roleLabel: "Certified Peer Tutor",
-                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          peerName
-                        )}&background=random`,
+                        avatar: null,
                       },
                 learner:
                   currentUserRole === "TUTOR"
@@ -668,9 +650,7 @@ export default function Messages() {
                         id: incoming.senderId,
                         name: peerName,
                         roleLabel: "Learner",
-                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          peerName
-                        )}&background=random`,
+                        avatar: null,
                       }
                     : {
                         id: currentUserId,
@@ -687,9 +667,7 @@ export default function Messages() {
                   : "Certified Peer Tutor",
               rating: "—",
               reviews: "0 reviews",
-              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                peerName
-              )}&background=random`,
+              avatar: null,
               slotId: null,
               messages: [incoming],
             },
@@ -974,7 +952,7 @@ export default function Messages() {
                       pb-4
                     "
                   >
-                    <div
+                    {/* <div
                       className="
                         h-14
                         w-14
@@ -986,16 +964,21 @@ export default function Messages() {
                         font-mono
                         font-bold
                       "
-                    >
-                      <div
+                    > */}
+                      <Avatar
+                        person={selectedConversation}
+                        size={56}
+                        
+                      />
+                      {/* <div
                         className="h-full w-full rounded-full
                                    flex items-center justify-center
                                    bg-[#E25555] font-mono font-extrabold
-                                   text-white text-[18px]"
+                                   text-white text-[22px]"
                       >
                         {getInitials(selectedConversation.name)}
-                      </div>
-                    </div>
+                      </div> */}
+                     {/* </div> */}
 
                     <div className="min-w-0 flex-1">
                       <h2

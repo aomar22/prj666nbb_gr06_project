@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getUser } from "../../api";
 import {
   fetchMergedTutorReviewsForTutor,
-  tutorReviewerAvatarSrc,
   tutorReviewerDisplayName,
 } from "../../utils/tutorReceivedReviewUtils";
 import Sidebar from "../../components/layout/Sidebar";
 import Topbar from "../../components/layout/Topbar";
+import Avatar from "../../components/ui/Avatar";
 
 const PAGE_SIZE = 6;
 const GOLD = "#E0B100";
@@ -105,9 +105,6 @@ export default function TutorMyReviews() {
               value={query}
               onSearchChange={(e) => setQuery(e.target.value)}
               onSearchSubmit={() => {}}
-              avatarSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                userName
-              )}&background=ddd&color=666&size=100`}
             />
           </div>
           <button
@@ -148,13 +145,14 @@ export default function TutorMyReviews() {
                 <article key={r.id} style={styles.card}>
                   <div style={styles.cardHeader}>
                     <div style={styles.avatarWrap}>
-                      <img
-                        src={tutorReviewerAvatarSrc(r)}
-                        alt=""
-                        style={styles.avatarImg}
-                        onError={(e) => {
-                          e.target.style.display = "none";
+                      <Avatar
+                        person={{
+                          firstName: r.learnerFirstName,
+                          lastName: r.learnerLastName,
+                          profileImageUrl: r.learnerProfileImageUrl || null,
                         }}
+                        size={44}
+                        fallbackName="Student"
                       />
                     </div>
                     <div style={styles.cardHeaderText}>

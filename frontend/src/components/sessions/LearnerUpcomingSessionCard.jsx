@@ -1,4 +1,5 @@
 import { Calendar, Clock } from "lucide-react";
+import Avatar from "../ui/Avatar";
 
 export default function LearnerUpcomingSessionCard({
   session,
@@ -11,6 +12,18 @@ export default function LearnerUpcomingSessionCard({
   if (!session) return null;
 
   const isClickable = typeof onClick === "function";
+  const tutorObject = session.tutor || {};
+  const tutorObjectName = String(tutorObject.name || "").trim();
+  const fallbackTutorName = String(session.tutorName || "")
+    .split(" - ")[0]
+    .trim();
+  const avatarPerson = {
+    ...tutorObject,
+    name:
+      tutorObjectName && tutorObjectName.toLowerCase() !== "tutor"
+        ? tutorObjectName
+        : fallbackTutorName || "Tutor",
+  };
 
   return (
     <div
@@ -24,16 +37,26 @@ export default function LearnerUpcomingSessionCard({
       ].join(" ")}
     >
       <div className="flex items-start gap-3">
-        <img
+        {/* <img
           src={session.avatarSrc || "/avatar.png"}
           alt="Tutor"
           className="h-[58px] w-[58px] rounded-full object-cover"
-        />
+        /> 
+         */}
+        <Avatar person={avatarPerson} size={50} />
 
         <div className="font-mono">
-          <div className="text-[20px] font-extrabold leading-none text-black">
-            {session.tutorName || "Tutor"}
+          
+          {/* Tutor name */}
+          <div className="text-[18px] font-extrabold text-black">
+            {session.tutorName?.split(" - ")[0]}
+          
+          {/* Courses */}
+          <div className="text-[14px] font-semibold text-black/70 mt-1">
+            {session.tutorName?.split(" - ")[1]}
           </div>
+        
+        </div>
 
           <div className="mt-2 flex items-center gap-2 text-[15px] font-bold text-black">
             <span>★ {session.rating ?? "—"}</span>
