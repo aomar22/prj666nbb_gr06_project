@@ -60,11 +60,7 @@ export function tutorReviewerDisplayName(r) {
 }
 
 export function tutorReviewerAvatarSrc(r) {
-  if (r.learnerProfileImageUrl) return r.learnerProfileImageUrl;
-  const name = tutorReviewerDisplayName(r);
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    name
-  )}&background=f5e6dc&color=7A0000&size=128`;
+  return r.learnerProfileImageUrl || null;
 }
 
 /**

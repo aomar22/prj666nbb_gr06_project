@@ -7,8 +7,7 @@ export const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
     id: "placeholder-learner-1",
     tutorFirstName: "Brad",
     tutorLastName: "Pitt",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
+    tutorProfileImageUrl: null,
     rating: 5,
     comment: "Very patient and explains everything clearly!",
     createdAt: "2026-03-18T10:00:00.000Z",
@@ -17,8 +16,7 @@ export const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
     id: "placeholder-learner-2",
     tutorFirstName: "Emma",
     tutorLastName: "Stone",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
+    tutorProfileImageUrl: null,
     rating: 4,
     comment:
       "Helpful with IPC144 — I finally understand loops and arrays after our session.",
@@ -28,8 +26,7 @@ export const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
     id: "placeholder-learner-3",
     tutorFirstName: "James",
     tutorLastName: "Wilson",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+    tutorProfileImageUrl: null,
     rating: 5,
     comment: "Structured notes and great examples. Would book again.",
     createdAt: "2026-03-10T09:15:00.000Z",
@@ -38,8 +35,7 @@ export const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
     id: "placeholder-learner-4",
     tutorFirstName: "Sarah",
     tutorLastName: "Chen",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+    tutorProfileImageUrl: null,
     rating: 4,
     comment: "Good pace for DBS311 — answers questions without rushing.",
     createdAt: "2026-03-08T11:45:00.000Z",
@@ -48,8 +44,7 @@ export const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
     id: "placeholder-learner-5",
     tutorFirstName: "Marcus",
     tutorLastName: "Nguyen",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+    tutorProfileImageUrl: null,
     rating: 3,
     comment: "Solid session; a bit fast on joins but we covered what I needed.",
     createdAt: "2026-03-05T13:00:00.000Z",
@@ -58,8 +53,7 @@ export const LEARNER_PLACEHOLDER_REVIEWS_RAW = [
     id: "placeholder-learner-6",
     tutorFirstName: "Priya",
     tutorLastName: "Sharma",
-    tutorProfileImageUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+    tutorProfileImageUrl: null,
     rating: 5,
     comment: "Encouraging and clear — my confidence for the midterm is way up.",
     createdAt: "2026-03-01T08:30:00.000Z",
@@ -149,11 +143,7 @@ export function learnerReviewTutorDisplayName(r) {
 }
 
 export function learnerReviewTutorAvatarSrc(r) {
-  if (r.tutorProfileImageUrl) return r.tutorProfileImageUrl;
-  const name = learnerReviewTutorDisplayName(r);
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    name
-  )}&background=f5e6dc&color=7A0000&size=128`;
+  return r.tutorProfileImageUrl || null;
 }
 
 /**
