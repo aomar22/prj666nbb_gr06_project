@@ -181,8 +181,11 @@ function mergeTimesIntoBlocks(timePairs) {
 export default function AvailabilityV2() {
   const location = useLocation();
   const user = getUser();
-  const [selectedDay, setSelectedDay] = useState("MONDAY");
-
+  //const [selectedDay, setSelectedDay] = useState("MONDAY");
+  const [selectedDay, setSelectedDay] = useState(
+    ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][new Date().getDay()]
+  );
+  const [visibleDate, setVisibleDate] = useState(new Date());
   const fromOnboarding =
     location.state?.from?.startsWith("/onboarding") ||
     location.pathname.includes("/onboarding");
@@ -784,7 +787,7 @@ export default function AvailabilityV2() {
                   <div className='text-[28px] font-mono font-extrabold leading-none'>
                     Generated Session Slots
                   </div>
-                  <div className='mt-2 text-[14px] font-mono font-semibold text-black/70'>
+                  <div className='mt-2 text-[16px] font-mono font-semibold text-black/70'>
                     Automatically created from your availability
                   </div>
                 </div>
@@ -899,6 +902,8 @@ export default function AvailabilityV2() {
               </div> */}
               <WeeklySlotCalendar
                   slotsByDayKey={previewSlots}
+                  visibleDate={visibleDate}
+                  onChangeVisibleDate={setVisibleDate}
                   selectedDayKey={selectedDay}
                   onSelectDayKey={handleSelectDay}
                   selectedSlotId={selectedPreviewId}
